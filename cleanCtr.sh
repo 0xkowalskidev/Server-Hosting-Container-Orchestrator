@@ -17,11 +17,6 @@ ctr -n $NAMESPACE snapshots ls | tail -n +2 | awk '{print $1}' | while read -r s
     ctr -n $NAMESPACE snapshots rm "$snapshot"
 done
 
-# Optionally, clean up images in the specified namespace
-for image in $(ctr -n $NAMESPACE images list -q); do
-    echo "Deleting image: $image"
-    ctr -n $NAMESPACE images remove "$image"
-done
 
 echo "Cleanup complete."
 

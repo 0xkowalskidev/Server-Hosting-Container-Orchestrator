@@ -14,12 +14,12 @@ import (
 )
 
 func main() {
-	if err := redisExample(); err != nil {
+	if err := minecraftExample(); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func redisExample() error {
+func minecraftExample() error {
 	client, err := containerd.New("/run/containerd/containerd.sock")
 	if err != nil {
 		return err
@@ -38,7 +38,6 @@ func redisExample() error {
 		ctx,
 		"minecraft-server-container",
 		containerd.WithNewSnapshot("minecraft-server-snapshot", image),
-		containerd.WithNewSpec(oci.WithImageConfig(image)),
 		containerd.WithNewSpec(
 			oci.WithImageConfig(image),
 			oci.WithEnv([]string{"EULA=TRUE"}), // Set the EULA environment variable
