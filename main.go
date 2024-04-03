@@ -7,6 +7,10 @@ import (
 	"syscall"
 	"time"
 
+	//	"github.com/0xKowalski1/container-orchestrator/api"
+	//	"github.com/0xKowalski1/container-orchestrator/state-manager"
+	"github.com/0xKowalski1/container-orchestrator/runtime"
+
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/cio"
 	"github.com/containerd/containerd/containers"
@@ -16,8 +20,43 @@ import (
 )
 
 func main() {
-	if err := debugExample(); err != nil {
-		log.Fatal(err)
+	// for now nodes will be both controller and worker
+	//state := statemanager.Start()
+	//api.Start()
+
+	// if control node
+	// start api
+	// start schedular
+	// start controllers/managers
+	// start state manager
+
+	// else worker node
+	// start runtime
+	// start agent
+	// start networking
+	// start local storage
+
+	/*
+		if err := debugExample(); err != nil {
+			log.Fatal(err)
+		}
+	*/
+	//debugExample()
+
+	// Create runtime
+	_runtime, err := runtime.NewRuntime("containerd")
+
+	if err != nil {
+		log.Fatalf("Failed to initialize runtime: %v", err)
+	}
+
+	containers, err := _runtime.ListContainers("example")
+	if err != nil {
+		log.Fatalf("Failed to list containers: %v", err)
+	}
+
+	for _, container := range containers {
+		log.Println("Container ID:", container.ID)
 	}
 }
 
@@ -78,7 +117,6 @@ func debugExample() error {
 		return err
 	}
 
-	// Wait for a signal to kill the task, for demonstration we wait for a fixed time
 	time.Sleep(60 * time.Second) // Adjust the sleep time as necessary
 
 	if err := task.Kill(ctx, syscall.SIGTERM); err != nil {
