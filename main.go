@@ -52,9 +52,14 @@ func main() {
 		log.Println("Container ID:", container.ID)
 	}
 
-	err = _runtime.StopContainer("example", _container.ID, 60)
+	err = _runtime.StopContainer("example", _container.ID, 5)
 	if err != nil {
 		log.Fatalf("failed to stop container: %v", err)
+	}
+
+	err = _runtime.RemoveContainer("example", _container.ID)
+	if err != nil {
+		log.Fatalf("failed to remove container: %v", err)
 	}
 
 }

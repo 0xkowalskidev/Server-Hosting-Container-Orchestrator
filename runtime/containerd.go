@@ -132,7 +132,8 @@ func (_runtime *ContainerdRuntime) StopContainer(namespace string, containerID s
 	case <-time.After(time.Duration(timeout) * time.Second):
 		log.Printf("Container %s stop timeout; sending SIGKILL", containerID)
 		if err := task.Kill(ctx, syscall.SIGKILL); err != nil { // Forcefully stop the container
-			return fmt.Errorf("failed to send SIGKILL to container %s: %v", containerID, err)
+			log.Printf("failed to send SIGKILL to container %s: %v", containerID, err)
+			return err
 		}
 		<-exitCh // Wait for the SIGKILL to take effect
 	}
@@ -148,7 +149,25 @@ func (_runtime *ContainerdRuntime) StopContainer(namespace string, containerID s
 }
 
 // RemoveContainer removes a container from the system. This may require the container to be stopped first.
-//func RemoveContainer(ctx context.Context, containerID string) error {}
+func (_runtime *ContainerdRuntime) RemoveContainer(namespace string, containerID string) error {
+	ctx := namespaces.WithNamespace(context.Background(), namespace)
+
+	container, err := _runtime.client.LoadContainer(ctx, containerID)
+	if err != nil {
+		log.Printf("Failed to load container %s: %v", containerID, err)
+		return err
+	}
+
+	// Attempt to delete the container. If the container has a running task, containerd will return an error.
+	if err := container.Delete(ctx, containerd.WithSnapshotCleanup); err != nil {
+		log.Printf("Failed to delete container %s: %v", containerID, err)
+		return err
+	}
+
+	log.Printf("Successfully deleted container %s", containerID)
+
+	return nil
+}
 
 // ListContainers returns a list of all containers managed by the runtime.
 func (_runtime *ContainerdRuntime) ListContainers(namespace string) ([]Container, error) {

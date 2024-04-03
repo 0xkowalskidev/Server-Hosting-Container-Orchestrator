@@ -26,7 +26,7 @@ type Runtime interface {
 	StopContainer(namespace string, containerID string, timeout int) error
 
 	// RemoveContainer removes a container from the system. This may require the container to be stopped first.
-	//RemoveContainer(ctx context.Context, containerID string) error
+	RemoveContainer(namespace string, containerID string) error
 
 	// ListContainers returns a list of all containers managed by the runtime.
 	ListContainers(namespace string) ([]Container, error)
