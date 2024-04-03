@@ -31,11 +31,8 @@ type Runtime interface {
 	// ListContainers returns a list of all containers managed by the runtime.
 	ListContainers(namespace string) ([]Container, error)
 
-	// GetContainerLogs returns the logs for a specific container.
-	//GetContainerLogs(ctx context.Context, containerID string) (io.ReadCloser, error)
-
 	// InspectContainer returns detailed information about a specific container.
-	//InspectContainer(ctx context.Context, containerID string) (Container, error)
+	InspectContainer(namespace string, containerID string) (Container, error)
 }
 
 type ContainerConfig struct {

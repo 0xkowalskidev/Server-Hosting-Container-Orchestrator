@@ -197,8 +197,26 @@ func (_runtime *ContainerdRuntime) ListContainers(namespace string) ([]Container
 	return containers, nil
 }
 
-// GetContainerLogs returns the logs for a specific container.
-//func GetContainerLogs(ctx context.Context, containerID string) (io.ReadCloser, error) {}
-
 // InspectContainer returns detailed information about a specific container.
-//func InspectContainer(ctx context.Context, containerID string) (Container, error) {}
+func (_runtime *ContainerdRuntime) InspectContainer(namespace string, containerID string) (Container, error) {
+	ctx := namespaces.WithNamespace(context.Background(), namespace)
+
+	container, err := _runtime.client.LoadContainer(ctx, containerID)
+	if err != nil {
+		log.Printf("Failed to load container %s: %v", containerID, err)
+		return Container{}, err
+	}
+
+	info, err := container.Info(ctx)
+	if err != nil {
+		log.Printf("Failed to get info for container %s: %v", containerID, err)
+		return Container{}, err
+	}
+
+	c := Container{
+		ID: info.ID,
+	}
+
+	return c, nil
+
+}

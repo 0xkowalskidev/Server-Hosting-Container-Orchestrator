@@ -52,6 +52,12 @@ func main() {
 		log.Println("Container ID:", container.ID)
 	}
 
+	ctr, err := _runtime.InspectContainer("example", _container.ID)
+	if err != nil {
+		log.Fatalf("failed to inspect container: %v", err)
+	}
+	log.Println("Container ID:", ctr.ID)
+
 	err = _runtime.StopContainer("example", _container.ID, 5)
 	if err != nil {
 		log.Fatalf("failed to stop container: %v", err)
