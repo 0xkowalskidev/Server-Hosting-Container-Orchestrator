@@ -2,9 +2,12 @@ package runtime
 
 import (
 	"context"
+	"fmt"
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/namespaces"
 	"log"
+	"syscall"
+	"time"
 
 	"github.com/containerd/containerd/cio"
 	"github.com/containerd/containerd/containers"
@@ -96,7 +99,53 @@ func (_runtime *ContainerdRuntime) StartContainer(namespace string, containerID 
 }
 
 // StopContainer stops a running container.
-//func StopContainer(ctx context.Context, containerID string, timeout int) error {}
+func (_runtime *ContainerdRuntime) StopContainer(namespace string, containerID string, timeout int) error {
+	ctx := namespaces.WithNamespace(context.Background(), namespace)
+
+	container, err := _runtime.client.LoadContainer(ctx, containerID)
+	if err != nil {
+		log.Printf("Failed to load container %s: %v", containerID, err)
+		return err
+	}
+
+	task, err := container.Task(ctx, cio.Load)
+	if err != nil {
+		log.Printf("failed to load task for container  %s: %v", containerID, err)
+		return err
+	}
+
+	// Kill the task using SIGTERM, allowing for graceful shutdown
+	// Not sure this is working
+	if err := task.Kill(ctx, syscall.SIGTERM); err != nil {
+		log.Printf("failed to send SIGTERM to container %s: %v", containerID, err)
+		return err
+	}
+
+	exitCh, err := task.Wait(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to wait on task for container %s: %v", containerID, err)
+	}
+
+	select {
+	case <-exitCh:
+		log.Printf("Container %s stopped gracefully", containerID)
+	case <-time.After(time.Duration(timeout) * time.Second):
+		log.Printf("Container %s stop timeout; sending SIGKILL", containerID)
+		if err := task.Kill(ctx, syscall.SIGKILL); err != nil { // Forcefully stop the container
+			return fmt.Errorf("failed to send SIGKILL to container %s: %v", containerID, err)
+		}
+		<-exitCh // Wait for the SIGKILL to take effect
+	}
+
+	if _, err := task.Delete(ctx); err != nil {
+		log.Printf("failed to delete task for container %s: %v", containerID, err)
+		return err
+	}
+
+	log.Printf("Successfully stopped container %s", containerID)
+
+	return nil
+}
 
 // RemoveContainer removes a container from the system. This may require the container to be stopped first.
 //func RemoveContainer(ctx context.Context, containerID string) error {}

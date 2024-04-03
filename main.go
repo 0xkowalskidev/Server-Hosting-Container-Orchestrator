@@ -45,10 +45,16 @@ func main() {
 
 	containers, err := _runtime.ListContainers("example")
 	if err != nil {
-		log.Fatalf("Failed to list containers: %v", err)
+		log.Fatalf("failed to list containers: %v", err)
 	}
 
 	for _, container := range containers {
 		log.Println("Container ID:", container.ID)
 	}
+
+	err = _runtime.StopContainer("example", _container.ID, 60)
+	if err != nil {
+		log.Fatalf("failed to stop container: %v", err)
+	}
+
 }

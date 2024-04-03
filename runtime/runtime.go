@@ -23,7 +23,7 @@ type Runtime interface {
 	StartContainer(namespace string, containerID string) error
 
 	// StopContainer stops a running container.
-	//StopContainer(ctx context.Context, containerID string, timeout int) error
+	StopContainer(namespace string, containerID string, timeout int) error
 
 	// RemoveContainer removes a container from the system. This may require the container to be stopped first.
 	//RemoveContainer(ctx context.Context, containerID string) error
