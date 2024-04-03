@@ -3,32 +3,42 @@ package main
 import (
 	"log"
 
+	"github.com/0xKowalski1/container-orchestrator/agent"
+	"github.com/0xKowalski1/container-orchestrator/api"
 	"github.com/0xKowalski1/container-orchestrator/runtime"
+	statemanager "github.com/0xKowalski1/container-orchestrator/state-manager"
 )
 
 func main() {
 	// for now nodes will be both controller and worker
-	//state := statemanager.Start()
-	//api.Start()
 
 	// if control node
-	// start api
-	// start schedular
-	// start controllers/managers
 	// start state manager
+	state := statemanager.Start()
+
+	// start api
+	go api.Start(state)
+
+	// start schedular
+
+	// start controllers/managers
 
 	// else worker node
 	// start runtime
-	// start agent
-	// start networking
-	// start local storage
-
-	// Create runtime
 	_runtime, err := runtime.NewRuntime("containerd")
 
 	if err != nil {
 		log.Fatalf("Failed to initialize runtime: %v", err)
 	}
+
+	// start agent
+	//temp join
+	state.AddNode("node-1")
+
+	agent.StartAgent(_runtime)
+
+	// start networking
+	// start local storage
 
 	_containerConfig := runtime.ContainerConfig{ID: "minecraft-server", Image: "docker.io/itzg/minecraft-server:latest", Env: []string{"EULA=TRUE"}}
 
