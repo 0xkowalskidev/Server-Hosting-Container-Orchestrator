@@ -5,6 +5,11 @@ import (
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/namespaces"
 	"log"
+
+	"github.com/containerd/containerd/cio"
+	"github.com/containerd/containerd/containers"
+	"github.com/containerd/containerd/oci"
+	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
 // ContainerdRuntime implements the Runtime interface for containerd.
@@ -26,10 +31,69 @@ func NewContainerdRuntime(socketPath string) (*ContainerdRuntime, error) {
 }
 
 // CreateContainer instantiates a new container but does not start it.
-//func CreateContainer(ctx context.Context, config ContainerConfig) (Container, error) {}
+func (_runtime *ContainerdRuntime) CreateContainer(namespace string, config ContainerConfig) (Container, error) {
+	ctx := namespaces.WithNamespace(context.Background(), namespace)
+
+	image, err := _runtime.client.Pull(ctx, config.Image, containerd.WithPullUnpack)
+	if err != nil {
+		log.Printf("Error pulling image: %v", err)
+		return Container{}, err
+	}
+
+	cont, err := _runtime.client.NewContainer(ctx, config.ID, containerd.WithImage(image), containerd.WithNewSnapshot(config.ID+"-snapshot", image), containerd.WithNewSpec(
+		oci.WithHostNamespace(specs.NetworkNamespace),
+		oci.WithImageConfig(image),
+		oci.WithEnv(config.Env),
+		func(ctx context.Context, _ oci.Client, _ *containers.Container, s *oci.Spec) error {
+			//temporary
+			s.Mounts = append(s.Mounts, specs.Mount{
+				Destination: "/etc/resolv.conf",
+				Type:        "bind",
+				Source:      "/home/kowalski/dev/container-orchestrator/resolv.conf",
+				Options:     []string{"rbind", "ro"},
+			})
+
+			return nil
+		},
+	))
+
+	if err != nil {
+		log.Printf("Error creating container: %v", err)
+		return Container{}, err
+	}
+
+	return Container{ID: cont.ID()}, nil
+}
 
 // StartContainer starts an existing container.
-//func StartContainer(ctx context.Context, containerID string) error {}
+func (_runtime *ContainerdRuntime) StartContainer(namespace string, containerID string) error {
+	ctx := namespaces.WithNamespace(context.Background(), namespace)
+
+	container, err := _runtime.client.LoadContainer(ctx, containerID)
+	if err != nil {
+		log.Printf("Failed to load container %s: %v", containerID, err)
+		return err
+	}
+
+	logPath := "/home/kowalski/dev/container-orchestrator/log.log"
+
+	task, err := container.NewTask(ctx, cio.LogFile(logPath))
+	if err != nil {
+		log.Printf("Failed to create task for container %s: %v", containerID, err)
+		return err
+	}
+	defer task.Delete(ctx)
+
+	if err := task.Start(ctx); err != nil {
+		log.Printf("Failed to start task for container %s: %v", containerID, err)
+
+		return err
+	}
+
+	log.Printf("Successfully started container %s", containerID)
+
+	return nil
+}
 
 // StopContainer stops a running container.
 //func StopContainer(ctx context.Context, containerID string, timeout int) error {}

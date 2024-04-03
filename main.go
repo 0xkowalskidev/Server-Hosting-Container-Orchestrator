@@ -30,6 +30,21 @@ func main() {
 		log.Fatalf("Failed to initialize runtime: %v", err)
 	}
 
+	_containerConfig := runtime.ContainerConfig{ID: "minecraft-server", Image: "docker.io/itzg/minecraft-server:latest", Env: []string{"EULA=TRUE"}}
+
+	_container, err := _runtime.CreateContainer("example", _containerConfig)
+
+	if err != nil {
+		log.Fatalf("Failed to create container: %v", err)
+	}
+
+	err = _runtime.StartContainer("example", _container.ID)
+	if err != nil {
+		log.Fatalf("Failed to create container: %v", err)
+	}
+
+	log.Println("Container ID:", _container.ID)
+
 	containers, err := _runtime.ListContainers("example")
 	if err != nil {
 		log.Fatalf("Failed to list containers: %v", err)

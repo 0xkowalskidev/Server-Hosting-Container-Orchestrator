@@ -17,10 +17,10 @@ func NewRuntime(backend string) (Runtime, error) {
 // Runtime defines the interface for a container runtime.
 type Runtime interface {
 	// CreateContainer instantiates a new container but does not start it.
-	//CreateContainer(ctx context.Context, config ContainerConfig) (Container, error)
+	CreateContainer(namespace string, config ContainerConfig) (Container, error)
 
 	// StartContainer starts an existing container.
-	//StartContainer(ctx context.Context, containerID string) error
+	StartContainer(namespace string, containerID string) error
 
 	// StopContainer stops a running container.
 	//StopContainer(ctx context.Context, containerID string, timeout int) error
@@ -39,10 +39,11 @@ type Runtime interface {
 }
 
 type ContainerConfig struct {
-	Image string            // The container image to use.
-	Cmd   []string          // Command to run in the container.
-	Env   map[string]string // Environment variables for the container.
-	Ports []int             // Ports to expose from the container.
+	ID    string   // The container ID to use.
+	Image string   // The container image to use.
+	Cmd   []string // Command to run in the container.
+	Env   []string // Environment variables for the container.
+	Ports []int    // Ports to expose from the container.
 }
 
 type Container struct {
