@@ -43,8 +43,6 @@ func main() {
 		log.Fatalf("Failed to create container: %v", err)
 	}
 
-	log.Println("Container ID:", _container.ID)
-
 	containers, err := _runtime.ListContainers("example")
 	if err != nil {
 		log.Fatalf("Failed to list containers: %v", err)

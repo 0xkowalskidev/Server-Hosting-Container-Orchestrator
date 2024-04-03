@@ -122,8 +122,7 @@ func (_runtime *ContainerdRuntime) ListContainers(namespace string) ([]Container
 		}
 
 		containers = append(containers, Container{
-			ID:     cont.ID(),
-			Status: string("running"), //temp
+			ID: cont.ID(),
 		})
 	}
 

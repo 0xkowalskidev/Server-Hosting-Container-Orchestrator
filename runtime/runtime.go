@@ -41,13 +41,9 @@ type Runtime interface {
 type ContainerConfig struct {
 	ID    string   // The container ID to use.
 	Image string   // The container image to use.
-	Cmd   []string // Command to run in the container.
 	Env   []string // Environment variables for the container.
-	Ports []int    // Ports to expose from the container.
 }
 
 type Container struct {
-	ID      string // Unique identifier for the container.
-	Status  string // Current status of the container (e.g., "running", "stopped").
-	Address string // Network address for accessing the container, if applicable.
+	ID string // Unique identifier for the container.
 }
