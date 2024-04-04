@@ -23,6 +23,7 @@ func scheduleContainers(state *statemanager.State) {
 			if len(node.Containers) < 2 { // Arbitrary rule
 				state.Nodes[i].Containers = append(state.Nodes[i].Containers, container)
 				assigned = true
+				state.RemoveUnscheduledContainer(container.ID)
 				break
 			}
 		}

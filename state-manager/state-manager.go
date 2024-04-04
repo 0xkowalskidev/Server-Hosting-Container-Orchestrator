@@ -92,3 +92,13 @@ func (s *State) RemoveContainer(nodeID, containerID string) {
 		}
 	}
 }
+
+// RemoveUnscheduledContainer removes a container from UnscheduledContainers by ID.
+func (s *State) RemoveUnscheduledContainer(containerID string) {
+	for i, container := range s.UnscheduledContainers {
+		if container.ID == containerID {
+			s.UnscheduledContainers = append(s.UnscheduledContainers[:i], s.UnscheduledContainers[i+1:]...)
+			return
+		}
+	}
+}

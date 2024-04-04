@@ -87,6 +87,8 @@ func Start(_runtime runtime.Runtime) {
 			}
 			if !found {
 				// Do something
+				_runtime.StopContainer("example", c.ID, 5)
+				_runtime.RemoveContainer("example", c.ID)
 			}
 		}
 	}
