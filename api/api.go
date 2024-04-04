@@ -28,7 +28,7 @@ func Start(state *statemanager.State) {
 
 // POST /containers
 func createContainer(c *gin.Context, state *statemanager.State) {
-	state.AddContainer("node-1", "minecraft-server")
+	state.AddContainer("minecraft-server")
 }
 
 // GET /containers/{id}

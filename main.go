@@ -6,6 +6,7 @@ import (
 	"github.com/0xKowalski1/container-orchestrator/agent"
 	"github.com/0xKowalski1/container-orchestrator/api"
 	"github.com/0xKowalski1/container-orchestrator/runtime"
+	"github.com/0xKowalski1/container-orchestrator/schedular"
 	statemanager "github.com/0xKowalski1/container-orchestrator/state-manager"
 )
 
@@ -20,6 +21,7 @@ func main() {
 	go api.Start(state)
 
 	// start schedular
+	schedular.Start(state)
 
 	// start controllers/managers
 
@@ -35,7 +37,7 @@ func main() {
 	//temp join
 	state.AddNode("node-1")
 
-	agent.StartAgent(_runtime)
+	agent.Start(_runtime)
 
 	// start networking
 	// start local storage

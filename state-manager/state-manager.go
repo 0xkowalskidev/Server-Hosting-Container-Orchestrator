@@ -13,7 +13,36 @@ type Container struct {
 }
 
 type State struct {
-	Nodes []Node
+	Nodes                 []Node
+	UnscheduledContainers []Container
+	listeners             []Listener
+}
+
+type EventType string
+
+const (
+	NodeAdded        EventType = "NodeAdded"
+	NodeRemoved      EventType = "NodeRemoved"
+	ContainerAdded   EventType = "ContainerAdded"
+	ContainerRemoved EventType = "ContainerRemoved"
+)
+
+type Event struct {
+	Type EventType
+	Data interface{}
+}
+
+type Listener func(Event)
+
+func (s *State) Subscribe(listener Listener) {
+	s.listeners = append(s.listeners, listener)
+}
+
+// emit broadcasts an event to all subscribers.
+func (s *State) emit(event Event) {
+	for _, listener := range s.listeners {
+		listener(event)
+	}
 }
 
 func Start() *State {
@@ -24,7 +53,10 @@ func Start() *State {
 
 // AddNode adds a new node to the state.
 func (s *State) AddNode(nodeID string) {
-	s.Nodes = append(s.Nodes, Node{ID: nodeID})
+	node := Node{ID: nodeID}
+	s.Nodes = append(s.Nodes, node)
+
+	s.emit(Event{Type: NodeAdded, Data: nodeID})
 }
 
 // RemoveNode removes a node from the state by ID.
@@ -32,19 +64,18 @@ func (s *State) RemoveNode(nodeID string) {
 	for i, node := range s.Nodes {
 		if node.ID == nodeID {
 			s.Nodes = append(s.Nodes[:i], s.Nodes[i+1:]...)
+			s.emit(Event{Type: NodeRemoved, Data: nodeID})
+
 			return
 		}
 	}
 }
 
 // AddContainer adds a new container to the specified node.
-func (s *State) AddContainer(nodeID, containerID string) {
-	for i, node := range s.Nodes {
-		if node.ID == nodeID {
-			s.Nodes[i].Containers = append(s.Nodes[i].Containers, Container{ID: containerID})
-			return
-		}
-	}
+func (s *State) AddContainer(containerID string) {
+	container := Container{ID: containerID}
+	s.UnscheduledContainers = append(s.UnscheduledContainers, container)
+	s.emit(Event{Type: ContainerAdded, Data: container})
 }
 
 // RemoveContainer removes a container from the specified node.
@@ -54,6 +85,7 @@ func (s *State) RemoveContainer(nodeID, containerID string) {
 			for j, container := range node.Containers {
 				if container.ID == containerID {
 					s.Nodes[i].Containers = append(s.Nodes[i].Containers[:j], s.Nodes[i].Containers[j+1:]...)
+					s.emit(Event{Type: ContainerRemoved, Data: container.ID})
 					return
 				}
 			}

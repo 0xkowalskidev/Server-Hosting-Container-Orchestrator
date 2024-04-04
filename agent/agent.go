@@ -16,7 +16,7 @@ type DesiredState struct {
 	} `json:"containers"`
 }
 
-func StartAgent(_runtime runtime.Runtime) {
+func Start(_runtime runtime.Runtime) {
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 
