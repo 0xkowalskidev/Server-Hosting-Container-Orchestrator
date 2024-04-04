@@ -34,50 +34,12 @@ func main() {
 	}
 
 	// start agent
-	//temp join
+	//temp join, should be handled by agent
 	state.AddNode("node-1")
 
 	agent.Start(_runtime)
 
 	// start networking
 	// start local storage
-
-	_containerConfig := runtime.ContainerConfig{ID: "minecraft-server", Image: "docker.io/itzg/minecraft-server:latest", Env: []string{"EULA=TRUE"}}
-
-	_container, err := _runtime.CreateContainer("example", _containerConfig)
-
-	if err != nil {
-		log.Fatalf("Failed to create container: %v", err)
-	}
-
-	err = _runtime.StartContainer("example", _container.ID)
-	if err != nil {
-		log.Fatalf("Failed to create container: %v", err)
-	}
-
-	containers, err := _runtime.ListContainers("example")
-	if err != nil {
-		log.Fatalf("failed to list containers: %v", err)
-	}
-
-	for _, container := range containers {
-		log.Println("Container ID:", container.ID)
-	}
-
-	ctr, err := _runtime.InspectContainer("example", _container.ID)
-	if err != nil {
-		log.Fatalf("failed to inspect container: %v", err)
-	}
-	log.Println("Container ID:", ctr.ID)
-
-	err = _runtime.StopContainer("example", _container.ID, 5)
-	if err != nil {
-		log.Fatalf("failed to stop container: %v", err)
-	}
-
-	err = _runtime.RemoveContainer("example", _container.ID)
-	if err != nil {
-		log.Fatalf("failed to remove container: %v", err)
-	}
 
 }
