@@ -3,7 +3,7 @@ package runtime
 import (
 	"fmt"
 
-	statemanager "github.com/0xKowalski1/container-orchestrator/state-manager"
+	statemanager "0xKowalski1/container-orchestrator/state-manager"
 )
 
 // NewRuntime creates and returns a Runtime implementation based on the provided config.

@@ -1,4 +1,4 @@
-module github.com/0xKowalski1/container-orchestrator
+module 0xKowalski1/container-orchestrator
 
 go 1.21.8
 
@@ -7,7 +7,6 @@ require (
 	github.com/gin-contrib/cors v1.7.1
 	github.com/gin-gonic/gin v1.9.1
 	github.com/opencontainers/runtime-spec v1.1.0
-	go.etcd.io/etcd/api/v3 v3.5.13
 	go.etcd.io/etcd/client/v3 v3.5.13
 )
 
@@ -63,6 +62,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.12 // indirect
+	go.etcd.io/etcd/api/v3 v3.5.13 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.13 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.45.0 // indirect

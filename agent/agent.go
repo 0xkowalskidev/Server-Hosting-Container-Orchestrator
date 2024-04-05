@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/0xKowalski1/container-orchestrator/runtime"
-	statemanager "github.com/0xKowalski1/container-orchestrator/state-manager"
+	"0xKowalski1/container-orchestrator/runtime"
+	statemanager "0xKowalski1/container-orchestrator/state-manager"
 )
 
 type ApiResponse struct {

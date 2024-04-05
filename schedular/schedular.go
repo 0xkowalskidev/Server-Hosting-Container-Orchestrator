@@ -3,7 +3,7 @@ package schedular
 import (
 	"log"
 
-	statemanager "github.com/0xKowalski1/container-orchestrator/state-manager"
+	statemanager "0xKowalski1/container-orchestrator/state-manager"
 )
 
 func Start(_statemanager *statemanager.StateManager) {

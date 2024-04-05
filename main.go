@@ -3,11 +3,11 @@ package main
 import (
 	"log"
 
-	"github.com/0xKowalski1/container-orchestrator/agent"
-	"github.com/0xKowalski1/container-orchestrator/api"
-	"github.com/0xKowalski1/container-orchestrator/runtime"
-	"github.com/0xKowalski1/container-orchestrator/schedular"
-	statemanager "github.com/0xKowalski1/container-orchestrator/state-manager"
+	"0xKowalski1/container-orchestrator/agent"
+	"0xKowalski1/container-orchestrator/api"
+	"0xKowalski1/container-orchestrator/runtime"
+	"0xKowalski1/container-orchestrator/schedular"
+	statemanager "0xKowalski1/container-orchestrator/state-manager"
 )
 
 func main() {

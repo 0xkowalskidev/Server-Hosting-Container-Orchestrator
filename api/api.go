@@ -1,7 +1,7 @@
 package api
 
 import (
-	statemanager "github.com/0xKowalski1/container-orchestrator/state-manager"
+	statemanager "0xKowalski1/container-orchestrator/state-manager"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
