@@ -116,7 +116,6 @@ func (s *State) PatchContainer(containerID string, patch ContainerPatch) (Contai
 	for i, node := range s.Nodes {
 		for j, container := range node.Containers {
 			if container.ID == containerID {
-				// Found the container, apply the patch
 				if patch.DesiredStatus != nil {
 					s.Nodes[i].Containers[j].DesiredStatus = *patch.DesiredStatus
 				}
@@ -125,7 +124,6 @@ func (s *State) PatchContainer(containerID string, patch ContainerPatch) (Contai
 		}
 	}
 
-	// If unscheduled containers can also be patched
 	for i, container := range s.UnscheduledContainers {
 		if container.ID == containerID {
 			if patch.DesiredStatus != nil {

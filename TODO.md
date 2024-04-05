@@ -1,8 +1,8 @@
-Finish the api calls - 
-
-Switch delete to mark for deletion instead of just removing container from state - 
+Finish the api calls - ✓ (system yet to do)
 
 Refactor api - 
+
+Switch delete to mark for deletion instead of just removing container from state - 
 
 Make sure nodes send back usage/resources to control node - 
 

@@ -44,6 +44,14 @@ func Start(state *statemanager.State) {
 		getContainerLogs(c, state)
 	})
 
+	router.GET("nodes", func(c *gin.Context) {
+		getNodes(c, state)
+	})
+
+	router.GET("nodes/:id", func(c *gin.Context) {
+		getNode(c, state)
+	})
+
 	router.GET("nodes/:id/desired", func(c *gin.Context) {
 		getNodeDesiredState(c, state)
 	})
@@ -82,8 +90,6 @@ func createContainer(c *gin.Context, state *statemanager.State) {
 		return
 	}
 
-	// For this example, add the container to the list of UnscheduledContainers.
-	// In a real system, you might instead trigger scheduling logic here.
 	state.AddContainer(req.ID)
 
 	// Respond to indicate successful container creation.
@@ -174,8 +180,31 @@ func getContainerLogs(c *gin.Context, state *statemanager.State) {
 // /nodes
 
 // GET /nodes
+func getNodes(c *gin.Context, state *statemanager.State) {
+	c.JSON(http.StatusOK, gin.H{
+		"nodes": state.Nodes,
+	})
+}
 
 // GET /nodes/{id}
+func getNode(c *gin.Context, state *statemanager.State) {
+	nodeID := c.Param("id")
+
+	for _, node := range state.Nodes {
+		if node.ID == nodeID {
+			// Node found, return its containers as the desired state.
+			c.JSON(http.StatusOK, gin.H{
+				"node": node,
+			})
+			return
+		}
+	}
+
+	// Node not found.
+	c.JSON(http.StatusNotFound, gin.H{
+		"error": "Node not found",
+	})
+}
 
 // GET /nodes/{id}/desired
 func getNodeDesiredState(c *gin.Context, state *statemanager.State) {
