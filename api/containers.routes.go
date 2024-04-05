@@ -48,9 +48,15 @@ func createContainer(c *gin.Context, _statemanager *statemanager.StateManager) {
 		return
 	}
 
+	createdContainer := statemanager.Container{
+		ID:          req.ID,
+		Image:       req.Image,
+		Env:         req.Env,
+		StopTimeout: req.StopTimeout,
+	}
+
 	c.JSON(http.StatusCreated, gin.H{
-		"message":     "Container created",
-		"containerID": req.ID,
+		"container": createdContainer,
 	})
 }
 
