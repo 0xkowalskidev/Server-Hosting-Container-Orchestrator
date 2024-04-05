@@ -8,27 +8,29 @@ import (
 )
 
 // GET /containers
-func getContainers(c *gin.Context, state *statemanager.State) {
-	var allContainers []statemanager.Container
+func getContainers(c *gin.Context, _statemanager *statemanager.StateManager) {
+	namespace := c.Param("namespace")
+	containers, err := _statemanager.ListContainers(namespace)
 
-	// Iterate over all nodes and aggregate their containers.
-	for _, node := range state.Nodes {
-		allContainers = append(allContainers, node.Containers...)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 
-	// Return the list of all containers as JSON.
 	c.JSON(http.StatusOK, gin.H{
-		"containers":            allContainers,
-		"unscheduledContainers": state.UnscheduledContainers,
+		"containers": containers,
 	})
+
 }
 
 // POST /containers
 type CreateContainerRequest struct {
-	ID string `json:"id"` // Include other fields as necessary, e.g., image name.
+	ID string `json:"id"`
 }
 
-func createContainer(c *gin.Context, state *statemanager.State) {
+func createContainer(c *gin.Context, _statemanager *statemanager.StateManager) {
+	namespace := c.Param("namespace")
+
 	var req CreateContainerRequest
 	// Parse the JSON body to the CreateContainerRequest struct.
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -36,9 +38,13 @@ func createContainer(c *gin.Context, state *statemanager.State) {
 		return
 	}
 
-	state.AddContainer(req.ID)
+	err := _statemanager.AddContainer(namespace, statemanager.Container{ID: req.ID, DesiredStatus: "running"})
 
-	// Respond to indicate successful container creation.
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
 	c.JSON(http.StatusCreated, gin.H{
 		"message":     "Container created",
 		"containerID": req.ID,
@@ -46,37 +52,44 @@ func createContainer(c *gin.Context, state *statemanager.State) {
 }
 
 // GET /containers/{id}
-func getContainer(c *gin.Context, state *statemanager.State) {
-	containerID := c.Param("id") // Retrieve the container ID from the URL parameter.
+func getContainer(c *gin.Context, _statemanager *statemanager.StateManager) {
+	namespace := c.Param("namespace")
+	containerID := c.Param("id")
 
-	container, err := state.GetContainer(containerID)
+	container, err := _statemanager.GetContainer(namespace, containerID)
 
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Container not found"})
-	} else {
-		c.JSON(http.StatusOK, container)
+		return
 	}
 
+	c.JSON(http.StatusOK, container)
 }
 
 // DELETE /containers/{id}
-func deleteContainer(c *gin.Context, state *statemanager.State) {
-	containerID := c.Param("id") // Retrieve the container ID from the URL parameter.
+func deleteContainer(c *gin.Context, _statemanager *statemanager.StateManager) {
+	namespace := c.Param("namespace")
+	containerID := c.Param("id")
 
 	// Should mark for deletion!
-	state.RemoveContainer(containerID)
-	state.RemoveUnscheduledContainer(containerID)
+	err := _statemanager.RemoveContainer(namespace, containerID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{"success": "true"})
 }
 
 // POST /containers/{id}/start
-func startContainer(c *gin.Context, state *statemanager.State) {
-	containerID := c.Param("id") // Retrieve the container ID from the URL parameter.
+func startContainer(c *gin.Context, _statemanager *statemanager.StateManager) {
+	namespace := c.Param("namespace")
+	containerID := c.Param("id")
 
 	desiredStatus := "running"
 
-	patchedContainer, err := state.PatchContainer(containerID, statemanager.ContainerPatch{
+	err := _statemanager.PatchContainer(namespace, containerID, statemanager.ContainerPatch{
 		DesiredStatus: &desiredStatus,
 	})
 
@@ -85,16 +98,17 @@ func startContainer(c *gin.Context, state *statemanager.State) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Container starting", "container": patchedContainer})
+	c.JSON(http.StatusOK, gin.H{"message": "Container starting"})
 }
 
 // POST /containers/{id}/stop
-func stopContainer(c *gin.Context, state *statemanager.State) {
-	containerID := c.Param("id") // Retrieve the container ID from the URL parameter.
+func stopContainer(c *gin.Context, _statemanager *statemanager.StateManager) {
+	namespace := c.Param("namespace")
+	containerID := c.Param("id")
 
 	desiredStatus := "stopped"
 
-	patchedContainer, err := state.PatchContainer(containerID, statemanager.ContainerPatch{
+	err := _statemanager.PatchContainer(namespace, containerID, statemanager.ContainerPatch{
 		DesiredStatus: &desiredStatus,
 	})
 
@@ -103,10 +117,11 @@ func stopContainer(c *gin.Context, state *statemanager.State) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Container stopping", "container": patchedContainer})
+	c.JSON(http.StatusOK, gin.H{"message": "Container stopping"})
 }
 
 // GET /containers/{id}/logs
-func getContainerLogs(c *gin.Context, state *statemanager.State) {
+func getContainerLogs(c *gin.Context, _statemanager *statemanager.StateManager) {
+	//namespace := c.Param("namespace")
 	// containerID := c.Param("id") // Retrieve the container ID from the URL parameter.
 }

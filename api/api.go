@@ -7,10 +7,10 @@ import (
 )
 
 // Start initializes the HTTP server and routes
-func Start(state *statemanager.State) {
+func Start(_statemanagermanager *statemanager.StateManager) {
 	router := gin.Default()
 	setupMiddlewares(router)
-	setupRoutes(router, state)
+	setupRoutes(router, _statemanagermanager)
 	router.Run()
 }
 
@@ -23,23 +23,32 @@ func setupMiddlewares(router *gin.Engine) {
 }
 
 // setupRoutes configures the routes for the API
-func setupRoutes(router *gin.Engine, state *statemanager.State) {
-	// Container routes
-	containerGroup := router.Group("/containers")
+func setupRoutes(router *gin.Engine, _statemanager *statemanager.StateManager) {
+
+	// Namespace routes
+	namespacesGroup := router.Group("/namespaces")
 	{
-		containerGroup.GET("", func(c *gin.Context) { getContainers(c, state) })
-		containerGroup.GET("/:id", func(c *gin.Context) { getContainer(c, state) })
-		containerGroup.POST("", func(c *gin.Context) { createContainer(c, state) })
-		containerGroup.DELETE("/:id", func(c *gin.Context) { deleteContainer(c, state) })
-		containerGroup.POST("/:id/start", func(c *gin.Context) { startContainer(c, state) })
-		containerGroup.POST("/:id/stop", func(c *gin.Context) { stopContainer(c, state) })
-		containerGroup.GET("/:id/logs", func(c *gin.Context) { getContainerLogs(c, state) })
+		namespacesGroup.GET("", func(c *gin.Context) { getNamespaces(c, _statemanager) })           // Lists all namespaces
+		namespacesGroup.GET("/:namespace", func(c *gin.Context) { getNamespace(c, _statemanager) }) // Retrieves a specific namespace
+		namespacesGroup.POST("", func(c *gin.Context) { createNamespace(c, _statemanager) })        // Creates a new namespace
+
+		// Nested container routes
+		containersGroup := namespacesGroup.Group("/:namespace/containers")
+		{
+			containersGroup.GET("", func(c *gin.Context) { getContainers(c, _statemanager) })             // Lists all containers in the specified namespace
+			containersGroup.GET("/:id", func(c *gin.Context) { getContainer(c, _statemanager) })          // Retrieves a specific container in the specified namespace
+			containersGroup.POST("", func(c *gin.Context) { createContainer(c, _statemanager) })          // Creates a new container in the specified namespace
+			containersGroup.DELETE("/:id", func(c *gin.Context) { deleteContainer(c, _statemanager) })    // Deletes a specific container in the specified namespace
+			containersGroup.POST("/:id/start", func(c *gin.Context) { startContainer(c, _statemanager) }) // Starts a specific container in the specified namespace
+			containersGroup.POST("/:id/stop", func(c *gin.Context) { stopContainer(c, _statemanager) })   // Stops a specific container in the specified namespace
+			containersGroup.GET("/:id/logs", func(c *gin.Context) { getContainerLogs(c, _statemanager) }) // Retrieves logs for a specific container in the specified namespace
+		}
 	}
 
 	// Node routes
 	nodeGroup := router.Group("/nodes")
 	{
-		nodeGroup.GET("", func(c *gin.Context) { getNodes(c, state) })
-		nodeGroup.GET("/:id", func(c *gin.Context) { getNode(c, state) })
+		nodeGroup.GET("", func(c *gin.Context) { getNodes(c, _statemanager) })
+		nodeGroup.GET("/:id", func(c *gin.Context) { getNode(c, _statemanager) })
 	}
 }

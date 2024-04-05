@@ -8,17 +8,23 @@ import (
 )
 
 // GET /nodes
-func getNodes(c *gin.Context, state *statemanager.State) {
+func getNodes(c *gin.Context, _statemanager *statemanager.StateManager) {
+	nodes, err := _statemanager.ListNodes()
+
+	if err != nil {
+		//500
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"nodes": state.Nodes,
+		"nodes": nodes,
 	})
 }
 
 // GET /nodes/{id}
-func getNode(c *gin.Context, state *statemanager.State) {
+func getNode(c *gin.Context, _statemanager *statemanager.StateManager) {
 	nodeID := c.Param("id")
 
-	node, err := state.GetNode(nodeID)
+	node, err := _statemanager.GetNode(nodeID)
 
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{

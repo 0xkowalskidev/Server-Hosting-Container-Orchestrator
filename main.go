@@ -15,13 +15,17 @@ func main() {
 
 	// if control node
 	// start state manager
-	state := statemanager.Start()
+	_statemanager, err := statemanager.Start()
+	if err != nil {
+		log.Fatalf("Failed to initialize statemanager: %v", err)
+	}
+	defer _statemanager.Close()
 
 	// start api
-	go api.Start(state)
+	go api.Start(_statemanager)
 
 	// start schedular
-	schedular.Start(state)
+	schedular.Start(_statemanager)
 
 	// start controllers/managers
 
@@ -33,10 +37,10 @@ func main() {
 		log.Fatalf("Failed to initialize runtime: %v", err)
 	}
 
-	// start agent
 	//temp join, should be handled by agent
-	state.AddNode("node-1")
+	_statemanager.AddNode(statemanager.Node{ID: "node-1"})
 
+	// start agent
 	agent.Start(_runtime)
 
 	// start networking

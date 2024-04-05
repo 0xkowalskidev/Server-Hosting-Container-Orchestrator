@@ -6,25 +6,48 @@ import (
 	statemanager "github.com/0xKowalski1/container-orchestrator/state-manager"
 )
 
-func Start(state *statemanager.State) {
-	state.Subscribe(func(event statemanager.Event) {
+func Start(_statemanager *statemanager.StateManager) {
+	// Run schedule once on start, incase there where missed unscheduled events while offlien
+	scheduleContainers(_statemanager)
+
+	_statemanager.Subscribe(func(event statemanager.Event) {
 		switch event.Type {
 		case statemanager.ContainerAdded:
-			scheduleContainers(state)
+			scheduleContainers(_statemanager)
 		}
 	})
 }
 
-// scheduleContainers checks and updates the state to schedule containers to nodes.
-func scheduleContainers(state *statemanager.State) {
-	for _, container := range state.UnscheduledContainers {
+// scheduleContainers checks and updates the _statemanager to schedule containers to nodes.
+func scheduleContainers(sm *statemanager.StateManager) {
+	unscheduledContainers, err := sm.ListUnscheduledContainers()
+	if err != nil {
+		log.Printf("Error fetching unscheduled containers: %v", err)
+		return
+	}
+
+	nodes, err := sm.ListNodes()
+	if err != nil {
+		log.Printf("Error fetching nodes: %v", err)
+		return
+	}
+
+	log.Printf("Starting container scheduling...")
+	for _, container := range unscheduledContainers {
+		log.Printf("Attempting to schedule container %s...", container.ID)
 		assigned := false
-		for i, node := range state.Nodes {
-			if len(node.Containers) < 2 { // Arbitrary rule
-				state.Nodes[i].Containers = append(state.Nodes[i].Containers, container)
+		for _, node := range nodes {
+			if len(node.Containers) < 2 { // Arbitrary scheduling rule
+				// Prepare the patch to assign the container to the node
+
+				// Use PatchContainer to assign the container to the node
+				err := sm.AssignContainerToNode(container.NamespaceID, container.ID, node.ID)
+				if err != nil {
+					log.Printf("Failed to assign container %s to node %s: %v", container.ID, node.ID, err)
+					continue
+				}
 				assigned = true
-				state.RemoveUnscheduledContainer(container.ID)
-				break
+				break // Break from the node loop as we've assigned the container
 			}
 		}
 		if !assigned {
