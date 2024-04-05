@@ -94,6 +94,27 @@ func (s *State) AddContainer(containerID string) {
 	s.emit(Event{Type: ContainerAdded, Data: container})
 }
 
+// GetContainer finds a container by id, by searching both containers and unscheduled containers
+func (s *State) GetContainer(containerID string) (Container, error) {
+	// First, search in unscheduled containers.
+	for _, container := range s.UnscheduledContainers {
+		if container.ID == containerID {
+			return container, nil
+		}
+	}
+
+	// If not found, search in each node's containers.
+	for _, node := range s.Nodes {
+		for _, container := range node.Containers {
+			if container.ID == containerID {
+				return container, nil
+			}
+		}
+	}
+
+	return Container{}, fmt.Errorf("Container not found at id: %s", containerID)
+}
+
 // RemoveContainer removes a container from the specified node.
 func (s *State) RemoveContainer(containerID string) {
 	for i, node := range s.Nodes {

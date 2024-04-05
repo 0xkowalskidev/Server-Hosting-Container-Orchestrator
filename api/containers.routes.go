@@ -49,26 +49,14 @@ func createContainer(c *gin.Context, state *statemanager.State) {
 func getContainer(c *gin.Context, state *statemanager.State) {
 	containerID := c.Param("id") // Retrieve the container ID from the URL parameter.
 
-	// First, search in unscheduled containers.
-	for _, container := range state.UnscheduledContainers {
-		if container.ID == containerID {
-			c.JSON(http.StatusOK, container)
-			return
-		}
+	container, err := state.GetContainer(containerID)
+
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Container not found"})
+	} else {
+		c.JSON(http.StatusOK, container)
 	}
 
-	// If not found, search in each node's containers.
-	for _, node := range state.Nodes {
-		for _, container := range node.Containers {
-			if container.ID == containerID {
-				c.JSON(http.StatusOK, container)
-				return
-			}
-		}
-	}
-
-	// Container not found.
-	c.JSON(http.StatusNotFound, gin.H{"error": "Container not found"})
 }
 
 // DELETE /containers/{id}
