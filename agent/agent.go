@@ -1,12 +1,10 @@
 package agent
 
 import (
-	"encoding/json"
-	"io/ioutil"
 	"log"
-	"net/http"
 	"time"
 
+	"0xKowalski1/container-orchestrator/api"
 	"0xKowalski1/container-orchestrator/runtime"
 	statemanager "0xKowalski1/container-orchestrator/state-manager"
 )
@@ -22,29 +20,18 @@ func Start(_runtime runtime.Runtime) {
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 
+	apiClient := api.NewApiWrapper()
+
 	for range ticker.C {
 		// Fetch desired statr
-		resp, err := http.Get("http://localhost:8080/nodes/node-1") // get node-id from config
+
+		node, err := apiClient.GetNode("node-1")
 		if err != nil {
 			log.Printf("Error checking for nodes desired state: %v", err)
 			continue
 		}
 
-		body, err := ioutil.ReadAll(resp.Body)
-		resp.Body.Close()
-
-		if err != nil {
-			log.Printf("Error reading response body: %v", err)
-			continue
-		}
-
-		var apiResponse ApiResponse
-		if err := json.Unmarshal(body, &apiResponse); err != nil {
-			log.Printf("Error unmarshaling desired state: %v", err)
-			continue
-		}
-
-		desiredContainers := apiResponse.Node.Containers
+		desiredContainers := node.Containers
 
 		// List actual containers
 		actualContainers, err := _runtime.ListContainers("example") // need to list accross all namespaces

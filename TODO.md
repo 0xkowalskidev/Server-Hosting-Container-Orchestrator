@@ -6,7 +6,7 @@ etcd - ✓
 
 Use container config - ✓
 
-Move api wrapper to orchestrator -
+Move api wrapper to orchestrator - ✓
 
 Nodes send status make of containers -
 

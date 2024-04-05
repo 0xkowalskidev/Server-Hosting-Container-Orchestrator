@@ -142,3 +142,28 @@ func (c *WrapperClient) StopContainer(namespace string, containerID string) (str
 
 	return containerID, nil
 }
+
+type NodeResponse struct {
+	Node statemanager.Node `json:"node"`
+}
+
+func (c *WrapperClient) GetNode(nodeID string) (*statemanager.Node, error) {
+	url := fmt.Sprintf("%s/nodes/%s", BaseURL, nodeID)
+	response, err := c.HTTPClient.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("API request failed with status code %d", response.StatusCode)
+	}
+
+	var resp NodeResponse // Adjusted to use the new wrapper struct
+	if err := json.NewDecoder(response.Body).Decode(&resp); err != nil {
+		return nil, err
+	}
+
+	return &resp.Node, nil // Return the slice of containers
+
+}
