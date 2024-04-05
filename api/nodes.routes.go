@@ -18,18 +18,15 @@ func getNodes(c *gin.Context, state *statemanager.State) {
 func getNode(c *gin.Context, state *statemanager.State) {
 	nodeID := c.Param("id")
 
-	for _, node := range state.Nodes {
-		if node.ID == nodeID {
-			// Node found, return its containers as the desired state.
-			c.JSON(http.StatusOK, gin.H{
-				"node": node,
-			})
-			return
-		}
-	}
+	node, err := state.GetNode(nodeID)
 
-	// Node not found.
-	c.JSON(http.StatusNotFound, gin.H{
-		"error": "Node not found",
-	})
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "Node not found",
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"node": node,
+		})
+	}
 }

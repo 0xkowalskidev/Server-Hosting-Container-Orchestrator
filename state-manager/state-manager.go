@@ -56,6 +56,17 @@ func Start() *State {
 	return state
 }
 
+// GetNode finds a node from state
+func (s *State) GetNode(nodeID string) (Node, error) {
+	for _, node := range s.Nodes {
+		if node.ID == nodeID {
+			// Node found, return its containers as the desired state.
+			return node, nil
+		}
+	}
+	return Node{}, fmt.Errorf("Node not found at id: %s", nodeID)
+}
+
 // AddNode adds a new node to the state.
 func (s *State) AddNode(nodeID string) {
 	node := Node{ID: nodeID}
