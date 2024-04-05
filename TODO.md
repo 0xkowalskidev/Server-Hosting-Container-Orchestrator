@@ -6,7 +6,8 @@ etcd - ✓
 
 Use container config - ✓
 
-Bug, node deletes itself when deleting a container or restarting - 
+Bug, node deletes itself when deleting a container or restarting -  ✓
+Follow up, delete containerIds from node when deleting a container -
 
 Stop hardcoding timeout -  
 

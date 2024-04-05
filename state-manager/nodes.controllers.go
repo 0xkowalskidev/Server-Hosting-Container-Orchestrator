@@ -49,7 +49,9 @@ func (sm *StateManager) GetNode(nodeID string) (*Node, error) {
 	for _, container := range node.Containers {
 		container, err := sm.GetContainer(container.NamespaceID, container.ID)
 		if err != nil {
-			return nil, err
+			fmt.Printf("Failed to populate container for node: %v", err)
+			continue
+
 		}
 		populatedContainers = append(populatedContainers, *container)
 	}
@@ -80,7 +82,8 @@ func (sm *StateManager) ListNodes() ([]Node, error) {
 		for _, container := range node.Containers {
 			container, err := sm.GetContainer(container.NamespaceID, container.ID)
 			if err != nil {
-				return nil, err
+				fmt.Printf("Failed to populate container for node: %v", err)
+				continue
 			}
 			populatedContainers = append(populatedContainers, *container)
 		}

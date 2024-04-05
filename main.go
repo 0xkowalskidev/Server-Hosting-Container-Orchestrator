@@ -38,7 +38,10 @@ func main() {
 	}
 
 	//temp join, should be handled by agent
-	_statemanager.AddNode(statemanager.Node{ID: "node-1"})
+	_, err = _statemanager.GetNode("node-1")
+	if err != nil {
+		_statemanager.AddNode(statemanager.Node{ID: "node-1"})
+	}
 
 	// start agent
 	agent.Start(_runtime)
