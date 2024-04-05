@@ -28,6 +28,22 @@ func Start(state *statemanager.State) {
 		createContainer(c, state)
 	})
 
+	router.DELETE("/containers/:id", func(c *gin.Context) {
+		deleteContainer(c, state)
+	})
+
+	router.POST("/containers/:id/start", func(c *gin.Context) {
+		startContainer(c, state)
+	})
+
+	router.POST("/containers/:id/stop", func(c *gin.Context) {
+		stopContainer(c, state)
+	})
+
+	router.GET("/containers/:id/logs", func(c *gin.Context) {
+		getContainerLogs(c, state)
+	})
+
 	router.GET("nodes/:id/desired", func(c *gin.Context) {
 		getNodeDesiredState(c, state)
 	})
@@ -104,12 +120,56 @@ func getContainer(c *gin.Context, state *statemanager.State) {
 }
 
 // DELETE /containers/{id}
+func deleteContainer(c *gin.Context, state *statemanager.State) {
+	containerID := c.Param("id") // Retrieve the container ID from the URL parameter.
+
+	// Should mark for deletion!
+	state.RemoveContainer(containerID)
+	state.RemoveUnscheduledContainer(containerID)
+
+	c.JSON(http.StatusOK, gin.H{"success": "true"})
+}
 
 // POST /containers/{id}/start
+func startContainer(c *gin.Context, state *statemanager.State) {
+	containerID := c.Param("id") // Retrieve the container ID from the URL parameter.
+
+	desiredStatus := "running"
+
+	patchedContainer, err := state.PatchContainer(containerID, statemanager.ContainerPatch{
+		DesiredStatus: &desiredStatus,
+	})
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Container starting", "container": patchedContainer})
+}
 
 // POST /containers/{id}/stop
+func stopContainer(c *gin.Context, state *statemanager.State) {
+	containerID := c.Param("id") // Retrieve the container ID from the URL parameter.
+
+	desiredStatus := "stopped"
+
+	patchedContainer, err := state.PatchContainer(containerID, statemanager.ContainerPatch{
+		DesiredStatus: &desiredStatus,
+	})
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Container stopping", "container": patchedContainer})
+}
 
 // GET /containers/{id}/logs
+func getContainerLogs(c *gin.Context, state *statemanager.State) {
+	// containerID := c.Param("id") // Retrieve the container ID from the URL parameter.
+}
 
 // /nodes
 

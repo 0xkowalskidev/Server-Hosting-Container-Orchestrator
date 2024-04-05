@@ -1,6 +1,8 @@
 package statemanager
 
-import ()
+import (
+	"fmt"
+)
 
 // use etcd in the future, this is temp
 type Node struct {
@@ -9,7 +11,10 @@ type Node struct {
 }
 
 type Container struct {
-	ID string
+	ID            string
+	DesiredStatus string // running or stopped
+	//MarkedForDeletion
+	Status string
 }
 
 type State struct {
@@ -73,22 +78,22 @@ func (s *State) RemoveNode(nodeID string) {
 
 // AddContainer adds a new container to the specified node.
 func (s *State) AddContainer(containerID string) {
-	container := Container{ID: containerID}
+	container := Container{ID: containerID, DesiredStatus: "running"}
 	s.UnscheduledContainers = append(s.UnscheduledContainers, container)
 	s.emit(Event{Type: ContainerAdded, Data: container})
 }
 
 // RemoveContainer removes a container from the specified node.
-func (s *State) RemoveContainer(nodeID, containerID string) {
+func (s *State) RemoveContainer(containerID string) {
 	for i, node := range s.Nodes {
-		if node.ID == nodeID {
-			for j, container := range node.Containers {
-				if container.ID == containerID {
-					s.Nodes[i].Containers = append(s.Nodes[i].Containers[:j], s.Nodes[i].Containers[j+1:]...)
-					s.emit(Event{Type: ContainerRemoved, Data: container.ID})
-					return
-				}
+
+		for j, container := range node.Containers {
+			if container.ID == containerID {
+				s.Nodes[i].Containers = append(s.Nodes[i].Containers[:j], s.Nodes[i].Containers[j+1:]...)
+				s.emit(Event{Type: ContainerRemoved, Data: container.ID})
+				return
 			}
+
 		}
 	}
 }
@@ -101,4 +106,35 @@ func (s *State) RemoveUnscheduledContainer(containerID string) {
 			return
 		}
 	}
+}
+
+type ContainerPatch struct {
+	DesiredStatus *string `json:"desiredStatus,omitempty"` //Pointer allows differentiation between an omitted field and an empty value
+}
+
+func (s *State) PatchContainer(containerID string, patch ContainerPatch) (Container, error) {
+	for i, node := range s.Nodes {
+		for j, container := range node.Containers {
+			if container.ID == containerID {
+				// Found the container, apply the patch
+				if patch.DesiredStatus != nil {
+					s.Nodes[i].Containers[j].DesiredStatus = *patch.DesiredStatus
+				}
+				return s.Nodes[i].Containers[j], nil // Successfully patched
+			}
+		}
+	}
+
+	// If unscheduled containers can also be patched
+	for i, container := range s.UnscheduledContainers {
+		if container.ID == containerID {
+			if patch.DesiredStatus != nil {
+				s.UnscheduledContainers[i].DesiredStatus = *patch.DesiredStatus
+			}
+
+			return s.UnscheduledContainers[i], nil // Successfully patched
+		}
+	}
+
+	return Container{}, fmt.Errorf("container with ID %s not found", containerID)
 }

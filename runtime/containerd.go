@@ -215,8 +215,28 @@ func (_runtime *ContainerdRuntime) InspectContainer(namespace string, containerI
 		return statemanager.Container{}, err
 	}
 
+	// Initialize status as "stopped" assuming that if there's no task, the container is not running.
+	containerStatus := "stopped"
+
+	// Attempt to retrieve the task associated with the container
+	task, err := container.Task(ctx, nil)
+	if err != nil {
+		// If an error occurs retrieving the task, log it and proceed with the assumption the container is stopped.
+		fmt.Println("No running task found for container, assuming it's stopped:", err)
+	} else {
+		// If a task is found, retrieve its status
+		status, err := task.Status(ctx)
+		if err != nil {
+			fmt.Println("Error retrieving task status:", err)
+		} else {
+			containerStatus = string(status.Status)
+		}
+	}
+
+	// Construct your container representation including its status
 	c := statemanager.Container{
-		ID: info.ID,
+		ID:     info.ID,
+		Status: containerStatus,
 	}
 
 	return c, nil

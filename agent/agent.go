@@ -8,12 +8,16 @@ import (
 	"time"
 
 	"github.com/0xKowalski1/container-orchestrator/runtime"
+	statemanager "github.com/0xKowalski1/container-orchestrator/state-manager"
 )
 
+type DesiredContainer struct {
+	ID            string `json:"id"`
+	DesiredStatus string `json:"desiredStatus"`
+}
+
 type DesiredState struct {
-	Containers []struct {
-		ID string `json:"id"`
-	} `json:"containers"`
+	Containers []DesiredContainer `json:"containers"`
 }
 
 func Start(_runtime runtime.Runtime) {
@@ -50,30 +54,29 @@ func Start(_runtime runtime.Runtime) {
 		}
 
 		// Map actual container IDs for easier lookup
-		actualMap := make(map[string]bool)
+		actualMap := make(map[string]statemanager.Container)
 		for _, c := range actualContainers {
-			actualMap[c.ID] = true
+			ic, err := _runtime.InspectContainer("example", c.ID)
+			if err != nil {
+				log.Printf("Error inspecting container: %v", err)
+			}
+			actualMap[c.ID] = ic
 		}
 
-		// Start missing containers
-		for _, c := range desired.Containers {
-			if !actualMap[c.ID] {
-				// Create container
-				_containerConfig := runtime.ContainerConfig{ID: c.ID, Image: "docker.io/itzg/minecraft-server:latest", Env: []string{"EULA=TRUE"}}
+		for _, desiredContainer := range desired.Containers {
+			// Create missing containers
+			if _, exists := actualMap[desiredContainer.ID]; !exists {
+				// Create container if it does not exist in actual state
+				_containerConfig := runtime.ContainerConfig{ID: desiredContainer.ID, Image: "docker.io/itzg/minecraft-server:latest", Env: []string{"EULA=TRUE"}}
 
-				_container, err := _runtime.CreateContainer("example", _containerConfig)
+				_, err := _runtime.CreateContainer("example", _containerConfig)
 				if err != nil {
-					log.Fatalf("Failed to create container: %v", err)
+					log.Printf("Failed to create container: %v", err)
 					continue
 				}
-
-				err = _runtime.StartContainer("example", _container.ID)
-				if err != nil {
-					log.Fatalf("Failed to start container: %v", err)
-					continue
-				}
-
 			}
+
+			reconcileContainerState(_runtime, desiredContainer, actualMap[desiredContainer.ID])
 		}
 
 		// Stop extra containers
@@ -86,9 +89,28 @@ func Start(_runtime runtime.Runtime) {
 				}
 			}
 			if !found {
-				// Do something
-				_runtime.StopContainer("example", c.ID, 5)
+				_runtime.StopContainer("example", c.ID, 5) // timeout should come from container config
 				_runtime.RemoveContainer("example", c.ID)
+			}
+		}
+	}
+}
+
+func reconcileContainerState(_runtime runtime.Runtime, desiredContainer DesiredContainer, actualContainer statemanager.Container) {
+	switch desiredContainer.DesiredStatus {
+	case "running":
+		if actualContainer.Status != "running" {
+			err := _runtime.StartContainer("example", desiredContainer.ID) // Probably a bug here, if we use actualContainer this fails as ID is missing
+			if err != nil {
+				log.Fatalf("Failed to start container: %v", err)
+			}
+
+		}
+	case "stopped":
+		if actualContainer.Status != "stopped" {
+			err := _runtime.StopContainer("example", desiredContainer.ID, 5)
+			if err != nil {
+				log.Fatalf("Failed to stop container: %v", err)
 			}
 		}
 	}
