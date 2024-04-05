@@ -47,7 +47,7 @@ func Start(_runtime runtime.Runtime) {
 		desiredContainers := apiResponse.Node.Containers
 
 		// List actual containers
-		actualContainers, err := _runtime.ListContainers("example")
+		actualContainers, err := _runtime.ListContainers("example") // need to list accross all namespaces
 		if err != nil {
 			log.Printf("Error listing containers: %v", err)
 			continue
@@ -67,7 +67,7 @@ func Start(_runtime runtime.Runtime) {
 			// Create missing containers
 			if _, exists := actualMap[desiredContainer.ID]; !exists {
 				// Create container if it does not exist in actual state
-				_, err := _runtime.CreateContainer("example", desiredContainer)
+				_, err := _runtime.CreateContainer(desiredContainer.NamespaceID, desiredContainer)
 				if err != nil {
 					log.Printf("Failed to create container: %v", err)
 					continue
@@ -106,7 +106,7 @@ func reconcileContainerState(_runtime runtime.Runtime, desiredContainer stateman
 		}
 	case "stopped":
 		if actualContainer.Status != "stopped" {
-			err := _runtime.StopContainer("example", desiredContainer.ID, 5)
+			err := _runtime.StopContainer(desiredContainer.NamespaceID, desiredContainer.ID, desiredContainer.StopTimeout)
 			if err != nil {
 				log.Fatalf("Failed to stop container: %v", err)
 			}

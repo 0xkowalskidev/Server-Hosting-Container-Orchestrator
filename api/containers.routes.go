@@ -25,9 +25,10 @@ func getContainers(c *gin.Context, _statemanager *statemanager.StateManager) {
 
 // POST /containers
 type CreateContainerRequest struct {
-	ID    string   `json:"id"`
-	Image string   `json:"image"`
-	Env   []string `json:"env"`
+	ID          string   `json:"id"`
+	Image       string   `json:"image"`
+	Env         []string `json:"env"`
+	StopTimeout int      `json:"stopTimeout"`
 }
 
 func createContainer(c *gin.Context, _statemanager *statemanager.StateManager) {
@@ -40,7 +41,7 @@ func createContainer(c *gin.Context, _statemanager *statemanager.StateManager) {
 		return
 	}
 
-	err := _statemanager.AddContainer(namespace, statemanager.Container{ID: req.ID, Image: req.Image, Env: req.Env})
+	err := _statemanager.AddContainer(namespace, statemanager.Container{ID: req.ID, Image: req.Image, Env: req.Env, StopTimeout: req.StopTimeout})
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

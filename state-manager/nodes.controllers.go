@@ -45,6 +45,16 @@ func (sm *StateManager) GetNode(nodeID string) (*Node, error) {
 		return nil, err
 	}
 
+	populatedContainers := make([]Container, 0, len(node.Containers))
+	for _, container := range node.Containers {
+		container, err := sm.GetContainer(container.NamespaceID, container.ID)
+		if err != nil {
+			return nil, err
+		}
+		populatedContainers = append(populatedContainers, *container)
+	}
+	node.Containers = populatedContainers
+
 	return &node, nil
 }
 
@@ -65,6 +75,17 @@ func (sm *StateManager) ListNodes() ([]Node, error) {
 			// Handle or log the error
 			continue
 		}
+
+		populatedContainers := make([]Container, 0, len(node.Containers))
+		for _, container := range node.Containers {
+			container, err := sm.GetContainer(container.NamespaceID, container.ID)
+			if err != nil {
+				return nil, err
+			}
+			populatedContainers = append(populatedContainers, *container)
+		}
+		node.Containers = populatedContainers
+
 		nodes = append(nodes, node)
 	}
 
@@ -91,7 +112,7 @@ func (sm *StateManager) AssignContainerToNode(namespaceID, containerID, nodeID s
 	}
 
 	// Add the container to the node's list of containers
-	node.Containers = append(node.Containers, *container)
+	node.Containers = append(node.Containers, Container{ID: container.ID, NamespaceID: container.NamespaceID}) // Other data is fetched in getNodes/listNodes
 	// Save the updated node back to etcd
 	return sm.etcdClient.SaveEntity(node)
 }

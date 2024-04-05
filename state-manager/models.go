@@ -4,8 +4,9 @@ import "encoding/json"
 
 // Node - /nodes
 type Node struct {
-	ID         string
-	Containers []Container
+	ID           string      `json:"id"`
+	ContainerIDs []string    `json:"containerIDs"`
+	Containers   []Container `json:"containers,omitempty"`
 }
 
 func (n Node) Key() string {
@@ -46,6 +47,7 @@ type Container struct {
 	NodeID        string
 	Image         string
 	Env           []string
+	StopTimeout   int
 }
 
 func (c Container) Key() string {

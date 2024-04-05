@@ -4,9 +4,11 @@ Refactor api - ✓
 
 etcd - ✓
 
-Use container config - 
+Use container config - ✓
 
-Stop hardcoding timeout - 
+Bug, node deletes itself when deleting a container or restarting - 
+
+Stop hardcoding timeout -  
 
 Switch delete to mark for deletion instead of just removing container from state - 
 

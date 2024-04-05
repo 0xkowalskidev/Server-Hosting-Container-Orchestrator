@@ -102,29 +102,34 @@ func (_runtime *ContainerdRuntime) StartContainer(namespace string, containerID 
 
 // StopContainer stops a running container.
 func (_runtime *ContainerdRuntime) StopContainer(namespace string, containerID string, timeout int) error {
+	log.Printf("Attempting to stop container %s in namespace %s with timeout %d", containerID, namespace, timeout)
+
 	ctx := namespaces.WithNamespace(context.Background(), namespace)
 
+	log.Printf("Loading container %s", containerID)
 	container, err := _runtime.client.LoadContainer(ctx, containerID)
 	if err != nil {
 		log.Printf("Failed to load container %s: %v", containerID, err)
 		return err
 	}
 
+	log.Printf("Loading task for container %s", containerID)
 	task, err := container.Task(ctx, cio.Load)
 	if err != nil {
-		log.Printf("failed to load task for container  %s: %v", containerID, err)
+		log.Printf("Failed to load task for container %s: %v", containerID, err)
 		return err
 	}
 
-	// Kill the task using SIGTERM, allowing for graceful shutdown
-	// Not sure this is working
+	log.Printf("Sending SIGTERM to container %s", containerID)
 	if err := task.Kill(ctx, syscall.SIGTERM); err != nil {
-		log.Printf("failed to send SIGTERM to container %s: %v", containerID, err)
+		log.Printf("Failed to send SIGTERM to container %s: %v", containerID, err)
 		return err
 	}
 
+	log.Printf("Waiting for container %s to exit", containerID)
 	exitCh, err := task.Wait(ctx)
 	if err != nil {
+		log.Printf("Failed to wait on task for container %s: %v", containerID, err)
 		return fmt.Errorf("failed to wait on task for container %s: %v", containerID, err)
 	}
 
@@ -132,20 +137,22 @@ func (_runtime *ContainerdRuntime) StopContainer(namespace string, containerID s
 	case <-exitCh:
 		log.Printf("Container %s stopped gracefully", containerID)
 	case <-time.After(time.Duration(timeout) * time.Second):
-		log.Printf("Container %s stop timeout; sending SIGKILL", containerID)
+		log.Printf("Timeout reached; sending SIGKILL to container %s", containerID)
 		if err := task.Kill(ctx, syscall.SIGKILL); err != nil { // Forcefully stop the container
-			log.Printf("failed to send SIGKILL to container %s: %v", containerID, err)
+			log.Printf("Failed to send SIGKILL to container %s: %v", containerID, err)
 			return err
 		}
+		log.Printf("Waiting for SIGKILL to take effect for container %s", containerID)
 		<-exitCh // Wait for the SIGKILL to take effect
 	}
 
+	log.Printf("Deleting task for container %s", containerID)
 	if _, err := task.Delete(ctx); err != nil {
-		log.Printf("failed to delete task for container %s: %v", containerID, err)
+		log.Printf("Failed to delete task for container %s: %v", containerID, err)
 		return err
 	}
 
-	log.Printf("Successfully stopped container %s", containerID)
+	log.Printf("Successfully stopped and deleted container %s", containerID)
 
 	return nil
 }
