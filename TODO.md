@@ -1,6 +1,12 @@
-Finish the api calls - ✓ (system yet to do)
+Finish the api calls - ✓
 
-Refactor api - 
+Refactor api - ✓
+
+etcd - 
+
+Use container config - 
+
+Stop hardcoding timeout - 
 
 Switch delete to mark for deletion instead of just removing container from state - 
 
@@ -18,7 +24,9 @@ Network cluster -
 
 Auth/security -
 
-Remove fatal errors, make sure agent cant crash - 
+Remove fatal errors, make sure agent cant crash -
+
+Tests - 
 
 Controllers/managers?
 Consensus?
