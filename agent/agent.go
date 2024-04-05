@@ -16,8 +16,11 @@ type DesiredContainer struct {
 	DesiredStatus string `json:"desiredStatus"`
 }
 
-type DesiredState struct {
-	Containers []DesiredContainer `json:"containers"`
+type ApiResponse struct {
+	Node struct {
+		ID         string             `json:"ID"`
+		Containers []DesiredContainer `json:"Containers"`
+	} `json:"node"`
 }
 
 func Start(_runtime runtime.Runtime) {
@@ -26,7 +29,7 @@ func Start(_runtime runtime.Runtime) {
 
 	for range ticker.C {
 		// Fetch desired state
-		resp, err := http.Get("http://localhost:8080/nodes/node-1/desired")
+		resp, err := http.Get("http://localhost:8080/nodes/node-1") // get node-id from config
 		if err != nil {
 			log.Printf("Error checking for nodes desired state: %v", err)
 			continue
@@ -40,11 +43,13 @@ func Start(_runtime runtime.Runtime) {
 			continue
 		}
 
-		var desired DesiredState
-		if err := json.Unmarshal(body, &desired); err != nil {
+		var apiResponse ApiResponse
+		if err := json.Unmarshal(body, &apiResponse); err != nil {
 			log.Printf("Error unmarshaling desired state: %v", err)
 			continue
 		}
+
+		desiredContainers := apiResponse.Node.Containers
 
 		// List actual containers
 		actualContainers, err := _runtime.ListContainers("example")
@@ -63,7 +68,7 @@ func Start(_runtime runtime.Runtime) {
 			actualMap[c.ID] = ic
 		}
 
-		for _, desiredContainer := range desired.Containers {
+		for _, desiredContainer := range desiredContainers {
 			// Create missing containers
 			if _, exists := actualMap[desiredContainer.ID]; !exists {
 				// Create container if it does not exist in actual state
@@ -82,7 +87,7 @@ func Start(_runtime runtime.Runtime) {
 		// Stop extra containers
 		for _, c := range actualContainers {
 			found := false
-			for _, d := range desired.Containers {
+			for _, d := range desiredContainers {
 				if d.ID == c.ID {
 					found = true
 					break

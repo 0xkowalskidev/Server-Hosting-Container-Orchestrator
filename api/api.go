@@ -52,10 +52,6 @@ func Start(state *statemanager.State) {
 		getNode(c, state)
 	})
 
-	router.GET("nodes/:id/desired", func(c *gin.Context) {
-		getNodeDesiredState(c, state)
-	})
-
 	router.Run()
 }
 
@@ -195,27 +191,6 @@ func getNode(c *gin.Context, state *statemanager.State) {
 			// Node found, return its containers as the desired state.
 			c.JSON(http.StatusOK, gin.H{
 				"node": node,
-			})
-			return
-		}
-	}
-
-	// Node not found.
-	c.JSON(http.StatusNotFound, gin.H{
-		"error": "Node not found",
-	})
-}
-
-// GET /nodes/{id}/desired
-func getNodeDesiredState(c *gin.Context, state *statemanager.State) {
-	nodeID := c.Param("id")
-
-	// Search for the node by ID.
-	for _, node := range state.Nodes {
-		if node.ID == nodeID {
-			// Node found, return its containers as the desired state.
-			c.JSON(http.StatusOK, gin.H{
-				"containers": node.Containers,
 			})
 			return
 		}
