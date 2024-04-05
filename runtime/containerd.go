@@ -36,7 +36,7 @@ func NewContainerdRuntime(socketPath string) (*ContainerdRuntime, error) {
 }
 
 // CreateContainer instantiates a new container but does not start it.
-func (_runtime *ContainerdRuntime) CreateContainer(namespace string, config ContainerConfig) (statemanager.Container, error) {
+func (_runtime *ContainerdRuntime) CreateContainer(namespace string, config statemanager.Container) (statemanager.Container, error) {
 	ctx := namespaces.WithNamespace(context.Background(), namespace)
 
 	image, err := _runtime.client.Pull(ctx, config.Image, containerd.WithPullUnpack)

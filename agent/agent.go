@@ -11,15 +11,10 @@ import (
 	statemanager "github.com/0xKowalski1/container-orchestrator/state-manager"
 )
 
-type DesiredContainer struct {
-	ID            string `json:"id"`
-	DesiredStatus string `json:"desiredStatus"`
-}
-
 type ApiResponse struct {
 	Node struct {
-		ID         string             `json:"ID"`
-		Containers []DesiredContainer `json:"Containers"`
+		ID         string                   `json:"ID"`
+		Containers []statemanager.Container `json:"Containers"`
 	} `json:"node"`
 }
 
@@ -28,7 +23,7 @@ func Start(_runtime runtime.Runtime) {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		// Fetch desired state
+		// Fetch desired statr
 		resp, err := http.Get("http://localhost:8080/nodes/node-1") // get node-id from config
 		if err != nil {
 			log.Printf("Error checking for nodes desired state: %v", err)
@@ -72,9 +67,7 @@ func Start(_runtime runtime.Runtime) {
 			// Create missing containers
 			if _, exists := actualMap[desiredContainer.ID]; !exists {
 				// Create container if it does not exist in actual state
-				_containerConfig := runtime.ContainerConfig{ID: desiredContainer.ID, Image: "docker.io/itzg/minecraft-server:latest", Env: []string{"EULA=TRUE"}}
-
-				_, err := _runtime.CreateContainer("example", _containerConfig)
+				_, err := _runtime.CreateContainer("example", desiredContainer)
 				if err != nil {
 					log.Printf("Failed to create container: %v", err)
 					continue
@@ -101,7 +94,7 @@ func Start(_runtime runtime.Runtime) {
 	}
 }
 
-func reconcileContainerState(_runtime runtime.Runtime, desiredContainer DesiredContainer, actualContainer statemanager.Container) {
+func reconcileContainerState(_runtime runtime.Runtime, desiredContainer statemanager.Container, actualContainer statemanager.Container) {
 	switch desiredContainer.DesiredStatus {
 	case "running":
 		if actualContainer.Status != "running" {

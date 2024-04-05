@@ -19,7 +19,7 @@ func NewRuntime(backend string) (Runtime, error) {
 // Runtime defines the interface for a container runtime.
 type Runtime interface {
 	// CreateContainer instantiates a new container but does not start it.
-	CreateContainer(namespace string, config ContainerConfig) (statemanager.Container, error)
+	CreateContainer(namespace string, config statemanager.Container) (statemanager.Container, error)
 
 	// StartContainer starts an existing container.
 	StartContainer(namespace string, containerID string) error
@@ -35,10 +35,4 @@ type Runtime interface {
 
 	// InspectContainer returns detailed information about a specific container.
 	InspectContainer(namespace string, containerID string) (statemanager.Container, error)
-}
-
-type ContainerConfig struct {
-	ID    string   // The container ID to use.
-	Image string   // The container image to use.
-	Env   []string // Environment variables for the container.
 }

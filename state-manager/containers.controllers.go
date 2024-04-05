@@ -18,6 +18,8 @@ func (sm *StateManager) AddContainer(namespaceID string, container Container) er
 	}
 
 	container.NamespaceID = namespaceID // Ensure the container knows its namespaceID
+	container.DesiredStatus = "running"
+
 	err = sm.etcdClient.SaveEntity(container)
 	if err != nil {
 		return err

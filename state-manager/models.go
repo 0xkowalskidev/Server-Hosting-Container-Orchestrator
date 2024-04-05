@@ -44,6 +44,8 @@ type Container struct {
 	Status        string
 	NamespaceID   string
 	NodeID        string
+	Image         string
+	Env           []string
 }
 
 func (c Container) Key() string {

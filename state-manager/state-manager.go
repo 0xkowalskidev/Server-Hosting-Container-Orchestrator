@@ -4,10 +4,6 @@ import (
 	"fmt"
 )
 
-// /nodes
-// /namespaces
-// /namespaces/{namespace}/containers
-
 type StateManager struct {
 	etcdClient *EtcdClient
 	listeners  []Listener

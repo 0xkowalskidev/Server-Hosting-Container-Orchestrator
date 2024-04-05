@@ -38,16 +38,14 @@ func scheduleContainers(sm *statemanager.StateManager) {
 		assigned := false
 		for _, node := range nodes {
 			if len(node.Containers) < 2 { // Arbitrary scheduling rule
-				// Prepare the patch to assign the container to the node
 
-				// Use PatchContainer to assign the container to the node
 				err := sm.AssignContainerToNode(container.NamespaceID, container.ID, node.ID)
 				if err != nil {
 					log.Printf("Failed to assign container %s to node %s: %v", container.ID, node.ID, err)
 					continue
 				}
 				assigned = true
-				break // Break from the node loop as we've assigned the container
+				break
 			}
 		}
 		if !assigned {
