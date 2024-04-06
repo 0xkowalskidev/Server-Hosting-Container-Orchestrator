@@ -1,15 +1,16 @@
 package api
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 
 	"0xKowalski1/container-orchestrator/models"
 )
 
-// API base URL. Adjust as needed.
 const BaseURL = "http://localhost:8080"
 
 // Client represents the API client
@@ -21,7 +22,7 @@ type WrapperClient struct {
 // NewClient creates a new API client
 func NewApiWrapper(namespace string) *WrapperClient {
 	return &WrapperClient{
-		HTTPClient: &http.Client{},
+		HTTPClient: &http.Client{Timeout: 0},
 		Namespace:  namespace,
 	}
 }
@@ -205,4 +206,37 @@ func (c *WrapperClient) GetNode(nodeID string) (*models.Node, error) {
 
 	return &resp.Node, nil // Return the slice of containers
 
+}
+
+func (c *WrapperClient) WatchContainer(containerID string, handleData func(string)) error {
+	// Construct the URL to the orchestrator's watch endpoint
+	url := fmt.Sprintf("%s/namespaces/%s/containers/%s/watch", BaseURL, c.Namespace, containerID)
+
+	// Make a request to the orchestrator's watch endpoint
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return err
+	}
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	// Assuming the response body streams updates as plain text or JSON lines
+	reader := bufio.NewReader(resp.Body)
+	for {
+		line, err := reader.ReadBytes('\n')
+		if err != nil {
+			if err == io.EOF {
+				break // Stream closed normally
+			}
+			return err // Stream error
+		}
+
+		// Pass the received data to the handler function
+		handleData(string(line))
+	}
+
+	return nil
 }

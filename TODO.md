@@ -23,6 +23,8 @@ Ensure namespace matches cfg when changing state -
 
 Logs API call - 
 
+Figure out how to watch status - 
+
 Stop hardcoding timeout -  
 
 Switch delete to mark for deletion instead of just removing container from state -

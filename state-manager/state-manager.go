@@ -4,12 +4,15 @@ import (
 	"0xKowalski1/container-orchestrator/config"
 	"0xKowalski1/container-orchestrator/models"
 	"fmt"
+	"sync"
 )
 
 type StateManager struct {
-	etcdClient *EtcdClient
-	listeners  []Listener
-	cfg        *config.Config
+	etcdClient    *EtcdClient
+	listeners     []Listener
+	cfg           *config.Config
+	subscriptions map[string]map[chan string]struct{} // ContainerID -> Set of Subscriber Channels
+	mu            sync.Mutex
 }
 
 func Start(cfg *config.Config) (*StateManager, error) {
@@ -19,7 +22,7 @@ func Start(cfg *config.Config) (*StateManager, error) {
 		return nil, err
 	}
 
-	state := &StateManager{etcdClient: cli, listeners: []Listener{}, cfg: cfg}
+	state := &StateManager{etcdClient: cli, listeners: []Listener{}, cfg: cfg, subscriptions: make(map[string]map[chan string]struct{})}
 
 	// Check configured namespace is the only namespace that exists, create it if no namespaces exist.
 	namespaces, err := state.ListNamespaces()

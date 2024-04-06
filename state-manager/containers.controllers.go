@@ -30,7 +30,7 @@ func (sm *StateManager) RemoveContainer(containerID string) error {
 	namespaceID := sm.cfg.Namespace
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	// IMPORTANT Should probably check if namespaces match here
+	// IMPORTANT Should probably check if namespaces match here (and everywhere else we change state)
 
 	err := sm.RemoveContainerFromNode(containerID)
 
@@ -139,4 +139,57 @@ func (sm *StateManager) PatchContainer(containerID string, patch models.UpdateCo
 	}
 
 	return sm.etcdClient.SaveEntity(*container)
+}
+
+func (sm *StateManager) SubscribeToStatus(containerID string) (chan string, error) {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+
+	// Create a new channel for this subscription
+	statusChan := make(chan string)
+
+	if _, ok := sm.subscriptions[containerID]; !ok {
+		sm.subscriptions[containerID] = make(map[chan string]struct{})
+		// Start watching etcd for changes to this container's status
+		go sm.watchStatus(containerID)
+	}
+
+	sm.subscriptions[containerID][statusChan] = struct{}{}
+
+	return statusChan, nil
+}
+
+func (sm *StateManager) UnsubscribeFromStatus(containerID string, statusChan chan string) {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+
+	subscribers, ok := sm.subscriptions[containerID]
+	if !ok {
+		return
+	}
+
+	// Remove the channel from the subscribers
+	delete(subscribers, statusChan)
+	close(statusChan)
+
+	// If there are no more subscribers, stop watching this container's status
+	if len(subscribers) == 0 {
+		delete(sm.subscriptions, containerID)
+	}
+}
+
+func (sm *StateManager) watchStatus(containerID string) {
+	ctx := context.Background()
+	watchChan := sm.etcdClient.Watch(ctx, "/namespaces/"+sm.cfg.Namespace+"/containers/"+containerID)
+
+	for watchResp := range watchChan {
+		for _, event := range watchResp.Events {
+			sm.mu.Lock()
+			containerData := string(event.Kv.Value)
+			for subscriberChan := range sm.subscriptions[containerID] {
+				subscriberChan <- containerData
+			}
+			sm.mu.Unlock()
+		}
+	}
 }

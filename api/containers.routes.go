@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"time"
 
 	"0xKowalski1/container-orchestrator/models"
 	statemanager "0xKowalski1/container-orchestrator/state-manager"
@@ -142,4 +143,48 @@ func stopContainer(c *gin.Context, _statemanager *statemanager.StateManager) {
 // GET /containers/{id}/logs
 func getContainerLogs(c *gin.Context, _statemanager *statemanager.StateManager) {
 	// containerID := c.Param("id") // Retrieve the container ID from the URL parameter.
+}
+
+// getContainerStatus streams the status of a container using Server-Sent Events (SSE).
+func getContainerStatus(c *gin.Context, stateManager *statemanager.StateManager) {
+	containerID := c.Param("id") // Retrieve the container ID from the URL parameter.
+
+	// Set headers related to event streaming.
+	c.Writer.Header().Set("Content-Type", "text/event-stream")
+	c.Writer.Header().Set("Cache-Control", "no-cache")
+	c.Writer.Header().Set("Connection", "keep-alive")
+	c.Writer.Header().Set("Transfer-Encoding", "chunked")
+
+	// Subscribe to the status updates for the specified container.
+	statusChan, err := stateManager.SubscribeToStatus(containerID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to subscribe to container status"})
+		return
+	}
+	defer stateManager.UnsubscribeFromStatus(containerID, statusChan)
+
+	// Use a ticker for sending heartbeats to keep the connection alive.
+	heartbeatTicker := time.NewTicker(30 * time.Second)
+	defer heartbeatTicker.Stop()
+
+	// Loop for streaming updates.
+	for {
+		select {
+		case status, ok := <-statusChan:
+			if !ok {
+				// Channel was closed, stop streaming.
+				return
+			}
+			// Send the status update.
+			c.SSEvent("status", status)
+			c.Writer.Flush()
+		case <-heartbeatTicker.C:
+			// Send a comment as a heartbeat to keep the connection alive.
+			c.SSEvent("", ":heartbeat")
+			c.Writer.Flush()
+		case <-c.Request.Context().Done():
+			// Client closed the connection, stop streaming.
+			return
+		}
+	}
 }

@@ -235,8 +235,7 @@ func (_runtime *ContainerdRuntime) InspectContainer(namespace string, containerI
 	// Attempt to retrieve the task associated with the container
 	task, err := container.Task(ctx, nil)
 	if err != nil {
-		// If an error occurs retrieving the task, log it and proceed with the assumption the container is stopped.
-		fmt.Println("No running task found for container, assuming it's stopped:", err)
+		// No task, probably fine
 	} else {
 		// If a task is found, retrieve its status
 		status, err := task.Status(ctx)
