@@ -8,7 +8,10 @@ Use container config - ✓
 
 Move api wrapper to orchestrator - ✓
 
-Nodes send status make of containers -
+One namespace or many? - One
+Switch to one namespace - 
+
+Nodes send status of containers -
 
 Logs API call - 
 

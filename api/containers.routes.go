@@ -24,17 +24,10 @@ func getContainers(c *gin.Context, _statemanager *statemanager.StateManager) {
 }
 
 // POST /containers
-type CreateContainerRequest struct {
-	ID          string   `json:"id"`
-	Image       string   `json:"image"`
-	Env         []string `json:"env"`
-	StopTimeout int      `json:"stopTimeout"`
-}
-
 func createContainer(c *gin.Context, _statemanager *statemanager.StateManager) {
 	namespace := c.Param("namespace")
 
-	var req CreateContainerRequest
+	var req statemanager.CreateContainerRequest
 	// Parse the JSON body to the CreateContainerRequest struct.
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
@@ -57,6 +50,29 @@ func createContainer(c *gin.Context, _statemanager *statemanager.StateManager) {
 
 	c.JSON(http.StatusCreated, gin.H{
 		"container": createdContainer,
+	})
+}
+
+// PATCH /containers
+func updateContainer(c *gin.Context, _statemanager *statemanager.StateManager) {
+	namespace := c.Param("namespace")
+	containerID := c.Param("id")
+
+	var req statemanager.UpdateContainerRequest
+	// Parse the JSON body to the UpdateContainerRequest struct.
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	err := _statemanager.PatchContainer(namespace, containerID, req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
 	})
 }
 
@@ -98,7 +114,7 @@ func startContainer(c *gin.Context, _statemanager *statemanager.StateManager) {
 
 	desiredStatus := "running"
 
-	err := _statemanager.PatchContainer(namespace, containerID, statemanager.ContainerPatch{
+	err := _statemanager.PatchContainer(namespace, containerID, statemanager.UpdateContainerRequest{
 		DesiredStatus: &desiredStatus,
 	})
 
@@ -117,7 +133,7 @@ func stopContainer(c *gin.Context, _statemanager *statemanager.StateManager) {
 
 	desiredStatus := "stopped"
 
-	err := _statemanager.PatchContainer(namespace, containerID, statemanager.ContainerPatch{
+	err := _statemanager.PatchContainer(namespace, containerID, statemanager.UpdateContainerRequest{
 		DesiredStatus: &desiredStatus,
 	})
 

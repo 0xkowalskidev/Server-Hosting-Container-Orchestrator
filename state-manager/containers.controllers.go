@@ -127,13 +127,8 @@ func (sm *StateManager) ListUnscheduledContainers() ([]Container, error) {
 	return unscheduledContainers, nil
 }
 
-type ContainerPatch struct {
-	DesiredStatus *string `json:"desiredStatus,omitempty"` // Pointer allows differentiation between an omitted field and an empty value
-	NodeID        *string `json:"nodeId,omitempty"`
-}
-
 // PatchContainer updates specific fields of a container in a namespace.
-func (sm *StateManager) PatchContainer(namespaceID, containerID string, patch ContainerPatch) error {
+func (sm *StateManager) PatchContainer(namespaceID, containerID string, patch UpdateContainerRequest) error {
 	container, err := sm.GetContainer(namespaceID, containerID)
 	if err != nil {
 		return err
@@ -145,6 +140,9 @@ func (sm *StateManager) PatchContainer(namespaceID, containerID string, patch Co
 	}
 	if patch.NodeID != nil {
 		container.NodeID = *patch.NodeID
+	}
+	if patch.Status != nil {
+		container.Status = *patch.Status
 	}
 
 	return sm.etcdClient.SaveEntity(*container)

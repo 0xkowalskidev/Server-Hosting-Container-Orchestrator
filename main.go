@@ -5,7 +5,6 @@ import (
 
 	"0xKowalski1/container-orchestrator/agent"
 	"0xKowalski1/container-orchestrator/api"
-	"0xKowalski1/container-orchestrator/runtime"
 	"0xKowalski1/container-orchestrator/schedular"
 	statemanager "0xKowalski1/container-orchestrator/state-manager"
 )
@@ -30,21 +29,14 @@ func main() {
 	// start controllers/managers
 
 	// else worker node
-	// start runtime
-	_runtime, err := runtime.NewRuntime("containerd")
-
-	if err != nil {
-		log.Fatalf("Failed to initialize runtime: %v", err)
-	}
-
-	//temp join, should be handled by agent
+	//temp join, should be handled by agent through api calls
 	_, err = _statemanager.GetNode("node-1")
 	if err != nil {
 		_statemanager.AddNode(statemanager.Node{ID: "node-1"})
 	}
 
 	// start agent
-	agent.Start(_runtime)
+	agent.Start()
 
 	// start networking
 	// start local storage

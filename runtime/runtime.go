@@ -10,7 +10,13 @@ import (
 func NewRuntime(backend string) (Runtime, error) {
 	switch backend {
 	case "containerd":
-		return NewContainerdRuntime("/run/containerd/containerd.sock")
+		runtime, err := NewContainerdRuntime("/run/containerd/containerd.sock")
+		if err != nil {
+			return nil, err
+		}
+		runtime.SubscribeToEvents("example")
+
+		return runtime, nil
 	default:
 		return nil, fmt.Errorf("unsupported runtime type: %s", backend)
 	}

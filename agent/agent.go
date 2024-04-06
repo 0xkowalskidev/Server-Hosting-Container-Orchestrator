@@ -16,15 +16,20 @@ type ApiResponse struct {
 	} `json:"node"`
 }
 
-func Start(_runtime runtime.Runtime) {
+func Start() {
+	// start runtime
+	_runtime, err := runtime.NewRuntime("containerd")
+
+	if err != nil {
+		log.Fatalf("Failed to initialize runtime: %v", err)
+	}
+
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 
 	apiClient := api.NewApiWrapper()
 
 	for range ticker.C {
-		// Fetch desired statr
-
 		node, err := apiClient.GetNode("node-1")
 		if err != nil {
 			log.Printf("Error checking for nodes desired state: %v", err)

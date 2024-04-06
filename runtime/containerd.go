@@ -7,13 +7,20 @@ import (
 	"syscall"
 	"time"
 
+	"0xKowalski1/container-orchestrator/api"
 	statemanager "0xKowalski1/container-orchestrator/state-manager"
+
 	"github.com/containerd/containerd"
+	eventstypes "github.com/containerd/containerd/api/events"
+	"github.com/containerd/containerd/events"
 	"github.com/containerd/containerd/namespaces"
+
+	"github.com/containerd/typeurl/v2"
 
 	"github.com/containerd/containerd/cio"
 	"github.com/containerd/containerd/containers"
 	"github.com/containerd/containerd/oci"
+
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
@@ -248,4 +255,64 @@ func (_runtime *ContainerdRuntime) InspectContainer(namespace string, containerI
 
 	return c, nil
 
+}
+
+// Events
+// SubscribeToEvents starts listening to containerd events and handles them.
+func (_runtime *ContainerdRuntime) SubscribeToEvents(namespace string) {
+	ctx := namespaces.WithNamespace(context.Background(), namespace)
+
+	// Process events and errors
+	go func() {
+		ch, errs := _runtime.client.EventService().Subscribe(ctx)
+
+		for {
+			select {
+			case envelope := <-ch:
+				if err := _runtime.processEvent(envelope, namespace); err != nil {
+					log.Printf("Error processing event: %v", err)
+				}
+
+			case e := <-errs:
+				log.Printf("Received an error: %v", e)
+			}
+		}
+	}()
+}
+
+func (_runtime *ContainerdRuntime) processEvent(envelope *events.Envelope, namespace string) error {
+	apiClient := api.NewApiWrapper()
+
+	event, err := typeurl.UnmarshalAny(envelope.Event)
+	if err != nil {
+		return err
+	}
+
+	switch e := event.(type) {
+	case *eventstypes.TaskStart:
+		log.Printf("Task started: ContainerID=%s, PID=%d", e.ContainerID, e.Pid)
+		status := "running"
+		containerPatch := statemanager.UpdateContainerRequest{Status: &status}
+		_, err := apiClient.UpdateContainer(namespace, e.ContainerID, containerPatch)
+		if err != nil {
+			log.Printf("Error updating container %s to status 'running': %v", e.ContainerID, err)
+		}
+
+	case *eventstypes.TaskDelete:
+		log.Printf("Task deleted: ContainerID=%s, PID=%d, ExitStatus=%d", e.ContainerID, e.Pid, e.ExitStatus)
+		status := "stopped"
+		containerPatch := statemanager.UpdateContainerRequest{Status: &status}
+		_, err := apiClient.UpdateContainer(namespace, e.ContainerID, containerPatch)
+		if err != nil {
+			log.Printf("Error updating container %s to status 'stopped': %v", e.ContainerID, err)
+		}
+
+	/* case *eventstypes.TaskExit:
+	log.Printf("Task exit: ContainerID=%s, PID=%d, ExitStatus=%d", e.ContainerID, e.Pid, e.ExitStatus) */ // Dont think we need this one
+
+	default:
+		log.Printf("Unhandled event type: %s", envelope.Topic)
+	}
+
+	return nil
 }

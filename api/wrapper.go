@@ -29,7 +29,7 @@ type ContainerListResponse struct {
 }
 
 // CreateContainer creates a new container in the specified namespace
-func (c *WrapperClient) CreateContainer(namespace string, req CreateContainerRequest) (*statemanager.Container, error) {
+func (c *WrapperClient) CreateContainer(namespace string, req statemanager.CreateContainerRequest) (*statemanager.Container, error) {
 	requestBody, err := json.Marshal(req)
 	if err != nil {
 		return nil, err
@@ -56,6 +56,43 @@ func (c *WrapperClient) CreateContainer(namespace string, req CreateContainerReq
 	}
 
 	fmt.Printf("Container Response: %+v\n", containerResponse.Container)
+
+	return &containerResponse.Container, nil
+}
+
+// UpdateContainer updates an existing container's configuration in the specified namespace.
+func (c *WrapperClient) UpdateContainer(namespace string, containerID string, req statemanager.UpdateContainerRequest) (*statemanager.Container, error) {
+	requestBody, err := json.Marshal(req)
+	if err != nil {
+		return nil, err
+	}
+
+	url := fmt.Sprintf("%s/namespaces/%s/containers/%s", BaseURL, namespace, containerID)
+	request, err := http.NewRequest(http.MethodPatch, url, bytes.NewBuffer(requestBody))
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set("Content-Type", "application/json")
+
+	response, err := c.HTTPClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("API request failed with status code %d", response.StatusCode)
+	}
+
+	var containerResponse struct {
+		Container statemanager.Container `json:"container"`
+	}
+
+	if err := json.NewDecoder(response.Body).Decode(&containerResponse); err != nil {
+		return nil, err
+	}
+
+	fmt.Printf("Updated Container Response: %+v\n", containerResponse.Container)
 
 	return &containerResponse.Container, nil
 }

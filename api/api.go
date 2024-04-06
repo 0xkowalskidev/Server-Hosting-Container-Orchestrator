@@ -39,6 +39,7 @@ func setupRoutes(router *gin.Engine, _statemanager *statemanager.StateManager) {
 			containersGroup.GET("/:id", func(c *gin.Context) { getContainer(c, _statemanager) })          // Retrieves a specific container in the specified namespace
 			containersGroup.POST("", func(c *gin.Context) { createContainer(c, _statemanager) })          // Creates a new container in the specified namespace
 			containersGroup.DELETE("/:id", func(c *gin.Context) { deleteContainer(c, _statemanager) })    // Deletes a specific container in the specified namespace
+			containersGroup.PATCH("/:id", func(c *gin.Context) { updateContainer(c, _statemanager) })     // Updates a specific container in the specified namespace
 			containersGroup.POST("/:id/start", func(c *gin.Context) { startContainer(c, _statemanager) }) // Starts a specific container in the specified namespace
 			containersGroup.POST("/:id/stop", func(c *gin.Context) { stopContainer(c, _statemanager) })   // Stops a specific container in the specified namespace
 			containersGroup.GET("/:id/logs", func(c *gin.Context) { getContainerLogs(c, _statemanager) }) // Retrieves logs for a specific container in the specified namespace

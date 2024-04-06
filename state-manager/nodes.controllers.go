@@ -109,7 +109,7 @@ func (sm *StateManager) AssignContainerToNode(namespaceID, containerID, nodeID s
 	}
 
 	// Update the container's NodeID
-	containerPatch := ContainerPatch{NodeID: &nodeID}
+	containerPatch := UpdateContainerRequest{NodeID: &nodeID}
 	if err := sm.PatchContainer(namespaceID, containerID, containerPatch); err != nil {
 		return err
 	}
