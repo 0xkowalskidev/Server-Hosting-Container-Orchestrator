@@ -96,7 +96,6 @@ func (sm *StateManager) ListNodes() ([]models.Node, error) {
 }
 
 func (sm *StateManager) AssignContainerToNode(containerID, nodeID string) error {
-	// Fetch the node
 	node, err := sm.GetNode(nodeID)
 	if err != nil {
 		return err
@@ -108,14 +107,45 @@ func (sm *StateManager) AssignContainerToNode(containerID, nodeID string) error 
 		return err
 	}
 
-	// Update the container's NodeID
 	containerPatch := models.UpdateContainerRequest{NodeID: &nodeID}
 	if err := sm.PatchContainer(containerID, containerPatch); err != nil {
 		return err
 	}
 
-	// Add the container to the node's list of containers
 	node.Containers = append(node.Containers, models.Container{ID: container.ID, NamespaceID: container.NamespaceID}) // Other data is fetched in getNodes/listNodes
-	// Save the updated node back to etcd
+
+	return sm.etcdClient.SaveEntity(node)
+}
+
+func (sm *StateManager) RemoveContainerFromNode(containerID string) error {
+	container, err := sm.GetContainer(containerID)
+	if err != nil {
+		return err
+	}
+
+	nodeID := container.NodeID
+
+	node, err := sm.GetNode(nodeID)
+	if err != nil {
+		return err
+	}
+
+	// Check if the container is indeed assigned to this node and get its index
+	containerIndex := -1
+	for i, container := range node.Containers {
+		if container.ID == containerID {
+			containerIndex = i
+			break
+		}
+	}
+
+	// If the container wasn't found on the node, return an error
+	if containerIndex == -1 {
+		return fmt.Errorf("container %s not found on node %s", containerID, nodeID)
+	}
+
+	node.Containers[containerIndex] = node.Containers[len(node.Containers)-1]
+	node.Containers = node.Containers[:len(node.Containers)-1]
+
 	return sm.etcdClient.SaveEntity(node)
 }

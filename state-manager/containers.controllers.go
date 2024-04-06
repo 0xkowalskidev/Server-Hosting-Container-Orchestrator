@@ -32,14 +32,25 @@ func (sm *StateManager) RemoveContainer(containerID string) error {
 	defer cancel()
 	// IMPORTANT Should probably check if namespaces match here
 
-	key := "/namespaces/" + namespaceID + "/containers/" + containerID
-	_, err := sm.etcdClient.Client.Delete(ctx, key)
+	err := sm.RemoveContainerFromNode(containerID)
 
-	if err == nil {
-		sm.emit(Event{Type: ContainerRemoved, Data: containerID})
+	if err != nil {
+		fmt.Printf("Failed to remove container from node: %v", err)
+
+		return err
 	}
 
-	return err
+	key := "/namespaces/" + namespaceID + "/containers/" + containerID
+	_, err = sm.etcdClient.Client.Delete(ctx, key)
+
+	if err != nil {
+		fmt.Printf("Failed to delete container: %v", err)
+		return err
+	}
+
+	sm.emit(Event{Type: ContainerRemoved, Data: containerID})
+
+	return nil
 }
 
 // GetContainer retrieves a container by its ID and namespaceID

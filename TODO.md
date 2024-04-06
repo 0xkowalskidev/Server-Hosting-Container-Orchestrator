@@ -14,15 +14,14 @@ Cleanup api requests, task request struct from model - ✓
 
 Main config - ✓
 
+Bug, node deletes itself when deleting a container or restarting -  ✓
+Follow up, delete containers from node when deleting a container - ✓
+
 One namespace or many? - One
 Switch to one namespace - ✓
 Ensure namespace matches cfg when changing state -
 
-
 Logs API call - 
-
-Bug, node deletes itself when deleting a container or restarting -  ✓
-Follow up, delete containerIds from node when deleting a container -
 
 Stop hardcoding timeout -  
 
@@ -41,7 +40,6 @@ Container delete api call always returns success -
 Container networking - 
 
 Container storage -
-
 
 Network cluster -
 

@@ -3,9 +3,8 @@ package models
 import "encoding/json"
 
 type Node struct {
-	ID           string      `json:"id"`
-	ContainerIDs []string    `json:"containerIDs"`
-	Containers   []Container `json:"containers,omitempty"`
+	ID         string      `json:"id"`
+	Containers []Container `json:"containers"`
 }
 
 func (n Node) Key() string {
