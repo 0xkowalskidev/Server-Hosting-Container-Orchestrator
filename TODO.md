@@ -8,10 +8,12 @@ Use container config - ✓
 
 Move api wrapper to orchestrator - ✓
 
+Nodes send status of containers - ✓
+
 One namespace or many? - One
 Switch to one namespace - 
 
-Nodes send status of containers -
+Cleanup api requests, task request struct from model - 
 
 Logs API call - 
 
