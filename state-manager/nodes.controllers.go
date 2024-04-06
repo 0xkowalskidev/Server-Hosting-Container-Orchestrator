@@ -1,6 +1,7 @@
 package statemanager
 
 import (
+	"0xKowalski1/container-orchestrator/models"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -10,7 +11,7 @@ import (
 )
 
 // AddNode adds a new node to the cluster
-func (sm *StateManager) AddNode(node Node) error {
+func (sm *StateManager) AddNode(node models.Node) error {
 	return sm.etcdClient.SaveEntity(node)
 }
 
@@ -25,7 +26,7 @@ func (sm *StateManager) RemoveNode(nodeID string) error {
 }
 
 // GetNode retrieves a node by its ID
-func (sm *StateManager) GetNode(nodeID string) (*Node, error) {
+func (sm *StateManager) GetNode(nodeID string) (*models.Node, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -39,15 +40,14 @@ func (sm *StateManager) GetNode(nodeID string) (*Node, error) {
 		return nil, fmt.Errorf("node not found")
 	}
 
-	var node Node
+	var node models.Node
 	err = json.Unmarshal(resp.Kvs[0].Value, &node)
 	if err != nil {
 		return nil, err
 	}
-
-	populatedContainers := make([]Container, 0, len(node.Containers))
+	populatedContainers := make([]models.Container, 0, len(node.Containers))
 	for _, container := range node.Containers {
-		container, err := sm.GetContainer(container.NamespaceID, container.ID)
+		container, err := sm.GetContainer(container.ID)
 		if err != nil {
 			fmt.Printf("Failed to populate container for node: %v", err)
 			continue
@@ -61,7 +61,7 @@ func (sm *StateManager) GetNode(nodeID string) (*Node, error) {
 }
 
 // ListNode lists all nodes in the cluster
-func (sm *StateManager) ListNodes() ([]Node, error) {
+func (sm *StateManager) ListNodes() ([]models.Node, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -70,17 +70,17 @@ func (sm *StateManager) ListNodes() ([]Node, error) {
 		return nil, err
 	}
 
-	nodes := make([]Node, 0, len(resp.Kvs))
+	nodes := make([]models.Node, 0, len(resp.Kvs))
 	for _, kv := range resp.Kvs {
-		var node Node
+		var node models.Node
 		if err := json.Unmarshal(kv.Value, &node); err != nil {
 			// Handle or log the error
 			continue
 		}
 
-		populatedContainers := make([]Container, 0, len(node.Containers))
+		populatedContainers := make([]models.Container, 0, len(node.Containers))
 		for _, container := range node.Containers {
-			container, err := sm.GetContainer(container.NamespaceID, container.ID)
+			container, err := sm.GetContainer(container.ID)
 			if err != nil {
 				fmt.Printf("Failed to populate container for node: %v", err)
 				continue
@@ -95,27 +95,27 @@ func (sm *StateManager) ListNodes() ([]Node, error) {
 	return nodes, nil
 }
 
-func (sm *StateManager) AssignContainerToNode(namespaceID, containerID, nodeID string) error {
+func (sm *StateManager) AssignContainerToNode(containerID, nodeID string) error {
 	// Fetch the node
 	node, err := sm.GetNode(nodeID)
 	if err != nil {
 		return err
 	}
 
-	container, err := sm.GetContainer(namespaceID, containerID)
+	container, err := sm.GetContainer(containerID)
 
 	if err != nil {
 		return err
 	}
 
 	// Update the container's NodeID
-	containerPatch := UpdateContainerRequest{NodeID: &nodeID}
-	if err := sm.PatchContainer(namespaceID, containerID, containerPatch); err != nil {
+	containerPatch := models.UpdateContainerRequest{NodeID: &nodeID}
+	if err := sm.PatchContainer(containerID, containerPatch); err != nil {
 		return err
 	}
 
 	// Add the container to the node's list of containers
-	node.Containers = append(node.Containers, Container{ID: container.ID, NamespaceID: container.NamespaceID}) // Other data is fetched in getNodes/listNodes
+	node.Containers = append(node.Containers, models.Container{ID: container.ID, NamespaceID: container.NamespaceID}) // Other data is fetched in getNodes/listNodes
 	// Save the updated node back to etcd
 	return sm.etcdClient.SaveEntity(node)
 }

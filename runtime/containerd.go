@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"0xKowalski1/container-orchestrator/api"
-	statemanager "0xKowalski1/container-orchestrator/state-manager"
+	"0xKowalski1/container-orchestrator/models"
 
 	"github.com/containerd/containerd"
 	eventstypes "github.com/containerd/containerd/api/events"
@@ -43,13 +43,13 @@ func NewContainerdRuntime(socketPath string) (*ContainerdRuntime, error) {
 }
 
 // CreateContainer instantiates a new container but does not start it.
-func (_runtime *ContainerdRuntime) CreateContainer(namespace string, config statemanager.Container) (statemanager.Container, error) {
+func (_runtime *ContainerdRuntime) CreateContainer(namespace string, config models.Container) (models.Container, error) {
 	ctx := namespaces.WithNamespace(context.Background(), namespace)
 
 	image, err := _runtime.client.Pull(ctx, config.Image, containerd.WithPullUnpack)
 	if err != nil {
 		log.Printf("Error pulling image: %v", err)
-		return statemanager.Container{}, err
+		return models.Container{}, err
 	}
 
 	cont, err := _runtime.client.NewContainer(ctx, config.ID, containerd.WithImage(image), containerd.WithNewSnapshot(config.ID+"-snapshot", image), containerd.WithNewSpec(
@@ -71,10 +71,10 @@ func (_runtime *ContainerdRuntime) CreateContainer(namespace string, config stat
 
 	if err != nil {
 		log.Printf("Error creating container: %v", err)
-		return statemanager.Container{}, err
+		return models.Container{}, err
 	}
 
-	return statemanager.Container{ID: cont.ID()}, nil
+	return models.Container{ID: cont.ID()}, nil
 }
 
 // StartContainer starts an existing container.
@@ -186,8 +186,8 @@ func (_runtime *ContainerdRuntime) RemoveContainer(namespace string, containerID
 }
 
 // ListContainers returns a list of all containers managed by the runtime.
-func (_runtime *ContainerdRuntime) ListContainers(namespace string) ([]statemanager.Container, error) {
-	var containers []statemanager.Container
+func (_runtime *ContainerdRuntime) ListContainers(namespace string) ([]models.Container, error) {
+	var containers []models.Container
 	ctx := namespaces.WithNamespace(context.Background(), namespace)
 
 	// List containers from containerd
@@ -205,7 +205,7 @@ func (_runtime *ContainerdRuntime) ListContainers(namespace string) ([]statemana
 			continue
 		}
 
-		containers = append(containers, statemanager.Container{
+		containers = append(containers, models.Container{
 			ID: cont.ID(),
 		})
 	}
@@ -214,19 +214,19 @@ func (_runtime *ContainerdRuntime) ListContainers(namespace string) ([]statemana
 }
 
 // InspectContainer returns detailed information about a specific container.
-func (_runtime *ContainerdRuntime) InspectContainer(namespace string, containerID string) (statemanager.Container, error) {
+func (_runtime *ContainerdRuntime) InspectContainer(namespace string, containerID string) (models.Container, error) {
 	ctx := namespaces.WithNamespace(context.Background(), namespace)
 
 	container, err := _runtime.client.LoadContainer(ctx, containerID)
 	if err != nil {
 		log.Printf("Failed to load container %s: %v", containerID, err)
-		return statemanager.Container{}, err
+		return models.Container{}, err
 	}
 
 	info, err := container.Info(ctx)
 	if err != nil {
 		log.Printf("Failed to get info for container %s: %v", containerID, err)
-		return statemanager.Container{}, err
+		return models.Container{}, err
 	}
 
 	// Initialize status as "stopped" assuming that if there's no task, the container is not running.
@@ -248,7 +248,7 @@ func (_runtime *ContainerdRuntime) InspectContainer(namespace string, containerI
 	}
 
 	// Construct your container representation including its status
-	c := statemanager.Container{
+	c := models.Container{
 		ID:     info.ID,
 		Status: containerStatus,
 	}
@@ -281,8 +281,8 @@ func (_runtime *ContainerdRuntime) SubscribeToEvents(namespace string) {
 }
 
 func (_runtime *ContainerdRuntime) processEvent(envelope *events.Envelope, namespace string) error {
-	apiClient := api.NewApiWrapper()
-
+	apiClient := api.NewApiWrapper(namespace)
+	//Should probably check namespace here
 	event, err := typeurl.UnmarshalAny(envelope.Event)
 	if err != nil {
 		return err
@@ -292,8 +292,8 @@ func (_runtime *ContainerdRuntime) processEvent(envelope *events.Envelope, names
 	case *eventstypes.TaskStart:
 		log.Printf("Task started: ContainerID=%s, PID=%d", e.ContainerID, e.Pid)
 		status := "running"
-		containerPatch := statemanager.UpdateContainerRequest{Status: &status}
-		_, err := apiClient.UpdateContainer(namespace, e.ContainerID, containerPatch)
+		containerPatch := models.UpdateContainerRequest{Status: &status}
+		_, err := apiClient.UpdateContainer(e.ContainerID, containerPatch)
 		if err != nil {
 			log.Printf("Error updating container %s to status 'running': %v", e.ContainerID, err)
 		}
@@ -301,8 +301,8 @@ func (_runtime *ContainerdRuntime) processEvent(envelope *events.Envelope, names
 	case *eventstypes.TaskDelete:
 		log.Printf("Task deleted: ContainerID=%s, PID=%d, ExitStatus=%d", e.ContainerID, e.Pid, e.ExitStatus)
 		status := "stopped"
-		containerPatch := statemanager.UpdateContainerRequest{Status: &status}
-		_, err := apiClient.UpdateContainer(namespace, e.ContainerID, containerPatch)
+		containerPatch := models.UpdateContainerRequest{Status: &status}
+		_, err := apiClient.UpdateContainer(e.ContainerID, containerPatch)
 		if err != nil {
 			log.Printf("Error updating container %s to status 'stopped': %v", e.ContainerID, err)
 		}

@@ -39,7 +39,7 @@ func scheduleContainers(sm *statemanager.StateManager) {
 		for _, node := range nodes {
 			if len(node.Containers) < 2 { // Arbitrary scheduling rule
 
-				err := sm.AssignContainerToNode(container.NamespaceID, container.ID, node.ID)
+				err := sm.AssignContainerToNode(container.ID, node.ID)
 				if err != nil {
 					log.Printf("Failed to assign container %s to node %s: %v", container.ID, node.ID, err)
 					continue

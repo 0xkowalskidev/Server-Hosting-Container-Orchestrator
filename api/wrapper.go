@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
-	statemanager "0xKowalski1/container-orchestrator/state-manager"
+	"0xKowalski1/container-orchestrator/models"
 )
 
 // API base URL. Adjust as needed.
@@ -15,27 +15,29 @@ const BaseURL = "http://localhost:8080"
 // Client represents the API client
 type WrapperClient struct {
 	HTTPClient *http.Client
+	Namespace  string
 }
 
 // NewClient creates a new API client
-func NewApiWrapper() *WrapperClient {
+func NewApiWrapper(namespace string) *WrapperClient {
 	return &WrapperClient{
 		HTTPClient: &http.Client{},
+		Namespace:  namespace,
 	}
 }
 
 type ContainerListResponse struct {
-	Containers []statemanager.Container `json:"containers"`
+	Containers []models.Container `json:"containers"`
 }
 
 // CreateContainer creates a new container in the specified namespace
-func (c *WrapperClient) CreateContainer(namespace string, req statemanager.CreateContainerRequest) (*statemanager.Container, error) {
+func (c *WrapperClient) CreateContainer(req models.CreateContainerRequest) (*models.Container, error) {
 	requestBody, err := json.Marshal(req)
 	if err != nil {
 		return nil, err
 	}
 
-	url := fmt.Sprintf("%s/namespaces/%s/containers", BaseURL, namespace)
+	url := fmt.Sprintf("%s/namespaces/%s/containers", BaseURL, c.Namespace)
 	response, err := c.HTTPClient.Post(url, "application/json", bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, err
@@ -47,7 +49,7 @@ func (c *WrapperClient) CreateContainer(namespace string, req statemanager.Creat
 	}
 
 	type ContainerResponse struct {
-		Container statemanager.Container `json:"container"`
+		Container models.Container `json:"container"`
 	}
 
 	var containerResponse ContainerResponse
@@ -61,13 +63,13 @@ func (c *WrapperClient) CreateContainer(namespace string, req statemanager.Creat
 }
 
 // UpdateContainer updates an existing container's configuration in the specified namespace.
-func (c *WrapperClient) UpdateContainer(namespace string, containerID string, req statemanager.UpdateContainerRequest) (*statemanager.Container, error) {
+func (c *WrapperClient) UpdateContainer(containerID string, req models.UpdateContainerRequest) (*models.Container, error) {
 	requestBody, err := json.Marshal(req)
 	if err != nil {
 		return nil, err
 	}
 
-	url := fmt.Sprintf("%s/namespaces/%s/containers/%s", BaseURL, namespace, containerID)
+	url := fmt.Sprintf("%s/namespaces/%s/containers/%s", BaseURL, c.Namespace, containerID)
 	request, err := http.NewRequest(http.MethodPatch, url, bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, err
@@ -85,7 +87,7 @@ func (c *WrapperClient) UpdateContainer(namespace string, containerID string, re
 	}
 
 	var containerResponse struct {
-		Container statemanager.Container `json:"container"`
+		Container models.Container `json:"container"`
 	}
 
 	if err := json.NewDecoder(response.Body).Decode(&containerResponse); err != nil {
@@ -97,8 +99,8 @@ func (c *WrapperClient) UpdateContainer(namespace string, containerID string, re
 	return &containerResponse.Container, nil
 }
 
-func (c *WrapperClient) ListContainers(namespace string) ([]statemanager.Container, error) {
-	url := fmt.Sprintf("%s/namespaces/%s/containers", BaseURL, namespace)
+func (c *WrapperClient) ListContainers() ([]models.Container, error) {
+	url := fmt.Sprintf("%s/namespaces/%s/containers", BaseURL, c.Namespace)
 	response, err := c.HTTPClient.Get(url)
 	if err != nil {
 		return nil, err
@@ -117,8 +119,8 @@ func (c *WrapperClient) ListContainers(namespace string) ([]statemanager.Contain
 	return resp.Containers, nil // Return the slice of containers
 }
 
-func (c *WrapperClient) DeleteContainer(namespace string, containerID string) (string, error) {
-	url := fmt.Sprintf("%s/namespaces/%s/containers/%s", BaseURL, namespace, containerID)
+func (c *WrapperClient) DeleteContainer(containerID string) (string, error) {
+	url := fmt.Sprintf("%s/namespaces/%s/containers/%s", BaseURL, c.Namespace, containerID)
 	req, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
 		fmt.Println("Error creating request:", err)
@@ -138,8 +140,8 @@ func (c *WrapperClient) DeleteContainer(namespace string, containerID string) (s
 	return containerID, nil
 }
 
-func (c *WrapperClient) StartContainer(namespace string, containerID string) (string, error) {
-	url := fmt.Sprintf("%s/namespaces/%s/containers/%s/start", BaseURL, namespace, containerID)
+func (c *WrapperClient) StartContainer(containerID string) (string, error) {
+	url := fmt.Sprintf("%s/namespaces/%s/containers/%s/start", BaseURL, c.Namespace, containerID)
 	req, err := http.NewRequest("POST", url, nil)
 	if err != nil {
 		fmt.Println("Error creating request:", err)
@@ -159,8 +161,8 @@ func (c *WrapperClient) StartContainer(namespace string, containerID string) (st
 	return containerID, nil
 }
 
-func (c *WrapperClient) StopContainer(namespace string, containerID string) (string, error) {
-	url := fmt.Sprintf("%s/namespaces/%s/containers/%s/stop", BaseURL, namespace, containerID)
+func (c *WrapperClient) StopContainer(containerID string) (string, error) {
+	url := fmt.Sprintf("%s/namespaces/%s/containers/%s/stop", BaseURL, c.Namespace, containerID)
 	req, err := http.NewRequest("POST", url, nil)
 	if err != nil {
 		fmt.Println("Error creating request:", err)
@@ -181,10 +183,10 @@ func (c *WrapperClient) StopContainer(namespace string, containerID string) (str
 }
 
 type NodeResponse struct {
-	Node statemanager.Node `json:"node"`
+	Node models.Node `json:"node"`
 }
 
-func (c *WrapperClient) GetNode(nodeID string) (*statemanager.Node, error) {
+func (c *WrapperClient) GetNode(nodeID string) (*models.Node, error) {
 	url := fmt.Sprintf("%s/nodes/%s", BaseURL, nodeID)
 	response, err := c.HTTPClient.Get(url)
 	if err != nil {

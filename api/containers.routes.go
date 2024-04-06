@@ -3,14 +3,15 @@ package api
 import (
 	"net/http"
 
+	"0xKowalski1/container-orchestrator/models"
 	statemanager "0xKowalski1/container-orchestrator/state-manager"
+
 	"github.com/gin-gonic/gin"
 )
 
 // GET /containers
 func getContainers(c *gin.Context, _statemanager *statemanager.StateManager) {
-	namespace := c.Param("namespace")
-	containers, err := _statemanager.ListContainers(namespace)
+	containers, err := _statemanager.ListContainers()
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -25,23 +26,21 @@ func getContainers(c *gin.Context, _statemanager *statemanager.StateManager) {
 
 // POST /containers
 func createContainer(c *gin.Context, _statemanager *statemanager.StateManager) {
-	namespace := c.Param("namespace")
-
-	var req statemanager.CreateContainerRequest
+	var req models.CreateContainerRequest
 	// Parse the JSON body to the CreateContainerRequest struct.
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
 
-	err := _statemanager.AddContainer(namespace, statemanager.Container{ID: req.ID, Image: req.Image, Env: req.Env, StopTimeout: req.StopTimeout})
+	err := _statemanager.AddContainer(models.Container{ID: req.ID, Image: req.Image, Env: req.Env, StopTimeout: req.StopTimeout})
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	createdContainer := statemanager.Container{
+	createdContainer := models.Container{
 		ID:          req.ID,
 		Image:       req.Image,
 		Env:         req.Env,
@@ -55,17 +54,16 @@ func createContainer(c *gin.Context, _statemanager *statemanager.StateManager) {
 
 // PATCH /containers
 func updateContainer(c *gin.Context, _statemanager *statemanager.StateManager) {
-	namespace := c.Param("namespace")
 	containerID := c.Param("id")
 
-	var req statemanager.UpdateContainerRequest
+	var req models.UpdateContainerRequest
 	// Parse the JSON body to the UpdateContainerRequest struct.
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
 
-	err := _statemanager.PatchContainer(namespace, containerID, req)
+	err := _statemanager.PatchContainer(containerID, req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -78,10 +76,9 @@ func updateContainer(c *gin.Context, _statemanager *statemanager.StateManager) {
 
 // GET /containers/{id}
 func getContainer(c *gin.Context, _statemanager *statemanager.StateManager) {
-	namespace := c.Param("namespace")
 	containerID := c.Param("id")
 
-	container, err := _statemanager.GetContainer(namespace, containerID)
+	container, err := _statemanager.GetContainer(containerID)
 
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Container not found"})
@@ -93,11 +90,10 @@ func getContainer(c *gin.Context, _statemanager *statemanager.StateManager) {
 
 // DELETE /containers/{id}
 func deleteContainer(c *gin.Context, _statemanager *statemanager.StateManager) {
-	namespace := c.Param("namespace")
 	containerID := c.Param("id")
 
 	// Should mark for deletion!
-	err := _statemanager.RemoveContainer(namespace, containerID)
+	err := _statemanager.RemoveContainer(containerID)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -109,12 +105,11 @@ func deleteContainer(c *gin.Context, _statemanager *statemanager.StateManager) {
 
 // POST /containers/{id}/start
 func startContainer(c *gin.Context, _statemanager *statemanager.StateManager) {
-	namespace := c.Param("namespace")
 	containerID := c.Param("id")
 
 	desiredStatus := "running"
 
-	err := _statemanager.PatchContainer(namespace, containerID, statemanager.UpdateContainerRequest{
+	err := _statemanager.PatchContainer(containerID, models.UpdateContainerRequest{
 		DesiredStatus: &desiredStatus,
 	})
 
@@ -128,12 +123,11 @@ func startContainer(c *gin.Context, _statemanager *statemanager.StateManager) {
 
 // POST /containers/{id}/stop
 func stopContainer(c *gin.Context, _statemanager *statemanager.StateManager) {
-	namespace := c.Param("namespace")
 	containerID := c.Param("id")
 
 	desiredStatus := "stopped"
 
-	err := _statemanager.PatchContainer(namespace, containerID, statemanager.UpdateContainerRequest{
+	err := _statemanager.PatchContainer(containerID, models.UpdateContainerRequest{
 		DesiredStatus: &desiredStatus,
 	})
 
@@ -147,6 +141,5 @@ func stopContainer(c *gin.Context, _statemanager *statemanager.StateManager) {
 
 // GET /containers/{id}/logs
 func getContainerLogs(c *gin.Context, _statemanager *statemanager.StateManager) {
-	//namespace := c.Param("namespace")
 	// containerID := c.Param("id") // Retrieve the container ID from the URL parameter.
 }

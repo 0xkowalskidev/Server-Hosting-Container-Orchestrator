@@ -28,9 +28,7 @@ func setupRoutes(router *gin.Engine, _statemanager *statemanager.StateManager) {
 	// Namespace routes
 	namespacesGroup := router.Group("/namespaces")
 	{
-		namespacesGroup.GET("", func(c *gin.Context) { getNamespaces(c, _statemanager) })           // Lists all namespaces
-		namespacesGroup.GET("/:namespace", func(c *gin.Context) { getNamespace(c, _statemanager) }) // Retrieves a specific namespace
-		namespacesGroup.POST("", func(c *gin.Context) { createNamespace(c, _statemanager) })        // Creates a new namespace
+		namespacesGroup.GET("", func(c *gin.Context) { getNamespaces(c, _statemanager) }) // Lists all namespaces
 
 		// Nested container routes
 		containersGroup := namespacesGroup.Group("/:namespace/containers")

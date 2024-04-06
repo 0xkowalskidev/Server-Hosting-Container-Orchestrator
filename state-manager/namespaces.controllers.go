@@ -1,55 +1,24 @@
 package statemanager
 
 import (
+	"0xKowalski1/container-orchestrator/models"
 	"context"
 	"encoding/json"
-	"fmt"
+	"log"
+	"strings"
+
 	"time"
 
 	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
 // AddNamespace adds a new namespace to the cluster
-func (sm *StateManager) AddNamespace(namespace Namespace) error {
+func (sm *StateManager) AddNamespace(namespace models.Namespace) error {
 	return sm.etcdClient.SaveEntity(namespace)
 }
 
-// RemoveNamespace removes a namespace from the cluster by its ID
-func (sm *StateManager) RemoveNamespace(namespaceID string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	key := "/namespaces/" + namespaceID
-	_, err := sm.etcdClient.Client.Delete(ctx, key, clientv3.WithPrefix()) // Use WithPrefix to ensure all contained containers are also deleted
-	return err
-}
-
-// GetNamespace retrieves a namespace by its ID
-func (sm *StateManager) GetNamespace(namespaceID string) (*Namespace, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	key := "/namespaces/" + namespaceID
-	resp, err := sm.etcdClient.Client.Get(ctx, key)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(resp.Kvs) == 0 {
-		return nil, fmt.Errorf("namespace not found")
-	}
-
-	var namespace Namespace
-	err = json.Unmarshal(resp.Kvs[0].Value, &namespace)
-	if err != nil {
-		return nil, err
-	}
-
-	return &namespace, nil
-}
-
 // ListNamespaces lists all namespaces in the cluster
-func (sm *StateManager) ListNamespaces() ([]Namespace, error) {
+func (sm *StateManager) ListNamespaces() ([]models.Namespace, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -58,13 +27,21 @@ func (sm *StateManager) ListNamespaces() ([]Namespace, error) {
 		return nil, err
 	}
 
-	namespaces := make([]Namespace, 0, len(resp.Kvs))
+	namespaces := make([]models.Namespace, 0)
 	for _, kv := range resp.Kvs {
-		var namespace Namespace
-		if err := json.Unmarshal(kv.Value, &namespace); err != nil {
-			continue
+		key := string(kv.Key)
+
+		segments := strings.Split(key, "/")
+		// Direct children of "/namespaces/" have 3 segments
+		if len(segments) == 3 {
+			var ns models.Namespace
+			if err := json.Unmarshal(kv.Value, &ns); err != nil {
+				log.Printf("Error unmarshalling namespace value for key %s: %v", key, err)
+				return nil, err
+			}
+			ns.ID = segments[2]
+			namespaces = append(namespaces, ns)
 		}
-		namespaces = append(namespaces, namespace)
 	}
 
 	return namespaces, nil

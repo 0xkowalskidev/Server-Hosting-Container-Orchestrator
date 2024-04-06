@@ -1,6 +1,7 @@
 package statemanager
 
 import (
+	"0xKowalski1/container-orchestrator/models"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -10,17 +11,11 @@ import (
 )
 
 // AddContainer adds a new container to a namespace
-func (sm *StateManager) AddContainer(namespaceID string, container Container) error {
-	//Check namespace exists
-	_, err := sm.GetNamespace(namespaceID)
-	if err != nil {
-		return err
-	}
-
-	container.NamespaceID = namespaceID // Ensure the container knows its namespaceID
+func (sm *StateManager) AddContainer(container models.Container) error {
+	container.NamespaceID = sm.cfg.Namespace // Ensure the container knows its namespaceID
 	container.DesiredStatus = "running"
 
-	err = sm.etcdClient.SaveEntity(container)
+	err := sm.etcdClient.SaveEntity(container)
 	if err != nil {
 		return err
 	}
@@ -31,9 +26,11 @@ func (sm *StateManager) AddContainer(namespaceID string, container Container) er
 }
 
 // RemoveContainer removes a container from a namespace by its ID
-func (sm *StateManager) RemoveContainer(namespaceID, containerID string) error {
+func (sm *StateManager) RemoveContainer(containerID string) error {
+	namespaceID := sm.cfg.Namespace
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+	// IMPORTANT Should probably check if namespaces match here
 
 	key := "/namespaces/" + namespaceID + "/containers/" + containerID
 	_, err := sm.etcdClient.Client.Delete(ctx, key)
@@ -46,7 +43,8 @@ func (sm *StateManager) RemoveContainer(namespaceID, containerID string) error {
 }
 
 // GetContainer retrieves a container by its ID and namespaceID
-func (sm *StateManager) GetContainer(namespaceID, containerID string) (*Container, error) {
+func (sm *StateManager) GetContainer(containerID string) (*models.Container, error) {
+	namespaceID := sm.cfg.Namespace
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -60,7 +58,7 @@ func (sm *StateManager) GetContainer(namespaceID, containerID string) (*Containe
 		return nil, fmt.Errorf("container not found")
 	}
 
-	var container Container
+	var container models.Container
 	err = json.Unmarshal(resp.Kvs[0].Value, &container)
 	if err != nil {
 		return nil, err
@@ -70,7 +68,8 @@ func (sm *StateManager) GetContainer(namespaceID, containerID string) (*Containe
 }
 
 // ListContainers lists all containers in a namespace
-func (sm *StateManager) ListContainers(namespaceID string) ([]Container, error) {
+func (sm *StateManager) ListContainers() ([]models.Container, error) {
+	namespaceID := sm.cfg.Namespace
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -80,9 +79,9 @@ func (sm *StateManager) ListContainers(namespaceID string) ([]Container, error) 
 		return nil, err
 	}
 
-	containers := make([]Container, 0, len(resp.Kvs))
+	containers := make([]models.Container, 0, len(resp.Kvs))
 	for _, kv := range resp.Kvs {
-		var container Container
+		var container models.Container
 		if err := json.Unmarshal(kv.Value, &container); err != nil {
 			continue
 		}
@@ -92,35 +91,18 @@ func (sm *StateManager) ListContainers(namespaceID string) ([]Container, error) 
 	return containers, nil
 }
 
-// ListUnscheduledContainers lists all containers across all namespaces that do not have a NodeID set.
-func (sm *StateManager) ListUnscheduledContainers() ([]Container, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	// Prefix for namespaces in etcd
-	namespacePrefix := "/namespaces/"
-	resp, err := sm.etcdClient.Client.Get(ctx, namespacePrefix, clientv3.WithPrefix())
+// ListUnscheduledContainers lists all containers that do not have a NodeID set.
+func (sm *StateManager) ListUnscheduledContainers() ([]models.Container, error) {
+	containers, err := sm.ListContainers()
 	if err != nil {
 		return nil, err
 	}
 
-	unscheduledContainers := []Container{}
-	for _, kv := range resp.Kvs {
-		var namespace Namespace
-		if err := json.Unmarshal(kv.Value, &namespace); err != nil {
-			continue // Skip on error
-		}
+	unscheduledContainers := make([]models.Container, 0, len(containers))
 
-		// Now, list containers within this namespace
-		namespaceContainers, err := sm.ListContainers(namespace.ID)
-		if err != nil {
-			continue // Skip on error
-		}
-
-		for _, container := range namespaceContainers {
-			if container.NodeID == "" { // Filter for unscheduled (no NodeID set)
-				unscheduledContainers = append(unscheduledContainers, container)
-			}
+	for _, container := range containers {
+		if container.NodeID == "" { // Filter for unscheduled (no NodeID set)
+			unscheduledContainers = append(unscheduledContainers, container)
 		}
 	}
 
@@ -128,8 +110,8 @@ func (sm *StateManager) ListUnscheduledContainers() ([]Container, error) {
 }
 
 // PatchContainer updates specific fields of a container in a namespace.
-func (sm *StateManager) PatchContainer(namespaceID, containerID string, patch UpdateContainerRequest) error {
-	container, err := sm.GetContainer(namespaceID, containerID)
+func (sm *StateManager) PatchContainer(containerID string, patch models.UpdateContainerRequest) error {
+	container, err := sm.GetContainer(containerID)
 	if err != nil {
 		return err
 	}

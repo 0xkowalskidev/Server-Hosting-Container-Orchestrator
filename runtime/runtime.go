@@ -3,18 +3,19 @@ package runtime
 import (
 	"fmt"
 
-	statemanager "0xKowalski1/container-orchestrator/state-manager"
+	"0xKowalski1/container-orchestrator/config"
+	"0xKowalski1/container-orchestrator/models"
 )
 
 // NewRuntime creates and returns a Runtime implementation based on the provided config.
-func NewRuntime(backend string) (Runtime, error) {
+func NewRuntime(backend string, cfg *config.Config) (Runtime, error) {
 	switch backend {
 	case "containerd":
 		runtime, err := NewContainerdRuntime("/run/containerd/containerd.sock")
 		if err != nil {
 			return nil, err
 		}
-		runtime.SubscribeToEvents("example")
+		runtime.SubscribeToEvents(cfg.Namespace)
 
 		return runtime, nil
 	default:
@@ -25,7 +26,7 @@ func NewRuntime(backend string) (Runtime, error) {
 // Runtime defines the interface for a container runtime.
 type Runtime interface {
 	// CreateContainer instantiates a new container but does not start it.
-	CreateContainer(namespace string, config statemanager.Container) (statemanager.Container, error)
+	CreateContainer(namespace string, config models.Container) (models.Container, error)
 
 	// StartContainer starts an existing container.
 	StartContainer(namespace string, containerID string) error
@@ -37,8 +38,8 @@ type Runtime interface {
 	RemoveContainer(namespace string, containerID string) error
 
 	// ListContainers returns a list of all containers managed by the runtime.
-	ListContainers(namespace string) ([]statemanager.Container, error)
+	ListContainers(namespace string) ([]models.Container, error)
 
 	// InspectContainer returns detailed information about a specific container.
-	InspectContainer(namespace string, containerID string) (statemanager.Container, error)
+	InspectContainer(namespace string, containerID string) (models.Container, error)
 }

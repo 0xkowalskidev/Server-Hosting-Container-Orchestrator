@@ -10,10 +10,14 @@ Move api wrapper to orchestrator - ✓
 
 Nodes send status of containers - ✓
 
-One namespace or many? - One
-Switch to one namespace - 
+Cleanup api requests, task request struct from model - ✓
 
-Cleanup api requests, task request struct from model - 
+Main config - ✓
+
+One namespace or many? - One
+Switch to one namespace - ✓
+Ensure namespace matches cfg when changing state -
+
 
 Logs API call - 
 
@@ -22,7 +26,9 @@ Follow up, delete containerIds from node when deleting a container -
 
 Stop hardcoding timeout -  
 
-Switch delete to mark for deletion instead of just removing container from state - 
+Switch delete to mark for deletion instead of just removing container from state -
+
+Crash loop back off -
 
 Make sure nodes send back usage/resources to control node - 
 
@@ -36,7 +42,6 @@ Container networking -
 
 Container storage -
 
-Main config, allow for conditional control node/worker node -
 
 Network cluster -
 
