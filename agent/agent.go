@@ -1,13 +1,18 @@
 package agent
 
 import (
+	"io"
 	"log"
+	"net/http"
 	"time"
 
 	"0xKowalski1/container-orchestrator/api"
 	"0xKowalski1/container-orchestrator/config"
 	"0xKowalski1/container-orchestrator/models"
 	"0xKowalski1/container-orchestrator/runtime"
+
+	"github.com/gin-gonic/gin"
+	"github.com/hpcloud/tail"
 )
 
 type ApiResponse struct {
@@ -26,6 +31,8 @@ func Start(cfg *config.Config) {
 	}
 
 	apiClient := api.NewApiWrapper(cfg.Namespace)
+
+	go startLogApi()
 
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
@@ -105,4 +112,49 @@ func reconcileContainerState(cfg *config.Config, _runtime runtime.Runtime, desir
 			}
 		}
 	}
+}
+
+// Http log server
+// StreamLogsHandler streams container logs to the client.
+func StreamLogsHandler(c *gin.Context) {
+	namespace := c.Param("namespace") // TAKE ME FROM CONFIG
+	containerID := c.Param("containerID")
+	logFilePath := "/home/kowalski/dev/container-orchestrator/" + namespace + "-" + containerID + ".log"
+
+	t, err := tail.TailFile(logFilePath, tail.Config{Follow: true})
+	if err != nil {
+		c.String(http.StatusInternalServerError, "Failed to tail log file: %s", err)
+		return
+	}
+
+	// Ensure the tailing goroutine is properly stopped when the client disconnects.
+	defer t.Stop()
+
+	c.Stream(func(w io.Writer) bool {
+		select {
+		case line := <-t.Lines:
+			if line.Err != nil {
+				c.Error(line.Err) // Use Gin's error handling mechanism.
+				return false
+			}
+			_, err := c.Writer.WriteString(line.Text + "\n")
+			if err != nil {
+				// Error writing to the client, stop streaming.
+				return false
+			}
+			return true
+		case <-c.Request.Context().Done():
+			// Client disconnected, stop streaming.
+			return false
+		}
+	})
+}
+
+func startLogApi() {
+	r := gin.Default()
+
+	// Set up the route with URL parameters captured by Gin.
+	r.GET("/namespaces/:namespace/containers/:containerID/logs", StreamLogsHandler)
+
+	r.Run(":8081")
 }

@@ -21,9 +21,12 @@ One namespace or many? - One
 Switch to one namespace - ✓
 Ensure namespace matches cfg when changing state -
 
-Logs API call - 
+Figure out how to watch status -  ✓
+Follow up, seems there are waaaay to many events being triggered - 
 
-Figure out how to watch status - 
+Logs API call - ✓
+Follow up, Performance concerns? -
+Follow up, Where do we store the logs? - 
 
 Stop hardcoding timeout -  
 

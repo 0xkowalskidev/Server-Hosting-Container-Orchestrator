@@ -2,6 +2,8 @@ package api
 
 import (
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"time"
 
 	"0xKowalski1/container-orchestrator/models"
@@ -141,8 +143,30 @@ func stopContainer(c *gin.Context, _statemanager *statemanager.StateManager) {
 }
 
 // GET /containers/{id}/logs
-func getContainerLogs(c *gin.Context, _statemanager *statemanager.StateManager) {
-	// containerID := c.Param("id") // Retrieve the container ID from the URL parameter.
+func streamContainerLogs(c *gin.Context, _statemanager *statemanager.StateManager) {
+	containerID := c.Param("id")             // Retrieve the container ID from the URL parameter.
+	namespace := c.Param("namespace")        // GET ME FROM CONFIG
+	workerAddress := "http://localhost:8081" // GET ME FROM NODE OF CONTAINER
+
+	// Construct the target URL to the worker node's log service.
+	targetURL, err := url.Parse(workerAddress)
+	if err != nil {
+		c.String(http.StatusInternalServerError, "Failed to parse worker address: %v", err)
+		return
+	}
+
+	// Set up the reverse proxy.
+	proxy := httputil.NewSingleHostReverseProxy(targetURL)
+	originalDirector := proxy.Director
+	proxy.Director = func(req *http.Request) {
+		originalDirector(req)
+		req.URL.Path = "/namespaces/" + namespace + "/containers/" + containerID + "/logs"
+		req.URL.Scheme = targetURL.Scheme
+		req.URL.Host = targetURL.Host
+	}
+
+	// Use the reverse proxy to handle the request.
+	proxy.ServeHTTP(c.Writer, c.Request)
 }
 
 // getContainerStatus streams the status of a container using Server-Sent Events (SSE).

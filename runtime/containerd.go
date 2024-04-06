@@ -87,7 +87,7 @@ func (_runtime *ContainerdRuntime) StartContainer(namespace string, containerID 
 		return err
 	}
 
-	logPath := "/home/kowalski/dev/container-orchestrator/log.log"
+	logPath := "/home/kowalski/dev/container-orchestrator/" + namespace + "-" + containerID + ".log"
 
 	task, err := container.NewTask(ctx, cio.LogFile(logPath))
 	if err != nil {
