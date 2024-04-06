@@ -240,3 +240,37 @@ func (c *WrapperClient) WatchContainer(containerID string, handleData func(strin
 
 	return nil
 }
+
+func (c *WrapperClient) StreamContainerLogs(containerID string, handleData func(string)) error {
+	// Construct the URL to the control node's log streaming endpoint.
+	url := fmt.Sprintf("%s/namespaces/%s/containers/%s/logs", BaseURL, c.Namespace, containerID)
+
+	// Make a request to the control node's log streaming endpoint.
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	// Stream the response body to the handler function.
+	reader := bufio.NewReader(resp.Body)
+	for {
+		line, err := reader.ReadBytes('\n')
+		if err != nil {
+			if err == io.EOF {
+				break // Stream closed normally.
+			}
+			return err // Handle errors during the stream.
+		}
+
+		// Pass the received log line to the handler function.
+		handleData(string(line))
+	}
+
+	return nil
+}
