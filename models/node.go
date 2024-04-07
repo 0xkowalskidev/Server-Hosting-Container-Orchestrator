@@ -7,6 +7,9 @@ type Node struct {
 	Containers  []Container `json:"containers"`
 	MemoryLimit int         `json:"memoryLimit"`
 	CpuLimit    int         `json:"cpuLimit"`
+
+	MemoryUsed int `json:"memoryUsed"`
+	CpuUsed    int `json:"cpuUsed"`
 }
 
 func (n Node) Key() string {

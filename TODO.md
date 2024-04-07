@@ -29,12 +29,14 @@ Follow up, seems there are waaaay to many events being triggered -
 Logs API call - ✓
 Follow up, Performance concerns? -
 Follow up, Where do we store the logs? -
-Use htmx sse - 
+Follow up, Use htmx sse -
+
+Add resource constraints to containers - ✓
 
 Make sure nodes send back usage/resources to control node -
 Set node resource limits manually? - Yes!
 
-Make schedular schedule containers based on actual pertinent information -
+Make schedular schedule containers based on actual pertinent information - ✓
 
 Stop hardcoding timeout -  
 
@@ -51,6 +53,8 @@ Container storage -
 Network cluster -
 
 Auth/security -
+
+Handle state race condition issues - 
 
 Remove fatal errors, make sure agent cant crash -
 

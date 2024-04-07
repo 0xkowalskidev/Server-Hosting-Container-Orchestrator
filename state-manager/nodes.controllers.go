@@ -53,6 +53,9 @@ func (sm *StateManager) GetNode(nodeID string) (*models.Node, error) {
 			continue
 
 		}
+		node.CpuUsed += container.CpuLimit
+		node.MemoryUsed += container.MemoryLimit
+
 		populatedContainers = append(populatedContainers, *container)
 	}
 	node.Containers = populatedContainers
@@ -85,6 +88,10 @@ func (sm *StateManager) ListNodes() ([]models.Node, error) {
 				fmt.Printf("Failed to populate container for node: %v", err)
 				continue
 			}
+
+			node.CpuUsed += container.CpuLimit
+			node.MemoryUsed += container.MemoryLimit
+
 			populatedContainers = append(populatedContainers, *container)
 		}
 		node.Containers = populatedContainers
