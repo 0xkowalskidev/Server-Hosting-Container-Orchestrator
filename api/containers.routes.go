@@ -36,18 +36,11 @@ func createContainer(c *gin.Context, _statemanager *statemanager.StateManager) {
 		return
 	}
 
-	err := _statemanager.AddContainer(models.Container{ID: req.ID, Image: req.Image, Env: req.Env, StopTimeout: req.StopTimeout})
+	createdContainer, err := _statemanager.AddContainer(req)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
-	}
-
-	createdContainer := models.Container{
-		ID:          req.ID,
-		Image:       req.Image,
-		Env:         req.Env,
-		StopTimeout: req.StopTimeout,
 	}
 
 	c.JSON(http.StatusCreated, gin.H{

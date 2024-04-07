@@ -11,6 +11,8 @@ type Container struct {
 	Image         string
 	Env           []string
 	StopTimeout   int
+	MemoryLimit   int
+	CpuLimit      int
 }
 
 // Container
@@ -19,12 +21,16 @@ type CreateContainerRequest struct {
 	Image       string   `json:"image"`
 	Env         []string `json:"env"`
 	StopTimeout int      `json:"stopTimeout"`
+	MemoryLimit int      `json:"memoryLimit"`
+	CpuLimit    int      `json:"cpuLimit"`
 }
 
 type UpdateContainerRequest struct {
 	DesiredStatus *string `json:"desiredStatus,omitempty"` // Pointer allows differentiation between an omitted field and an empty value
 	NodeID        *string `json:"nodeId,omitempty"`
 	Status        *string `json:"status,omitempty"`
+	MemoryLimit   int     `json:"memoryLimit"`
+	CpuLimit      int     `json:"cpuLimit"`
 }
 
 func (c Container) Key() string {

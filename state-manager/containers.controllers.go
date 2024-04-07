@@ -11,18 +11,26 @@ import (
 )
 
 // AddContainer adds a new container to a namespace
-func (sm *StateManager) AddContainer(container models.Container) error {
-	container.NamespaceID = sm.cfg.Namespace // Ensure the container knows its namespaceID
-	container.DesiredStatus = "running"
+func (sm *StateManager) AddContainer(containerRequest models.CreateContainerRequest) (*models.Container, error) {
+	container := models.Container{
+		ID:            containerRequest.ID,
+		Image:         containerRequest.Image,
+		Env:           containerRequest.Env,
+		StopTimeout:   containerRequest.StopTimeout,
+		MemoryLimit:   containerRequest.MemoryLimit,
+		CpuLimit:      containerRequest.CpuLimit,
+		NamespaceID:   sm.cfg.Namespace, // Ensure the container knows its namespaceID
+		DesiredStatus: "running",
+	}
 
 	err := sm.etcdClient.SaveEntity(container)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	sm.emit(Event{Type: ContainerAdded, Data: container})
 
-	return nil
+	return &container, nil
 }
 
 // RemoveContainer removes a container from a namespace by its ID

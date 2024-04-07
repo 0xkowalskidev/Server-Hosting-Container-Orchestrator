@@ -56,6 +56,8 @@ func (_runtime *ContainerdRuntime) CreateContainer(namespace string, config mode
 		oci.WithHostNamespace(specs.NetworkNamespace),
 		oci.WithImageConfig(image),
 		oci.WithEnv(config.Env),
+		oci.WithMemoryLimit(uint64(config.MemoryLimit*1024*1024*1024)), // in bytes
+		oci.WithCPUs(fmt.Sprint(config.CpuLimit)),
 		func(ctx context.Context, _ oci.Client, _ *containers.Container, s *oci.Spec) error {
 			//temporary
 			s.Mounts = append(s.Mounts, specs.Mount{

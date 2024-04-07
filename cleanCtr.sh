@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Specify your namespace
-NAMESPACE="example"
+NAMESPACE="development"
 
 # List all containers in the specified namespace and delete them
 for container in $(ctr -n $NAMESPACE containers list -q); do
