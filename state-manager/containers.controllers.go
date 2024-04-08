@@ -21,6 +21,7 @@ func (sm *StateManager) AddContainer(containerRequest models.CreateContainerRequ
 		CpuLimit:      containerRequest.CpuLimit,
 		NamespaceID:   sm.cfg.Namespace, // Ensure the container knows its namespaceID
 		DesiredStatus: "running",
+		Ports:         containerRequest.Ports,
 	}
 
 	err := sm.etcdClient.SaveEntity(container)

@@ -87,7 +87,7 @@ func Start(cfg *config.Config) {
 				}
 			}
 			if !found {
-				_runtime.StopContainer(cfg.Namespace, c.ID, 5) // timeout should come from container config
+				_runtime.StopContainer(cfg.Namespace, c.ID, c.StopTimeout)
 				_runtime.RemoveContainer(cfg.Namespace, c.ID)
 			}
 		}

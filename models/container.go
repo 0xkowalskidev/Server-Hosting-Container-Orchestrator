@@ -2,6 +2,12 @@ package models
 
 import "encoding/json"
 
+type Port struct {
+	HostPort      int    `json:"hostPort"`
+	ContainerPort int    `json:"containerPort"`
+	Protocol      string `json:"protocol"` // tcp or udp
+}
+
 type Container struct {
 	ID            string
 	DesiredStatus string // running or stopped
@@ -13,6 +19,7 @@ type Container struct {
 	StopTimeout   int
 	MemoryLimit   int
 	CpuLimit      int
+	Ports         []Port
 }
 
 // Container
@@ -23,6 +30,7 @@ type CreateContainerRequest struct {
 	StopTimeout int      `json:"stopTimeout"`
 	MemoryLimit int      `json:"memoryLimit"`
 	CpuLimit    int      `json:"cpuLimit"`
+	Ports       []Port   `json:"ports"`
 }
 
 type UpdateContainerRequest struct {
@@ -31,6 +39,7 @@ type UpdateContainerRequest struct {
 	Status        *string `json:"status,omitempty"`
 	MemoryLimit   int     `json:"memoryLimit"`
 	CpuLimit      int     `json:"cpuLimit"`
+	Ports         []Port  `json:"ports"`
 }
 
 func (c Container) Key() string {

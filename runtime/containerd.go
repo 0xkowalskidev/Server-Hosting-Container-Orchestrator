@@ -53,7 +53,10 @@ func (_runtime *ContainerdRuntime) CreateContainer(namespace string, config mode
 	}
 
 	cont, err := _runtime.client.NewContainer(ctx, config.ID, containerd.WithImage(image), containerd.WithNewSnapshot(config.ID+"-snapshot", image), containerd.WithNewSpec(
-		oci.WithHostNamespace(specs.NetworkNamespace),
+		oci.WithLinuxNamespace(specs.LinuxNamespace{
+			Type: "network",
+			Path: networkNamespacePathPrefix + config.ID,
+		}),
 		oci.WithImageConfig(image),
 		oci.WithEnv(config.Env),
 		oci.WithMemoryLimit(uint64(config.MemoryLimit*1024*1024*1024)), // in bytes
@@ -75,6 +78,15 @@ func (_runtime *ContainerdRuntime) CreateContainer(namespace string, config mode
 		log.Printf("Error creating container: %v", err)
 		return models.Container{}, err
 	}
+
+	// Setup container network with port mappings
+	err = setupContainerNetwork(ctx, cont, config.Ports)
+	if err != nil {
+		fmt.Println("Failed to setup container network:", err)
+		return models.Container{}, err
+	}
+
+	fmt.Printf("Container network setup successful")
 
 	return models.Container{ID: cont.ID()}, nil
 }
@@ -183,6 +195,10 @@ func (_runtime *ContainerdRuntime) RemoveContainer(namespace string, containerID
 	}
 
 	log.Printf("Successfully deleted container %s", containerID)
+
+	cleanupContainerNetwork(ctx, containerID)
+
+	log.Printf("Successfully deleted container network rules %s", containerID)
 
 	return nil
 }

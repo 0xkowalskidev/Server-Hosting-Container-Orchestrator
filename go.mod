@@ -5,6 +5,7 @@ go 1.21.8
 require (
 	github.com/containerd/containerd v1.7.14
 	github.com/containerd/typeurl/v2 v2.1.1
+	github.com/containernetworking/cni v1.1.2
 	github.com/gin-contrib/cors v1.7.1
 	github.com/gin-gonic/gin v1.9.1
 	github.com/hpcloud/tail v1.0.0

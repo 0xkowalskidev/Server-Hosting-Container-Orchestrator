@@ -8,8 +8,8 @@ type Node struct {
 	MemoryLimit int         `json:"memoryLimit"`
 	CpuLimit    int         `json:"cpuLimit"`
 
-	MemoryUsed int `json:"memoryUsed"`
-	CpuUsed    int `json:"cpuUsed"`
+	MemoryUsed int `json:"memoryUsed"` // Not to be persisted to etcd
+	CpuUsed    int `json:"cpuUsed"`    // Not to be persisted to etcd
 }
 
 func (n Node) Key() string {
@@ -17,7 +17,19 @@ func (n Node) Key() string {
 }
 
 func (n Node) Value() (string, error) {
-	bytes, err := json.Marshal(n)
+	serializedNode := struct {
+		ID          string      `json:"id"`
+		Containers  []Container `json:"containers"`
+		MemoryLimit int         `json:"memoryLimit"`
+		CpuLimit    int         `json:"cpuLimit"`
+	}{
+		ID:          n.ID,
+		Containers:  n.Containers,
+		MemoryLimit: n.MemoryLimit,
+		CpuLimit:    n.CpuLimit,
+	}
+
+	bytes, err := json.Marshal(serializedNode)
 	if err != nil {
 		return "", err
 	}

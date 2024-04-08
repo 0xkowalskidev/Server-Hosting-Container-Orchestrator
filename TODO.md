@@ -1,64 +1,77 @@
-Finish the api calls - ✓
+# MVP
 
-Refactor api - ✓
+## Finish the api calls - ✓
 
-etcd - ✓
+## Refactor api - ✓
+### Container delete api call always returns success -
 
-Use container config - ✓
+## etcd - ✓
 
-Move api wrapper to orchestrator - ✓
+## Use container config - ✓
 
-Nodes send status of containers - ✓
+## Move api wrapper to orchestrator - ✓
 
-Cleanup api requests, task request struct from model - ✓
+## Nodes send status of containers - ✓
 
-Main config - ✓
+## Cleanup api requests, task request struct from model - ✓
 
-Bug, node deletes itself when deleting a container or restarting -  ✓
-Follow up, delete containers from node when deleting a container - ✓
+## Main config - ✓
 
-Node currently overwrites node in etcd every time agent starts - ✓
+## Bug, node deletes itself when deleting a container or restarting -  ✓
+### Follow up, delete containers from node when deleting a container - ✓
 
-One namespace or many? - One
-Switch to one namespace - ✓
-Ensure namespace matches cfg when changing state -
+## Node currently overwrites node in etcd every time agent starts - ✓
 
-Figure out how to watch status -  ✓
-Follow up, seems there are waaaay to many events being triggered - 
+## One namespace or many? - One
+### Switch to one namespace - ✓
+### Ensure namespace matches cfg when changing state -
 
-Logs API call - ✓
-Follow up, Performance concerns? -
-Follow up, Where do we store the logs? -
-Follow up, Use htmx sse -
+## Figure out how to watch status -  ✓
+### Follow up, seems there are waaaay to many events being triggered - 
 
-Add resource constraints to containers - ✓
+## Logs API call - ✓
+### Follow up, Performance concerns? -
+### Follow up, Where do we store the logs? -
+### Follow up, Use htmx sse -
+### Follow up, web crashes, proxy panics -
 
-Make sure nodes send back usage/resources to control node -
-Set node resource limits manually? - Yes!
+## Add resource constraints to containers - ✓
 
-Make schedular schedule containers based on actual pertinent information - ✓
+## Make sure nodes send back usage/resources to control node -
+### Set node resource limits manually? - Yes!
 
-Stop hardcoding timeout -  
+## Make schedular schedule containers based on actual pertinent information - ✓
 
-Switch delete to mark for deletion instead of just removing container from state -
+## Stop hardcoding timeout - ✓
 
-Crash loop back off -
+## Switch delete to mark for deletion instead of just removing container from state -
 
-Container delete api call always returns success - 
+## Container networking -  ✓
+### Followup, Make more resiliant, should be done by agent on node pull, not on containter creation - 
 
-Container networking - 
+## Container storage -
 
-Container storage -
+## Network cluster -
 
-Network cluster -
 
-Auth/security -
+# Full Refactor
 
-Handle state race condition issues - 
 
-Remove fatal errors, make sure agent cant crash -
+# Later
 
-Tests - 
+## Add taints -
 
-Controllers/managers?
-Consensus?
+## Tests - 
+
+## Crash loop back off -
+
+## Auth/security -
+
+## Handle state race condition issues - 
+
+## Remove fatal errors, make sure agent cant crash -
+
+## sftp daemonset -
+
+## Controllers/managers?
+## Consensus?
