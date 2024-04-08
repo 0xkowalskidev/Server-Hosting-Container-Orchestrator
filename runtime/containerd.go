@@ -18,7 +18,6 @@ import (
 	"github.com/containerd/typeurl/v2"
 
 	"github.com/containerd/containerd/cio"
-	"github.com/containerd/containerd/containers"
 	"github.com/containerd/containerd/oci"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
@@ -61,17 +60,6 @@ func (_runtime *ContainerdRuntime) CreateContainer(namespace string, config mode
 		oci.WithEnv(config.Env),
 		oci.WithMemoryLimit(uint64(config.MemoryLimit*1024*1024*1024)), // in bytes
 		oci.WithCPUs(fmt.Sprint(config.CpuLimit)),
-		func(ctx context.Context, _ oci.Client, _ *containers.Container, s *oci.Spec) error {
-			//temporary
-			s.Mounts = append(s.Mounts, specs.Mount{
-				Destination: "/etc/resolv.conf",
-				Type:        "bind",
-				Source:      "/home/kowalski/dev/container-orchestrator/resolv.conf",
-				Options:     []string{"rbind", "ro"},
-			})
-
-			return nil
-		},
 	))
 
 	if err != nil {
