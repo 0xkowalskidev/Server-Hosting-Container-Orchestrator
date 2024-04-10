@@ -47,15 +47,25 @@
 ## Switch delete to mark for deletion instead of just removing container from state -
 
 ## Container networking -  ✓
-### Followup, Make more resiliant, should be done by agent on node pull, not on containter creation - 
 
-## Container storage -
+## Container storage - ✓
+### Schedular should bare storage in mind when scheduling -
+### Delete storage on container delete - 
+### Node config should define how much storage they have -
+### Node should use a different volume/partition just for container storage -
+### Node should enforce storage limits - 
 
 ## Network cluster -
+
+## Storage/networking should be handled seperately from runtime in agent -
+
+## Figure out how to containerize the dev environment (nix?) - 
 
 # Full Refactor
 
 # Later
+
+## Create containerd model for containers
 
 ## Add taints -
 

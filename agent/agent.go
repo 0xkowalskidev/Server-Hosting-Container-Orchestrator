@@ -98,6 +98,7 @@ func reconcileContainerState(cfg *config.Config, _runtime runtime.Runtime, desir
 	switch desiredContainer.DesiredStatus {
 	case "running":
 		if actualContainer.Status != "running" {
+
 			err := _runtime.StartContainer(cfg.Namespace, desiredContainer.ID) // Probably a bug here, if we use actualContainer this fails as ID is missing
 			if err != nil {
 				log.Fatalf("Failed to start container: %v", err)

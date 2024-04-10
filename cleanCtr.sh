@@ -21,7 +21,15 @@ for snapshot in $(ctr -n $NAMESPACE snapshots ls | tail -n +2 | awk '{print $1}'
     ctr -n $NAMESPACE snapshots rm "$snapshot"
 done
 
-rm log.log
+for image in $(ctr -n $NAMESPACE images list | tail -n +2 | awk '{print $1}'); do
+    echo "Deleting image: $image"
+    ctr -n $NAMESPACE images rm "$image"
+done
+
+rm  development-minecraft-server-1.log
+rm  development-minecraft-server-2.log
+sudo rm -rf ./mounts/minecraft-server-1
+
 
 echo "Cleanup complete."
 

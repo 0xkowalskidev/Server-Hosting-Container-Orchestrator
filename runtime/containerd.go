@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"syscall"
 	"time"
 
@@ -19,7 +20,6 @@ import (
 
 	"github.com/containerd/containerd/cio"
 	"github.com/containerd/containerd/oci"
-
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
@@ -51,16 +51,37 @@ func (_runtime *ContainerdRuntime) CreateContainer(namespace string, config mode
 		return models.Container{}, err
 	}
 
-	cont, err := _runtime.client.NewContainer(ctx, config.ID, containerd.WithImage(image), containerd.WithNewSnapshot(config.ID+"-snapshot", image), containerd.WithNewSpec(
+	volumePath := "/home/kowalski/dev/container-orchestrator/mounts/" + config.ID
+
+	err = os.MkdirAll(volumePath, os.ModePerm)
+	if err != nil {
+		fmt.Printf("Error creating directory: %s\n", err)
+	}
+	mounts := []oci.SpecOpts{
+		oci.WithMounts([]specs.Mount{
+			{
+				Destination: "/data/server",
+				Type:        "linux",
+				Source:      volumePath,
+				Options:     []string{"rbind", "rw"},
+			},
+		}),
+	}
+
+	specOpts := []oci.SpecOpts{
 		oci.WithLinuxNamespace(specs.LinuxNamespace{
 			Type: "network",
 			Path: networkNamespacePathPrefix + config.ID,
 		}),
 		oci.WithImageConfig(image),
 		oci.WithEnv(config.Env),
-		oci.WithMemoryLimit(uint64(config.MemoryLimit*1024*1024*1024)), // in bytes
+		oci.WithMemoryLimit(uint64(config.MemoryLimit * 1024 * 1024 * 1024)), // in bytes
 		oci.WithCPUs(fmt.Sprint(config.CpuLimit)),
-	))
+	}
+
+	specOpts = append(specOpts, mounts...)
+
+	cont, err := _runtime.client.NewContainer(ctx, config.ID, containerd.WithImage(image), containerd.WithNewSnapshot(config.ID+"-snapshot", image), containerd.WithNewSpec(specOpts...))
 
 	if err != nil {
 		log.Printf("Error creating container: %v", err)
