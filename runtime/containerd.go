@@ -91,8 +91,6 @@ func (_runtime *ContainerdRuntime) CreateContainer(containerSpec models.Containe
 		return models.Container{}, err
 	}
 
-	// Setup container network with port mappings
-	err = setupContainerNetwork(ctx, cont, containerSpec.Ports)
 	if err != nil {
 		fmt.Println("Failed to setup container network:", err)
 		return models.Container{}, err
@@ -207,8 +205,6 @@ func (_runtime *ContainerdRuntime) RemoveContainer(containerID string) error {
 	}
 
 	log.Printf("Successfully deleted container %s", containerID)
-
-	cleanupContainerNetwork(ctx, containerID)
 
 	log.Printf("Successfully deleted container network rules %s", containerID)
 

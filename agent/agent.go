@@ -9,6 +9,7 @@ import (
 	"0xKowalski1/container-orchestrator/api"
 	"0xKowalski1/container-orchestrator/config"
 	"0xKowalski1/container-orchestrator/models"
+	"0xKowalski1/container-orchestrator/networking"
 	"0xKowalski1/container-orchestrator/runtime"
 	"0xKowalski1/container-orchestrator/storage"
 
@@ -24,9 +25,10 @@ type ApiResponse struct {
 }
 
 type Agent struct {
-	runtime *runtime.ContainerdRuntime
-	storage *storage.StorageManager
-	cfg     *config.Config
+	runtime    *runtime.ContainerdRuntime
+	storage    *storage.StorageManager
+	networking *networking.NetworkingManager
+	cfg        *config.Config
 }
 
 func NewAgent(cfg *config.Config) *Agent {
@@ -39,10 +41,13 @@ func NewAgent(cfg *config.Config) *Agent {
 
 	storage := storage.NewStorageManager(cfg)
 
+	networking := networking.NewNetworkingManager(cfg)
+
 	return &Agent{
-		runtime: runtime,
-		storage: storage,
-		cfg:     cfg,
+		runtime:    runtime,
+		storage:    storage,
+		networking: networking,
+		cfg:        cfg,
 	}
 }
 
@@ -86,6 +91,7 @@ func (a *Agent) Start() {
 				// Create container if it does not exist in actual state
 
 				a.storage.CreateVolume(desiredContainer.ID, 1000) // Check errors here
+				a.networking.SetupContainerNetwork(desiredContainer.ID, desiredContainer.Ports)
 				_, err := a.runtime.CreateContainer(desiredContainer)
 				if err != nil {
 					log.Printf("Failed to create container: %v", err)
@@ -110,6 +116,7 @@ func (a *Agent) Start() {
 				a.runtime.StopContainer(c.ID, c.StopTimeout)
 				a.runtime.RemoveContainer(c.ID)
 				a.storage.RemoveVolume(c.ID)
+				a.networking.CleanupContainerNetwork(c.ID)
 			}
 		}
 	}

@@ -1,5 +1,13 @@
 {
     "namespace": "development",
     "containerdSocketPath": "/run/containerd/containerd.sock",
-    "storagePath": "/home/kowalski/dev/container-orchestrator/mounts/"
+
+    "storagePath": "/home/kowalski/dev/container-orchestrator/mounts/",
+
+    "cniPath":"/run/current-system/sw/bin",
+    "networkConfigPath":"/etc/cni/net.d",
+    "networkConfigFileName":"mynet",
+    "networkNamespacePath":"/var/run/netns/" 
 }
+
+

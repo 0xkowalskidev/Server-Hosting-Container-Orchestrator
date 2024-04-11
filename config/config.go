@@ -11,6 +11,11 @@ type Config struct {
 	ContainerdSocketPath string `json:"containerdSocketPath"`
 
 	StoragePath string `json:"storagePath"` // Path for worker node volumes, must end in /
+
+	CNIPath               string `json:"cniPath"`
+	NetworkConfigPath     string `json:"networkConfigPath"`
+	NetworkConfigFileName string `json:"networkConfigFileName"`
+	NetworkNamespacePath  string `json:"networkNamespacePath"`
 }
 
 func LoadConfig(configFile string) (*Config, error) {
