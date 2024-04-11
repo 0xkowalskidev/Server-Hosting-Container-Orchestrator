@@ -74,7 +74,7 @@ func (_runtime *ContainerdRuntime) CreateContainer(containerSpec models.Containe
 	specOpts := []oci.SpecOpts{
 		oci.WithLinuxNamespace(specs.LinuxNamespace{
 			Type: "network",
-			Path: networkNamespacePathPrefix + containerSpec.ID,
+			Path: _runtime.cfg.NetworkNamespacePath + containerSpec.ID,
 		}),
 		oci.WithImageConfig(image),
 		oci.WithEnv(containerSpec.Env),

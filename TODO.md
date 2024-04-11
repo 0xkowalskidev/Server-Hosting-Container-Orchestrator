@@ -48,6 +48,10 @@
 ## Switch delete to mark for deletion instead of just removing container from state -
 
 ## Container networking -  ✓
+### Seperate into its own package - ✓
+### Schedular should cleanup unused routes - 
+### Schedular should consider ports when scheduling - 
+### Config should define acceptable port range (e.g 30000-32767) -
 
 ## Container storage - ✓
 ### Storage should be in its own package - ✓
@@ -60,9 +64,9 @@
 
 ## Network cluster -
 
-## Storage/networking should be handled separately from runtime in agent -
-
 ## Figure out how to containerize the dev environment (nix?) - 
+
+## Live container metrics - 
 
 # Full Refactor
 
@@ -90,3 +94,5 @@
 
 ## Controllers/managers?
 ## Consensus?
+
+## Remove namespaces from routes as we are setting it in config anyway - 
