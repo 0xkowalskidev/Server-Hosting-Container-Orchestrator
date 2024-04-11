@@ -39,6 +39,7 @@
 
 ## Make sure nodes send back usage/resources to control node -
 ### Set node resource limits manually? - Yes!
+### Could set up node resource automatically on initial join - 
 
 ## Make schedular schedule containers based on actual pertinent information - ✓
 
@@ -57,7 +58,7 @@
 
 ## Network cluster -
 
-## Storage/networking should be handled seperately from runtime in agent -
+## Storage/networking should be handled separately from runtime in agent -
 
 ## Figure out how to containerize the dev environment (nix?) - 
 
@@ -65,7 +66,9 @@
 
 # Later
 
-## Create containerd model for containers
+## Logs & Monitoring (low level, not container level) -
+
+## Create containerd model for containers -
 
 ## Add taints -
 
@@ -80,6 +83,8 @@
 ## Remove fatal errors, make sure agent cant crash -
 
 ## sftp daemonset -
+
+## Readiness probe -
 
 ## Controllers/managers?
 ## Consensus?

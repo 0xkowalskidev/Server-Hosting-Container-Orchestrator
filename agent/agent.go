@@ -10,6 +10,7 @@ import (
 	"0xKowalski1/container-orchestrator/config"
 	"0xKowalski1/container-orchestrator/models"
 	"0xKowalski1/container-orchestrator/runtime"
+	"0xKowalski1/container-orchestrator/storage"
 
 	"github.com/gin-gonic/gin"
 	"github.com/hpcloud/tail"
@@ -22,15 +23,31 @@ type ApiResponse struct {
 	} `json:"node"`
 }
 
-func Start(cfg *config.Config) {
+type Agent struct {
+	runtime *runtime.ContainerdRuntime
+	storage *storage.StorageManager
+	cfg     *config.Config
+}
+
+func NewAgent(cfg *config.Config) *Agent {
 	// start runtime
-	_runtime, err := runtime.NewRuntime("containerd", cfg)
+	runtime, err := runtime.NewContainerdRuntime(cfg)
 
 	if err != nil {
 		log.Fatalf("Failed to initialize runtime: %v", err)
 	}
 
-	apiClient := api.NewApiWrapper(cfg.Namespace)
+	storage := storage.NewStorageManager(cfg)
+
+	return &Agent{
+		runtime: runtime,
+		storage: storage,
+		cfg:     cfg,
+	}
+}
+
+func (a *Agent) Start() {
+	apiClient := api.NewApiWrapper(a.cfg.Namespace)
 
 	go startLogApi()
 
@@ -47,7 +64,7 @@ func Start(cfg *config.Config) {
 		desiredContainers := node.Containers
 
 		// List actual containers
-		actualContainers, err := _runtime.ListContainers(cfg.Namespace)
+		actualContainers, err := a.runtime.ListContainers()
 		if err != nil {
 			log.Printf("Error listing containers: %v", err)
 			continue
@@ -56,7 +73,7 @@ func Start(cfg *config.Config) {
 		// Map actual container IDs for easier lookup
 		actualMap := make(map[string]models.Container)
 		for _, c := range actualContainers {
-			ic, err := _runtime.InspectContainer(cfg.Namespace, c.ID)
+			ic, err := a.runtime.InspectContainer(c.ID)
 			if err != nil {
 				log.Printf("Error inspecting container: %v", err)
 			}
@@ -67,14 +84,16 @@ func Start(cfg *config.Config) {
 			// Create missing containers
 			if _, exists := actualMap[desiredContainer.ID]; !exists {
 				// Create container if it does not exist in actual state
-				_, err := _runtime.CreateContainer(cfg.Namespace, desiredContainer)
+
+				a.storage.CreateVolume(desiredContainer.ID, 1000) // Check errors here
+				_, err := a.runtime.CreateContainer(desiredContainer)
 				if err != nil {
 					log.Printf("Failed to create container: %v", err)
 					continue
 				}
 			}
 
-			reconcileContainerState(cfg, _runtime, desiredContainer, actualMap[desiredContainer.ID])
+			reconcileContainerState(a.cfg, a.runtime, desiredContainer, actualMap[desiredContainer.ID])
 		}
 
 		// Stop extra containers
@@ -87,19 +106,21 @@ func Start(cfg *config.Config) {
 				}
 			}
 			if !found {
-				_runtime.StopContainer(cfg.Namespace, c.ID, c.StopTimeout)
-				_runtime.RemoveContainer(cfg.Namespace, c.ID)
+				// Check errors
+				a.runtime.StopContainer(c.ID, c.StopTimeout)
+				a.runtime.RemoveContainer(c.ID)
+				a.storage.RemoveVolume(c.ID)
 			}
 		}
 	}
 }
 
-func reconcileContainerState(cfg *config.Config, _runtime runtime.Runtime, desiredContainer models.Container, actualContainer models.Container) {
+func reconcileContainerState(cfg *config.Config, _runtime *runtime.ContainerdRuntime, desiredContainer models.Container, actualContainer models.Container) {
 	switch desiredContainer.DesiredStatus {
 	case "running":
 		if actualContainer.Status != "running" {
 
-			err := _runtime.StartContainer(cfg.Namespace, desiredContainer.ID) // Probably a bug here, if we use actualContainer this fails as ID is missing
+			err := _runtime.StartContainer(desiredContainer.ID) // Probably a bug here, if we use actualContainer this fails as ID is missing
 			if err != nil {
 				log.Fatalf("Failed to start container: %v", err)
 			}
@@ -107,7 +128,7 @@ func reconcileContainerState(cfg *config.Config, _runtime runtime.Runtime, desir
 		}
 	case "stopped":
 		if actualContainer.Status != "stopped" {
-			err := _runtime.StopContainer(cfg.Namespace, desiredContainer.ID, desiredContainer.StopTimeout)
+			err := _runtime.StopContainer(desiredContainer.ID, desiredContainer.StopTimeout)
 			if err != nil {
 				log.Fatalf("Failed to stop container: %v", err)
 			}
@@ -118,9 +139,9 @@ func reconcileContainerState(cfg *config.Config, _runtime runtime.Runtime, desir
 // Http log server
 // StreamLogsHandler streams container logs to the client.
 func StreamLogsHandler(c *gin.Context) {
-	namespace := c.Param("namespace") // TAKE ME FROM CONFIG
+	namespace := c.Param("namespace") // TAKE ME FROM CONFIG, ENSURE CORRECT
 	containerID := c.Param("containerID")
-	logFilePath := "/home/kowalski/dev/container-orchestrator/" + namespace + "-" + containerID + ".log"
+	logFilePath := "/home/kowalski/dev/container-orchestrator/" + namespace + "-" + containerID + ".log" // HANDLE THIS PROPERLY
 
 	t, err := tail.TailFile(logFilePath, tail.Config{Follow: true})
 	if err != nil {

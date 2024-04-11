@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"syscall"
 	"time"
 
 	"0xKowalski1/container-orchestrator/api"
+	"0xKowalski1/container-orchestrator/config"
 	"0xKowalski1/container-orchestrator/models"
 
 	"github.com/containerd/containerd"
@@ -26,37 +26,40 @@ import (
 // ContainerdRuntime implements the Runtime interface for containerd.
 type ContainerdRuntime struct {
 	client *containerd.Client
+	cfg    *config.Config
 }
 
 // NewContainerdRuntime creates a new instance of ContainerdRuntime with the given containerd client.
-func NewContainerdRuntime(socketPath string) (*ContainerdRuntime, error) {
-	client, err := containerd.New(socketPath)
+func NewContainerdRuntime(cfg *config.Config) (*ContainerdRuntime, error) {
+	client, err := containerd.New(cfg.ContainerdSocketPath)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &ContainerdRuntime{
+	runtime := &ContainerdRuntime{
 		client: client,
-	}, nil
+		cfg:    cfg,
+	}
+
+	runtime.SubscribeToEvents()
+
+	return runtime, nil
 }
 
+// This should return a pointer to a container
 // CreateContainer instantiates a new container but does not start it.
-func (_runtime *ContainerdRuntime) CreateContainer(namespace string, config models.Container) (models.Container, error) {
-	ctx := namespaces.WithNamespace(context.Background(), namespace)
+func (_runtime *ContainerdRuntime) CreateContainer(containerSpec models.Container) (models.Container, error) {
+	ctx := namespaces.WithNamespace(context.Background(), _runtime.cfg.Namespace) // put this in the _runtime struct
 
-	image, err := _runtime.client.Pull(ctx, config.Image, containerd.WithPullUnpack)
+	image, err := _runtime.client.Pull(ctx, containerSpec.Image, containerd.WithPullUnpack)
 	if err != nil {
 		log.Printf("Error pulling image: %v", err)
 		return models.Container{}, err
 	}
 
-	volumePath := "/home/kowalski/dev/container-orchestrator/mounts/" + config.ID
+	volumePath := _runtime.cfg.StoragePath + containerSpec.ID
 
-	err = os.MkdirAll(volumePath, os.ModePerm)
-	if err != nil {
-		fmt.Printf("Error creating directory: %s\n", err)
-	}
 	mounts := []oci.SpecOpts{
 		oci.WithMounts([]specs.Mount{
 			{
@@ -71,17 +74,17 @@ func (_runtime *ContainerdRuntime) CreateContainer(namespace string, config mode
 	specOpts := []oci.SpecOpts{
 		oci.WithLinuxNamespace(specs.LinuxNamespace{
 			Type: "network",
-			Path: networkNamespacePathPrefix + config.ID,
+			Path: networkNamespacePathPrefix + containerSpec.ID,
 		}),
 		oci.WithImageConfig(image),
-		oci.WithEnv(config.Env),
-		oci.WithMemoryLimit(uint64(config.MemoryLimit * 1024 * 1024 * 1024)), // in bytes
-		oci.WithCPUs(fmt.Sprint(config.CpuLimit)),
+		oci.WithEnv(containerSpec.Env),
+		oci.WithMemoryLimit(uint64(containerSpec.MemoryLimit * 1024 * 1024 * 1024)), // in bytes
+		oci.WithCPUs(fmt.Sprint(containerSpec.CpuLimit)),
 	}
 
 	specOpts = append(specOpts, mounts...)
 
-	cont, err := _runtime.client.NewContainer(ctx, config.ID, containerd.WithImage(image), containerd.WithNewSnapshot(config.ID+"-snapshot", image), containerd.WithNewSpec(specOpts...))
+	cont, err := _runtime.client.NewContainer(ctx, containerSpec.ID, containerd.WithImage(image), containerd.WithNewSnapshot(containerSpec.ID+"-snapshot", image), containerd.WithNewSpec(specOpts...))
 
 	if err != nil {
 		log.Printf("Error creating container: %v", err)
@@ -89,7 +92,7 @@ func (_runtime *ContainerdRuntime) CreateContainer(namespace string, config mode
 	}
 
 	// Setup container network with port mappings
-	err = setupContainerNetwork(ctx, cont, config.Ports)
+	err = setupContainerNetwork(ctx, cont, containerSpec.Ports)
 	if err != nil {
 		fmt.Println("Failed to setup container network:", err)
 		return models.Container{}, err
@@ -101,8 +104,8 @@ func (_runtime *ContainerdRuntime) CreateContainer(namespace string, config mode
 }
 
 // StartContainer starts an existing container.
-func (_runtime *ContainerdRuntime) StartContainer(namespace string, containerID string) error {
-	ctx := namespaces.WithNamespace(context.Background(), namespace)
+func (_runtime *ContainerdRuntime) StartContainer(containerID string) error {
+	ctx := namespaces.WithNamespace(context.Background(), _runtime.cfg.Namespace)
 
 	container, err := _runtime.client.LoadContainer(ctx, containerID)
 	if err != nil {
@@ -110,7 +113,7 @@ func (_runtime *ContainerdRuntime) StartContainer(namespace string, containerID 
 		return err
 	}
 
-	logPath := "/home/kowalski/dev/container-orchestrator/" + namespace + "-" + containerID + ".log"
+	logPath := "/home/kowalski/dev/container-orchestrator/" + _runtime.cfg.Namespace + "-" + containerID + ".log"
 
 	task, err := container.NewTask(ctx, cio.LogFile(logPath))
 	if err != nil {
@@ -131,10 +134,10 @@ func (_runtime *ContainerdRuntime) StartContainer(namespace string, containerID 
 }
 
 // StopContainer stops a running container.
-func (_runtime *ContainerdRuntime) StopContainer(namespace string, containerID string, timeout int) error {
-	log.Printf("Attempting to stop container %s in namespace %s with timeout %d", containerID, namespace, timeout)
+func (_runtime *ContainerdRuntime) StopContainer(containerID string, timeout int) error {
+	log.Printf("Attempting to stop container %s with timeout %d", containerID, timeout)
 
-	ctx := namespaces.WithNamespace(context.Background(), namespace)
+	ctx := namespaces.WithNamespace(context.Background(), _runtime.cfg.Namespace)
 
 	log.Printf("Loading container %s", containerID)
 	container, err := _runtime.client.LoadContainer(ctx, containerID)
@@ -187,9 +190,9 @@ func (_runtime *ContainerdRuntime) StopContainer(namespace string, containerID s
 	return nil
 }
 
-// RemoveContainer removes a container from the system. This may require the container to be stopped first.
-func (_runtime *ContainerdRuntime) RemoveContainer(namespace string, containerID string) error {
-	ctx := namespaces.WithNamespace(context.Background(), namespace)
+// RemoveContainer removes a container from the system. This requires the container to be stopped first.
+func (_runtime *ContainerdRuntime) RemoveContainer(containerID string) error {
+	ctx := namespaces.WithNamespace(context.Background(), _runtime.cfg.Namespace)
 
 	container, err := _runtime.client.LoadContainer(ctx, containerID)
 	if err != nil {
@@ -213,9 +216,9 @@ func (_runtime *ContainerdRuntime) RemoveContainer(namespace string, containerID
 }
 
 // ListContainers returns a list of all containers managed by the runtime.
-func (_runtime *ContainerdRuntime) ListContainers(namespace string) ([]models.Container, error) {
+func (_runtime *ContainerdRuntime) ListContainers() ([]models.Container, error) {
 	var containers []models.Container
-	ctx := namespaces.WithNamespace(context.Background(), namespace)
+	ctx := namespaces.WithNamespace(context.Background(), _runtime.cfg.Namespace)
 
 	// List containers from containerd
 	conts, err := _runtime.client.Containers(ctx)
@@ -241,8 +244,8 @@ func (_runtime *ContainerdRuntime) ListContainers(namespace string) ([]models.Co
 }
 
 // InspectContainer returns detailed information about a specific container.
-func (_runtime *ContainerdRuntime) InspectContainer(namespace string, containerID string) (models.Container, error) {
-	ctx := namespaces.WithNamespace(context.Background(), namespace)
+func (_runtime *ContainerdRuntime) InspectContainer(containerID string) (models.Container, error) {
+	ctx := namespaces.WithNamespace(context.Background(), _runtime.cfg.Namespace)
 
 	container, err := _runtime.client.LoadContainer(ctx, containerID)
 	if err != nil {
@@ -285,8 +288,8 @@ func (_runtime *ContainerdRuntime) InspectContainer(namespace string, containerI
 
 // Events
 // SubscribeToEvents starts listening to containerd events and handles them.
-func (_runtime *ContainerdRuntime) SubscribeToEvents(namespace string) {
-	ctx := namespaces.WithNamespace(context.Background(), namespace)
+func (_runtime *ContainerdRuntime) SubscribeToEvents() {
+	ctx := namespaces.WithNamespace(context.Background(), _runtime.cfg.Namespace)
 
 	// Process events and errors
 	go func() {
@@ -295,7 +298,7 @@ func (_runtime *ContainerdRuntime) SubscribeToEvents(namespace string) {
 		for {
 			select {
 			case envelope := <-ch:
-				if err := _runtime.processEvent(envelope, namespace); err != nil {
+				if err := _runtime.processEvent(envelope, _runtime.cfg.Namespace); err != nil {
 					log.Printf("Error processing event: %v", err)
 				}
 
@@ -307,6 +310,8 @@ func (_runtime *ContainerdRuntime) SubscribeToEvents(namespace string) {
 }
 
 func (_runtime *ContainerdRuntime) processEvent(envelope *events.Envelope, namespace string) error {
+	// MAKE SURE NAMESPACE IS CORRECT HERE
+
 	apiClient := api.NewApiWrapper(namespace)
 	//Should probably check namespace here
 	event, err := typeurl.UnmarshalAny(envelope.Event)

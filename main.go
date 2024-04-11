@@ -48,8 +48,10 @@ func main() {
 		_statemanager.AddNode(models.Node{ID: "node-1", MemoryLimit: 16, CpuLimit: 4})
 	}
 
+	agent := agent.NewAgent(cfg)
+
 	// start agent
-	agent.Start(cfg)
+	agent.Start()
 
 	// start networking
 	// start local storage

@@ -7,6 +7,10 @@ import (
 
 type Config struct {
 	Namespace string `json:"namespace"` // Production, Development or Test
+
+	ContainerdSocketPath string `json:"containerdSocketPath"`
+
+	StoragePath string `json:"storagePath"` // Path for worker node volumes, must end in /
 }
 
 func LoadConfig(configFile string) (*Config, error) {

@@ -51,3 +51,21 @@ Implementation: Could leverage existing networking solutions like CNI plugins, w
 Function: Manages local storage resources for containers, providing and managing volumes for persistent data storage.
 
 Implementation: This component would interface with the underlying storage system to provision, mount, and manage storage volumes for containers, potentially integrating with cloud storage APIs or local filesystems for volume management.
+
+# Create Container Flow
+
+## Api post req to /namespaces/{namespace}/containers with container spec
+
+## Api makes a new record in etcd for container
+
+## Schedular assigns record to a node
+
+## Node sees it has a container that is not running and ensures it matches the state
+
+## First it checks if its networking matches the state, and create/removes rules
+
+## Second it checks if its storage matches the state, and create/removes mounts
+
+## Third it checks its containerd containers matches and creates/removes additional containers
+
+## Finally it checks whether its containers match the status state and starts/stops any containers

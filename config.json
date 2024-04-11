@@ -1,3 +1,5 @@
 {
-    "namespace": "development"
+    "namespace": "development",
+    "containerdSocketPath": "/run/containerd/containerd.sock",
+    "storagePath": "/home/kowalski/dev/container-orchestrator/mounts/"
 }
