@@ -8,6 +8,14 @@ type Port struct {
 	Protocol      string `json:"protocol"` // tcp or udp
 }
 
+// Used by the agent network syncer, needs to be tied to the container id
+type Portmap struct {
+	HostPort      int    `json:"hostPort"`
+	ContainerPort int    `json:"containerPort"`
+	Protocol      string `json:"protocol"` // tcp or udp
+	ID            string `json:"id"`
+}
+
 type Container struct {
 	ID            string
 	DesiredStatus string // running or stopped

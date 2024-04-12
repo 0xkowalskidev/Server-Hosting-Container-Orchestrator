@@ -2,10 +2,13 @@ package networking
 
 import (
 	"0xKowalski1/container-orchestrator/config"
+	"bytes"
 	"context"
 	"fmt"
 	"log"
 	"os/exec"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"0xKowalski1/container-orchestrator/models"
@@ -37,6 +40,30 @@ func (nm *NetworkingManager) deleteNetworkNamespace(containerID string) error {
 		return fmt.Errorf("deleting network namespace failed: %w", err)
 	}
 	return nil
+}
+
+func (nm *NetworkingManager) ListNetworkNamespaces() ([]string, error) {
+	cmd := exec.Command("ip", "netns", "list")
+
+	var stdoutBuf bytes.Buffer
+	cmd.Stdout = &stdoutBuf
+
+	if err := cmd.Run(); err != nil {
+		return nil, fmt.Errorf("running command failed: %w", err)
+	}
+
+	var namespaces []string
+	lines := strings.Split(stdoutBuf.String(), "\n")
+	for _, line := range lines {
+		if line == "" {
+			continue
+		}
+		fields := strings.Fields(line)
+		if len(fields) > 0 {
+			namespaces = append(namespaces, fields[0])
+		}
+	}
+	return namespaces, nil
 }
 
 func (nm *NetworkingManager) getContainerIP(containerID string) (string, error) {
@@ -99,72 +126,81 @@ func (nm *NetworkingManager) SetupContainerNetwork(containerID string, ports []m
 
 func (nm *NetworkingManager) CleanupContainerNetwork(containerID string) error {
 	ctx := context.Background()
-
 	cniConfig := libcni.CNIConfig{Path: []string{nm.cfg.CNIPath}}
+
 	netConf, err := libcni.LoadConfList(nm.cfg.NetworkConfigPath, nm.cfg.NetworkConfigFileName)
 	if err != nil {
 		return fmt.Errorf("loading CNI configuration failed: %w", err)
 	}
 
-	if err := nm.cleanupIPRulesByIP(containerID); err != nil {
-		return err
+	containerIP, err := nm.getContainerIP(containerID)
+	if err != nil {
+		return fmt.Errorf("Failed to get container ip: %v", err)
+	}
+
+	cmd := exec.Command("bash", "-c", fmt.Sprintf(`sudo iptables -t nat -S | grep %s`, containerIP))
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to execute iptables command: %v", err)
+	}
+
+	portMappings, err := nm.parseIpTablesOutput(string(output))
+	if err != nil {
+		return fmt.Errorf("failed to parse iptables output: %v", err)
+	}
+
+	log.Println("Parsed Port Mappings:")
+	for _, mapping := range portMappings {
+		log.Printf("HostPort: %d, ContainerPort: %d, Protocol: %s\n",
+			mapping["hostPort"], mapping["containerPort"], mapping["protocol"])
 	}
 
 	runtimeConf := &libcni.RuntimeConf{
-		ContainerID: containerID,
-		NetNS:       nm.cfg.NetworkNamespacePath + containerID,
-		IfName:      "eth0",
+		ContainerID:    containerID,
+		NetNS:          nm.cfg.NetworkNamespacePath + containerID,
+		IfName:         "eth0",
+		CapabilityArgs: map[string]interface{}{"portMappings": portMappings},
 	}
 
+	log.Printf("Deleting CNI network for container %s", containerID)
 	if err := cniConfig.DelNetworkList(ctx, netConf, runtimeConf); err != nil {
+		log.Printf("Error cleaning up CNI network for container %s: %v", containerID, err)
 		return fmt.Errorf("cleaning up container network failed: %w", err)
 	}
 
+	log.Printf("Deleting network namespace for container %s", containerID)
 	if err := nm.deleteNetworkNamespace(containerID); err != nil {
+		log.Printf("Error deleting network namespace for container %s: %v", containerID, err)
 		return err
 	}
 
 	return nil
 }
 
-func (nm *NetworkingManager) cleanupIPRulesByIP(containerID string) error {
-	containerIP, err := nm.getContainerIP(containerID)
-	if err != nil {
-		return fmt.Errorf("error getting container IP: %v", err)
-	}
-	log.Printf("Container IP to cleanup: %s", containerIP)
-
-	tables := []string{"nat", "filter"} // Focus on relevant tables
-
-	for _, table := range tables {
-		// List all rules in the table
-		cmd := exec.Command("iptables", "-t", table, "-S")
-		output, err := cmd.Output()
-		if err != nil {
-			return fmt.Errorf("listing iptables rules failed: %w", err)
-		}
-
-		// Iterate through each listed rule
-		for _, line := range strings.Split(string(output), "\n") {
-			if strings.Contains(line, containerIP) {
-				// Rule found; construct deletion command
-				parts := strings.Fields(line)
-				if len(parts) > 2 {
-					// The first part is "-A" (add), change it to "-D" (delete) for the deletion command
-					parts[0] = "-D"
-					delCmd := exec.Command("iptables", append([]string{"-t", table}, parts...)...)
-					log.Printf("Executing: %v", delCmd) // Log the command for debugging
-
-					// Attempt to execute the deletion command
-					if err := delCmd.Run(); err != nil {
-						log.Printf("Failed to delete rule: %v", err) // Log failure
-					} else {
-						log.Printf("Successfully deleted rule: %s", line) // Log success
-					}
-				}
+func (nm *NetworkingManager) parseIpTablesOutput(output string) ([]map[string]interface{}, error) {
+	log.Printf("%s", output)
+	var portMappings []map[string]interface{}
+	lines := strings.Split(output, "\n")
+	re := regexp.MustCompile(`-p (\w+) .* --dport (\d+) -j DNAT --to-destination \d+\.\d+\.\d+\.\d+:(\d+)`)
+	for _, line := range lines {
+		matches := re.FindStringSubmatch(line)
+		if len(matches) == 4 { // Ensure we are matching the entire pattern including container port
+			protocol := matches[1]
+			hostPort, err := strconv.Atoi(matches[2])
+			if err != nil {
+				return nil, fmt.Errorf("error parsing hostPort: %v", err)
 			}
+			containerPort, err := strconv.Atoi(matches[3])
+			if err != nil {
+				return nil, fmt.Errorf("error parsing containerPort: %v", err)
+			}
+			portMapping := map[string]interface{}{
+				"hostPort":      hostPort,
+				"containerPort": containerPort,
+				"protocol":      protocol,
+			}
+			portMappings = append(portMappings, portMapping)
 		}
 	}
-
-	return nil
+	return portMappings, nil
 }

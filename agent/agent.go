@@ -62,8 +62,18 @@ func (a *Agent) Start() {
 		}
 
 		var desiredVolumes []models.Volume
+		var desiredPortmaps []models.Portmap
 		//Define wanted storage/containers/networking
 		for _, desiredContainer := range node.Containers {
+			for _, desiredPort := range desiredContainer.Ports {
+				newPortmap := models.Portmap{
+					HostPort:      desiredPort.HostPort,
+					ContainerPort: desiredPort.ContainerPort,
+					Protocol:      desiredPort.Protocol,
+					ID:            desiredContainer.ID,
+				}
+				desiredPortmaps = append(desiredPortmaps, newPortmap)
+			}
 
 			newVolume := models.Volume{ID: desiredContainer.ID, SizeLimit: int64(desiredContainer.StorageLimit)}
 			desiredVolumes = append(desiredVolumes, newVolume)
@@ -72,6 +82,12 @@ func (a *Agent) Start() {
 		err = a.syncStorage(desiredVolumes)
 		if err != nil {
 			log.Printf("Error syncing storage: %v", err)
+			continue
+		}
+
+		err = a.syncNetworking(desiredPortmaps)
+		if err != nil {
+			log.Printf("Error syncing network: %v", err)
 			continue
 		}
 

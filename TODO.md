@@ -66,6 +66,8 @@
 
 # Full Refactor
 
+## Switch from resourceUsed to resourceAllocated on node as its misleading - 
+
 ## syncContainers - 
 
 # Later
