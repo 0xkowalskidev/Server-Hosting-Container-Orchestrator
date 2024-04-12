@@ -56,7 +56,7 @@
 ## Container storage - ✓
 ### Storage should be in its own package - ✓
 ### Delete storage on container delete - ✓
-### Schedular should always cleanup unused storage -
+### Schedular should always cleanup unused storage - ✓
 ### Schedular should bare storage in mind when scheduling -
 ### Node config should define how much storage they have -
 ### Node should use a different volume/partition just for container storage -

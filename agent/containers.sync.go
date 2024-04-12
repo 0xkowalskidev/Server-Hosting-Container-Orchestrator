@@ -30,7 +30,6 @@ func (a *Agent) syncContainers(node *models.Node) error {
 		if _, exists := actualMap[desiredContainer.ID]; !exists {
 			// Create container if it does not exist in actual state
 
-			a.storage.CreateVolume(desiredContainer.ID, 1000) // Check errors here
 			a.networking.SetupContainerNetwork(desiredContainer.ID, desiredContainer.Ports)
 			_, err := a.runtime.CreateContainer(desiredContainer)
 			if err != nil {
@@ -55,7 +54,6 @@ func (a *Agent) syncContainers(node *models.Node) error {
 			// Check errors
 			a.runtime.StopContainer(c.ID, c.StopTimeout)
 			a.runtime.RemoveContainer(c.ID)
-			a.storage.RemoveVolume(c.ID)
 			a.networking.CleanupContainerNetwork(c.ID)
 		}
 	}

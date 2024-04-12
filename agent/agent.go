@@ -61,6 +61,20 @@ func (a *Agent) Start() {
 			continue
 		}
 
+		var desiredVolumes []models.Volume
+		//Define wanted storage/containers/networking
+		for _, desiredContainer := range node.Containers {
+
+			newVolume := models.Volume{ID: desiredContainer.ID, SizeLimit: 100}
+			desiredVolumes = append(desiredVolumes, newVolume)
+		}
+
+		err = a.syncStorage(desiredVolumes)
+		if err != nil {
+			log.Printf("Error syncing storage: %v", err)
+			continue
+		}
+
 		err = a.syncContainers(node)
 		if err != nil {
 			log.Printf("Error syncing containers: %v", err)
