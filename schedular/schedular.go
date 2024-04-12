@@ -38,6 +38,25 @@ func scheduleContainers(sm *statemanager.StateManager) {
 		assigned := false
 		for _, node := range nodes {
 			if node.MemoryLimit-node.MemoryUsed >= container.MemoryLimit && node.CpuLimit-node.CpuUsed >= container.CpuLimit && node.StorageLimit-node.StorageUsed >= container.StorageLimit {
+				// Check ports
+				portsFree := true
+				usedPortsMap := make(map[int]bool)
+				for _, container := range node.Containers {
+					for _, port := range container.Ports {
+						usedPortsMap[port.HostPort] = true
+					}
+				}
+
+				for _, port := range container.Ports {
+					if usedPortsMap[port.HostPort] {
+						portsFree = false
+						continue
+					}
+				}
+
+				if !portsFree {
+					continue
+				}
 
 				err := sm.AssignContainerToNode(container.ID, node.ID)
 				if err != nil {

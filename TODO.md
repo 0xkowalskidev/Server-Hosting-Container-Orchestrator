@@ -48,7 +48,7 @@
 ## Container networking -  ✓
 ### Seperate into its own package - ✓
 ### Schedular should cleanup unused routes - ✓
-### Schedular should consider ports when scheduling - 
+### Schedular should consider ports when scheduling -  ✓
 ### Config should define acceptable port range (e.g 30000-32767) -
 
 ## Container storage - ✓
@@ -66,11 +66,15 @@
 
 # Full Refactor
 
+## Network manager -
+
 ## Switch from resourceUsed to resourceAllocated on node as its misleading - 
 
 ## syncContainers - 
 
 # Later
+
+## Schedular does not attempt to reschedule a node until a new node is created, might be okay but need to handle - 
 
 ## Storage sync wont cleanup bad img files - 
 
@@ -111,3 +115,4 @@
 
 ## Permissions -
 
+## Node healthcheck should check if network is using any of the needed ports when it shouldent (e.g, 30000 is taken by a non container) - 
