@@ -2,22 +2,43 @@ package agent
 
 import (
 	"0xKowalski1/container-orchestrator/models"
+	"fmt"
 )
 
-func (a *Agent) syncNetworking(desiredPortmaps []models.Portmap) error {
-	// Get acutal network network namespaces
-
+func (a *Agent) syncNetworking(desiredContainers []models.Container) error {
 	actualNamespaces, err := a.networking.ListNetworkNamespaces()
 	if err != nil {
 		return err
 	}
 
-	// Iterate over desiredPortmaps
-	// If no network namespace, make one
-	// If no network rule, make one
+	desiredMap := make(map[string]models.Container)
+	for _, container := range desiredContainers {
+		desiredMap[container.ID] = container
+	}
 
-	// Iterate over network namespaces
-	// If namespace exists, but shouldent, delete
+	actualMap := make(map[string]bool)
+	for _, namespace := range actualNamespaces { // Namespace is a containerID
+		actualMap[namespace] = true
+	}
+
+	for containerID, container := range desiredMap {
+		if !actualMap[containerID] {
+			err := a.networking.SetupContainerNetwork(containerID, container.Ports)
+			if err != nil {
+				return fmt.Errorf("Failed to setup container network: %v", err)
+			}
+
+		}
+	}
+
+	for namespace := range actualMap {
+		if _, desired := desiredMap[namespace]; !desired {
+			err := a.networking.CleanupContainerNetwork(namespace)
+			if err != nil {
+				return fmt.Errorf("Failed to cleanup container network: %v", err)
+			}
+		}
+	}
 
 	return nil
 }

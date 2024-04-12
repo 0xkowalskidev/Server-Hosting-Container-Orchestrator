@@ -62,19 +62,10 @@ func (a *Agent) Start() {
 		}
 
 		var desiredVolumes []models.Volume
-		var desiredPortmaps []models.Portmap
+		desiredContainers := node.Containers
 		//Define wanted storage/containers/networking
+		// Why am I even doing this?
 		for _, desiredContainer := range node.Containers {
-			for _, desiredPort := range desiredContainer.Ports {
-				newPortmap := models.Portmap{
-					HostPort:      desiredPort.HostPort,
-					ContainerPort: desiredPort.ContainerPort,
-					Protocol:      desiredPort.Protocol,
-					ID:            desiredContainer.ID,
-				}
-				desiredPortmaps = append(desiredPortmaps, newPortmap)
-			}
-
 			newVolume := models.Volume{ID: desiredContainer.ID, SizeLimit: int64(desiredContainer.StorageLimit)}
 			desiredVolumes = append(desiredVolumes, newVolume)
 		}
@@ -85,7 +76,7 @@ func (a *Agent) Start() {
 			continue
 		}
 
-		err = a.syncNetworking(desiredPortmaps)
+		err = a.syncNetworking(desiredContainers)
 		if err != nil {
 			log.Printf("Error syncing network: %v", err)
 			continue

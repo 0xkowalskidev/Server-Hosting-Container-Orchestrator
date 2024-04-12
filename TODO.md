@@ -47,7 +47,7 @@
 
 ## Container networking -  ✓
 ### Seperate into its own package - ✓
-### Schedular should cleanup unused routes - 
+### Schedular should cleanup unused routes - ✓
 ### Schedular should consider ports when scheduling - 
 ### Config should define acceptable port range (e.g 30000-32767) -
 

@@ -184,7 +184,7 @@ func (nm *NetworkingManager) parseIpTablesOutput(output string) ([]map[string]in
 	re := regexp.MustCompile(`-p (\w+) .* --dport (\d+) -j DNAT --to-destination \d+\.\d+\.\d+\.\d+:(\d+)`)
 	for _, line := range lines {
 		matches := re.FindStringSubmatch(line)
-		if len(matches) == 4 { // Ensure we are matching the entire pattern including container port
+		if len(matches) == 4 {
 			protocol := matches[1]
 			hostPort, err := strconv.Atoi(matches[2])
 			if err != nil {
