@@ -37,7 +37,7 @@ func scheduleContainers(sm *statemanager.StateManager) {
 		log.Printf("Attempting to schedule container %s...", container.ID)
 		assigned := false
 		for _, node := range nodes {
-			if node.MemoryLimit-node.MemoryUsed >= container.MemoryLimit && node.CpuLimit-node.CpuUsed >= container.CpuLimit {
+			if node.MemoryLimit-node.MemoryUsed >= container.MemoryLimit && node.CpuLimit-node.CpuUsed >= container.CpuLimit && node.StorageLimit-node.StorageUsed >= container.StorageLimit {
 
 				err := sm.AssignContainerToNode(container.ID, node.ID)
 				if err != nil {

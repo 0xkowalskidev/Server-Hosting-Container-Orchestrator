@@ -45,7 +45,7 @@ func main() {
 	_, err = _statemanager.GetNode("node-1")
 	// 4 core, 16GB
 	if err != nil {
-		_statemanager.AddNode(models.Node{ID: "node-1", MemoryLimit: 16, CpuLimit: 4})
+		_statemanager.AddNode(models.Node{ID: "node-1", MemoryLimit: 16, CpuLimit: 4, StorageLimit: 10})
 	}
 
 	agent := agent.NewAgent(cfg)

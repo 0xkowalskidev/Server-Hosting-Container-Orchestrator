@@ -19,6 +19,7 @@ func (sm *StateManager) AddContainer(containerRequest models.CreateContainerRequ
 		StopTimeout:   containerRequest.StopTimeout,
 		MemoryLimit:   containerRequest.MemoryLimit,
 		CpuLimit:      containerRequest.CpuLimit,
+		StorageLimit:  containerRequest.StorageLimit,
 		NamespaceID:   sm.cfg.Namespace, // Ensure the container knows its namespaceID
 		DesiredStatus: "running",
 		Ports:         containerRequest.Ports,

@@ -55,6 +55,7 @@ func (sm *StateManager) GetNode(nodeID string) (*models.Node, error) {
 		}
 		node.CpuUsed += container.CpuLimit
 		node.MemoryUsed += container.MemoryLimit
+		node.StorageUsed += container.StorageLimit
 
 		populatedContainers = append(populatedContainers, *container)
 	}
@@ -91,6 +92,7 @@ func (sm *StateManager) ListNodes() ([]models.Node, error) {
 
 			node.CpuUsed += container.CpuLimit
 			node.MemoryUsed += container.MemoryLimit
+			node.StorageUsed += container.StorageLimit
 
 			populatedContainers = append(populatedContainers, *container)
 		}

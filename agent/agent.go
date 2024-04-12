@@ -65,7 +65,7 @@ func (a *Agent) Start() {
 		//Define wanted storage/containers/networking
 		for _, desiredContainer := range node.Containers {
 
-			newVolume := models.Volume{ID: desiredContainer.ID, SizeLimit: 100}
+			newVolume := models.Volume{ID: desiredContainer.ID, SizeLimit: int64(desiredContainer.StorageLimit)}
 			desiredVolumes = append(desiredVolumes, newVolume)
 		}
 

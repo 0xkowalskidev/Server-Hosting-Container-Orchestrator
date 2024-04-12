@@ -45,8 +45,6 @@
 
 ## Stop hardcoding timeout - ✓
 
-## Switch delete to mark for deletion instead of just removing container from state -
-
 ## Container networking -  ✓
 ### Seperate into its own package - ✓
 ### Schedular should cleanup unused routes - 
@@ -57,24 +55,36 @@
 ### Storage should be in its own package - ✓
 ### Delete storage on container delete - ✓
 ### Schedular should always cleanup unused storage - ✓
-### Schedular should bare storage in mind when scheduling -
-### Node config should define how much storage they have -
-### Node should use a different volume/partition just for container storage -
-### Node should enforce storage limits - 
+### Node should enforce storage limits -  ✓ 
+### Node should define how much storage they have - ✓
+### Schedular should bare storage in mind when scheduling - ✓
+
 
 ## Network cluster -
-
-## Figure out how to containerize the dev environment (nix?) - 
 
 ## Live container metrics - 
 
 # Full Refactor
 
+## syncContainers - 
+
 # Later
+
+## Storage sync wont cleanup bad img files - 
+
+## Switch delete to mark for deletion instead of just removing container from state -
+
+## Figure out how to containerize the dev environment (nix?) - 
+
+## Node should use a different volume/partition just for container storage -
+
+## Switch to SSE for worker node agent instead of polling - 
+
+## Make sure node agent always syncs on reconnect -
 
 ## Logs & Monitoring (low level, not container level) -
 
-## Create containerd model for containers -
+## Create containerd model for containers? -
 
 ## Add taints -
 
@@ -95,4 +105,7 @@
 ## Controllers/managers?
 ## Consensus?
 
-## Remove namespaces from routes as we are setting it in config anyway - 
+## Remove namespaces from routes as we are setting it in config anyway -
+
+## Permissions -
+
