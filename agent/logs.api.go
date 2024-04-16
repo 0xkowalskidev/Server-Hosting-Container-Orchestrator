@@ -10,10 +10,10 @@ import (
 
 // Http log server
 // StreamLogsHandler streams container logs to the client.
-func StreamLogsHandler(c *gin.Context) {
+func (a *Agent) StreamLogsHandler(c *gin.Context) {
 	namespace := c.Param("namespace") // TAKE ME FROM CONFIG, ENSURE CORRECT
 	containerID := c.Param("containerID")
-	logFilePath := "/home/kowalski/dev/container-orchestrator/" + namespace + "-" + containerID + ".log" // HANDLE THIS PROPERLY
+	logFilePath := a.cfg.LogPath + namespace + "-" + containerID + ".log" // HANDLE THIS PROPERLY
 
 	t, err := tail.TailFile(logFilePath, tail.Config{Follow: true})
 	if err != nil {
@@ -44,11 +44,11 @@ func StreamLogsHandler(c *gin.Context) {
 	})
 }
 
-func startLogApi() {
+func (a *Agent) startLogApi() {
 	r := gin.Default()
 
 	// Set up the route with URL parameters captured by Gin.
-	r.GET("/namespaces/:namespace/containers/:containerID/logs", StreamLogsHandler)
+	r.GET("/namespaces/:namespace/containers/:containerID/logs", a.StreamLogsHandler)
 
 	r.Run(":8081")
 }

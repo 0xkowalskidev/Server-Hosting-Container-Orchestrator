@@ -38,14 +38,16 @@ func NewAgent(cfg *config.Config) *Agent {
 
 	networking := networking.NewNetworkingManager(cfg)
 
-	go startLogApi()
-
-	return &Agent{
+	agent := &Agent{
 		runtime:    runtime,
 		storage:    storage,
 		networking: networking,
 		cfg:        cfg,
 	}
+
+	go agent.startLogApi()
+
+	return agent
 }
 
 func (a *Agent) Start() {

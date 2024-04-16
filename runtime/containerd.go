@@ -111,7 +111,7 @@ func (_runtime *ContainerdRuntime) StartContainer(containerID string) error {
 		return err
 	}
 
-	logPath := "/home/kowalski/dev/container-orchestrator/" + _runtime.cfg.Namespace + "-" + containerID + ".log"
+	logPath := _runtime.cfg.LogPath + _runtime.cfg.Namespace + "-" + containerID + ".log"
 
 	task, err := container.NewTask(ctx, cio.LogFile(logPath))
 	if err != nil {

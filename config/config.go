@@ -16,6 +16,8 @@ type Config struct {
 	NetworkConfigPath     string `json:"networkConfigPath"`
 	NetworkConfigFileName string `json:"networkConfigFileName"`
 	NetworkNamespacePath  string `json:"networkNamespacePath"`
+
+	LogPath string `json:"logPath"`
 }
 
 func LoadConfig(configFile string) (*Config, error) {

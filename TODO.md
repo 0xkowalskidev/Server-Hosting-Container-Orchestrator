@@ -49,7 +49,6 @@
 ### Seperate into its own package - ✓
 ### Schedular should cleanup unused routes - ✓
 ### Schedular should consider ports when scheduling -  ✓
-### Config should define acceptable port range (e.g 30000-32767) -
 
 ## Container storage - ✓
 ### Storage should be in its own package - ✓
@@ -61,6 +60,7 @@
 
 
 ## Network cluster -
+### Move worker/control plane into seperate CMD files
 
 ## Live container metrics - 
 
@@ -73,6 +73,10 @@
 ## syncContainers - 
 
 # Later
+
+## Schedular should pick a port if none provided -
+
+## Does not seem like cpu limit is working properly - 
 
 ## Schedular does not attempt to reschedule a node until a new node is created, might be okay but need to handle - 
 
@@ -114,5 +118,7 @@
 ## Remove namespaces from routes as we are setting it in config anyway -
 
 ## Permissions -
+
+## Config should define acceptable port range (e.g 30000-32767) -
 
 ## Node healthcheck should check if network is using any of the needed ports when it shouldent (e.g, 30000 is taken by a non container) - 

@@ -208,6 +208,30 @@ func (c *WrapperClient) GetNode(nodeID string) (*models.Node, error) {
 
 }
 
+type NodeListResponse struct {
+	Nodes []models.Node `json:"nodes"`
+}
+
+func (c *WrapperClient) ListNodes() ([]models.Node, error) {
+	url := fmt.Sprintf("%s/nodes", BaseURL)
+	response, err := c.HTTPClient.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("API request failed with status code %d", response.StatusCode)
+	}
+
+	var resp NodeListResponse
+	if err := json.NewDecoder(response.Body).Decode(&resp); err != nil {
+		return nil, err
+	}
+
+	return resp.Nodes, nil
+}
+
 func (c *WrapperClient) WatchContainer(containerID string, handleData func(string)) error {
 	// Construct the URL to the orchestrator's watch endpoint
 	url := fmt.Sprintf("%s/namespaces/%s/containers/%s/watch", BaseURL, c.Namespace, containerID)
