@@ -1,6 +1,8 @@
 package api
 
 import (
+	"fmt"
+	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -137,9 +139,24 @@ func stopContainer(c *gin.Context, _statemanager *statemanager.StateManager) {
 
 // GET /containers/{id}/logs
 func streamContainerLogs(c *gin.Context, _statemanager *statemanager.StateManager) {
-	containerID := c.Param("id")             // Retrieve the container ID from the URL parameter.
-	namespace := c.Param("namespace")        // GET ME FROM CONFIG
-	workerAddress := "http://localhost:8081" // GET ME FROM NODE OF CONTAINER
+	containerID := c.Param("id")      // Retrieve the container ID from the URL parameter.
+	namespace := c.Param("namespace") // GET ME FROM CONFIG
+
+	// Get Container
+	container, err := _statemanager.GetContainer(containerID)
+	if err != nil {
+		//handle
+		log.Printf("Error getting container: %v", err)
+	}
+
+	// Get Node
+	node, err := _statemanager.GetNode(container.NodeID)
+	if err != nil {
+		//handle
+		log.Printf("Error getting node: %v", err)
+	}
+
+	workerAddress := fmt.Sprintf("http://%s:8081", node.NodeIp)
 
 	// Construct the target URL to the worker node's log service.
 	targetURL, err := url.Parse(workerAddress)

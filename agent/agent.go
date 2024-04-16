@@ -58,19 +58,27 @@ func (a *Agent) Start() {
 		MemoryLimit:  16,
 		CpuLimit:     4,
 		StorageLimit: 10,
+		NodeIp:       a.cfg.NodeIp,
 	}
-	// Join Cluster
-	_, err := apiClient.JoinCluster(nodeConfig)
+
+	// Check if node exists
+	_, err := apiClient.GetNode(nodeConfig.ID)
 	if err != nil {
-		log.Printf("Error joining cluster: %v", err)
-		panic(err)
+		// If it does not (or not authed, which will fail) try and Join Cluster
+		_, err := apiClient.JoinCluster(nodeConfig)
+		if err != nil {
+			log.Printf("Error joining cluster: %v", err)
+			panic(err)
+		}
 	}
+
+	// If node already exists and it isnt use, then auth should catch it
 
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 
 	for range ticker.C {
-		node, err := apiClient.GetNode("node-1") //temp
+		node, err := apiClient.GetNode(nodeConfig.ID) //temp
 		if err != nil {
 			log.Printf("Error checking for nodes desired state: %v", err)
 			continue

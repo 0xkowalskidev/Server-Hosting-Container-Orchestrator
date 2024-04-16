@@ -1,5 +1,6 @@
 {
     "namespace": "development",
+    "nodeIp": "localhost", 
     "containerdSocketPath": "/run/containerd/containerd.sock",
 
     "storagePath": "/home/kowalski/dev/server-hosting/container-orchestrator/mounts/",

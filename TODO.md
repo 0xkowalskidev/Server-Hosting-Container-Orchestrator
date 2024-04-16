@@ -60,7 +60,9 @@
 
 
 ## Network cluster -
-### Move worker/control plane into seperate CMD files
+### Move worker/control plane into seperate CMD files - ✓
+### Make worker node go through a phase of self discovery -
+### Make control plane validate worker nodes ip before storing - 
 
 ## Live container metrics - 
 

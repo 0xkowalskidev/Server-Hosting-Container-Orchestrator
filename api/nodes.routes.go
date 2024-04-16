@@ -15,11 +15,15 @@ func getNodes(c *gin.Context, _statemanager *statemanager.StateManager) {
 
 	if err != nil {
 		//500
-	}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Something went wrong.",
+		})
+	} else {
 
-	c.JSON(http.StatusOK, gin.H{
-		"nodes": nodes,
-	})
+		c.JSON(http.StatusOK, gin.H{
+			"nodes": nodes,
+		})
+	}
 }
 
 // GET /nodes/{id}
@@ -29,10 +33,17 @@ func getNode(c *gin.Context, _statemanager *statemanager.StateManager) {
 	node, err := _statemanager.GetNode(nodeID)
 
 	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Something went wrong.",
+		})
+	}
+
+	if node == nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": "Node not found",
 		})
 	} else {
+
 		c.JSON(http.StatusOK, gin.H{
 			"node": node,
 		})

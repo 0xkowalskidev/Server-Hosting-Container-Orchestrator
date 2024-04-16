@@ -17,6 +17,7 @@ func (sm *StateManager) AddNode(newNode models.CreateNodeRequest) error {
 		MemoryLimit:  newNode.MemoryLimit,
 		CpuLimit:     newNode.CpuLimit,
 		StorageLimit: newNode.StorageLimit,
+		NodeIp:       newNode.NodeIp,
 	}
 	return sm.etcdClient.SaveEntity(node)
 }
@@ -67,6 +68,7 @@ func (sm *StateManager) GetNode(nodeID string) (*models.Node, error) {
 		populatedContainers = append(populatedContainers, *container)
 	}
 	node.Containers = populatedContainers
+	fmt.Printf("NodeIP: %s", node.NodeIp)
 
 	return &node, nil
 }

@@ -8,6 +8,7 @@ type Node struct {
 	MemoryLimit  int         `json:"memoryLimit"`
 	CpuLimit     int         `json:"cpuLimit"`
 	StorageLimit int         `json:"storageLimit"`
+	NodeIp       string      `json:"nodeIp"`
 
 	MemoryUsed  int `json:"memoryUsed"`  // Not to be persisted to etcd
 	CpuUsed     int `json:"cpuUsed"`     // Not to be persisted to etcd
@@ -19,6 +20,7 @@ type CreateNodeRequest struct {
 	MemoryLimit  int    `json:"memoryLimit"`
 	CpuLimit     int    `json:"cpuLimit"`
 	StorageLimit int    `json:"storageLimit"`
+	NodeIp       string `json:"nodeIp"`
 }
 
 func (n Node) Key() string {
@@ -32,12 +34,14 @@ func (n Node) Value() (string, error) {
 		MemoryLimit  int         `json:"memoryLimit"`
 		CpuLimit     int         `json:"cpuLimit"`
 		StorageLimit int         `json:"storageLimit"`
+		NodeIp       string      `json:"nodeIp"`
 	}{
 		ID:           n.ID,
 		Containers:   n.Containers,
 		MemoryLimit:  n.MemoryLimit,
 		CpuLimit:     n.CpuLimit,
 		StorageLimit: n.StorageLimit,
+		NodeIp:       n.NodeIp,
 	}
 
 	bytes, err := json.Marshal(serializedNode)

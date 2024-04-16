@@ -55,6 +55,6 @@ func setupRoutes(router *gin.Engine, _statemanager *statemanager.StateManager) {
 	{
 		nodeGroup.GET("", func(c *gin.Context) { getNodes(c, _statemanager) })
 		nodeGroup.GET("/:id", func(c *gin.Context) { getNode(c, _statemanager) })
-		nodeGroup.POST("/", func(c *gin.Context) { joinCluster(c, _statemanager) })
+		nodeGroup.POST("", func(c *gin.Context) { joinCluster(c, _statemanager) })
 	}
 }
