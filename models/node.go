@@ -14,6 +14,13 @@ type Node struct {
 	StorageUsed int `json:"storageUsed"` // Not to be persisted to etcd
 }
 
+type CreateNodeRequest struct {
+	ID           string `json:"id"`
+	MemoryLimit  int    `json:"memoryLimit"`
+	CpuLimit     int    `json:"cpuLimit"`
+	StorageLimit int    `json:"storageLimit"`
+}
+
 func (n Node) Key() string {
 	return "/nodes/" + n.ID
 }

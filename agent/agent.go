@@ -53,6 +53,19 @@ func NewAgent(cfg *config.Config) *Agent {
 func (a *Agent) Start() {
 	apiClient := api.NewApiWrapper(a.cfg.Namespace)
 
+	nodeConfig := models.CreateNodeRequest{
+		ID:           "node-1",
+		MemoryLimit:  16,
+		CpuLimit:     4,
+		StorageLimit: 10,
+	}
+	// Join Cluster
+	_, err := apiClient.JoinCluster(nodeConfig)
+	if err != nil {
+		log.Printf("Error joining cluster: %v", err)
+		panic(err)
+	}
+
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 

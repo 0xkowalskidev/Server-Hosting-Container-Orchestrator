@@ -5,16 +5,13 @@ import (
 	"log"
 	"os"
 
-	"0xKowalski1/container-orchestrator/agent"
 	"0xKowalski1/container-orchestrator/api"
 	"0xKowalski1/container-orchestrator/config"
-	"0xKowalski1/container-orchestrator/models"
 	"0xKowalski1/container-orchestrator/schedular"
 	statemanager "0xKowalski1/container-orchestrator/state-manager"
 )
 
 func main() {
-
 	cfgPath := "config.json"
 	cfg, err := config.LoadConfig(cfgPath)
 	if err != nil {
@@ -22,9 +19,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// for now nodes will be both controller and worker
-
-	// if control node
 	// start state manager
 	_statemanager, err := statemanager.Start(cfg)
 	if err != nil {
@@ -36,24 +30,9 @@ func main() {
 	go api.Start(_statemanager)
 
 	// start schedular
-	schedular.Start(_statemanager)
+	go schedular.Start(_statemanager)
 
-	// start controllers/managers
-
-	// else worker node
-	//temp join, should be handled by agent through api calls
-	_, err = _statemanager.GetNode("node-1")
-	// 4 core, 16GB
-	if err != nil {
-		_statemanager.AddNode(models.Node{ID: "node-1", MemoryLimit: 16, CpuLimit: 4, StorageLimit: 10})
-	}
-
-	agent := agent.NewAgent(cfg)
-
-	// start agent
-	agent.Start()
-
-	// start networking
-	// start local storage
-
+	// Block main from ending
+	done := make(chan struct{})
+	<-done
 }

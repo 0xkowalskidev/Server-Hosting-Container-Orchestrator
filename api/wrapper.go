@@ -298,3 +298,44 @@ func (c *WrapperClient) StreamContainerLogs(containerID string, handleData func(
 
 	return nil
 }
+
+// JoinCluster attempts to join a worker node to the cluster
+func (c *WrapperClient) JoinCluster(req models.CreateNodeRequest) (*models.Node, error) {
+	requestBody, err := json.Marshal(req)
+	if err != nil {
+		return nil, err
+	}
+
+	url := fmt.Sprintf("%s/nodes", BaseURL)
+	response, err := c.HTTPClient.Post(url, "application/json", bytes.NewBuffer(requestBody))
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	// Read the body irrespective of the response status
+	body, readErr := io.ReadAll(response.Body)
+	if readErr != nil {
+		return nil, fmt.Errorf("failed to read response body: %v", readErr)
+	}
+
+	if response.StatusCode != http.StatusOK {
+		apiError := struct {
+			Error string `json:"error"`
+		}{}
+		if err := json.Unmarshal(body, &apiError); err != nil {
+			// If unmarshalling the error failed, return the status code error
+			return nil, fmt.Errorf("API request failed with status code %d: unable to parse API error response", response.StatusCode)
+		}
+		return nil, fmt.Errorf("API request failed: %s", apiError.Error)
+	}
+
+	var nodeResponse struct {
+		Node models.Node `json:"node"`
+	}
+	if err := json.Unmarshal(body, &nodeResponse); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %v", err)
+	}
+
+	return &nodeResponse.Node, nil
+}

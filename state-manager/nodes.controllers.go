@@ -11,7 +11,13 @@ import (
 )
 
 // AddNode adds a new node to the cluster
-func (sm *StateManager) AddNode(node models.Node) error {
+func (sm *StateManager) AddNode(newNode models.CreateNodeRequest) error {
+	node := models.Node{
+		ID:           newNode.ID,
+		MemoryLimit:  newNode.MemoryLimit,
+		CpuLimit:     newNode.CpuLimit,
+		StorageLimit: newNode.StorageLimit,
+	}
 	return sm.etcdClient.SaveEntity(node)
 }
 
@@ -37,7 +43,8 @@ func (sm *StateManager) GetNode(nodeID string) (*models.Node, error) {
 	}
 
 	if len(resp.Kvs) == 0 {
-		return nil, fmt.Errorf("node not found")
+		// No node found
+		return nil, nil
 	}
 
 	var node models.Node
