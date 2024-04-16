@@ -308,7 +308,7 @@ func (_runtime *ContainerdRuntime) SubscribeToEvents() {
 func (_runtime *ContainerdRuntime) processEvent(envelope *events.Envelope, namespace string) error {
 	// MAKE SURE NAMESPACE IS CORRECT HERE
 
-	apiClient := api.NewApiWrapper(namespace)
+	apiClient := api.NewApiWrapper(namespace, _runtime.cfg.ControlNodeIp)
 	//Should probably check namespace here
 	event, err := typeurl.UnmarshalAny(envelope.Event)
 	if err != nil {

@@ -8,6 +8,7 @@ import (
 type Config struct {
 	Namespace            string `json:"namespace"` // Production, Development or Test
 	NodeIp               string `json:"nodeIp"`    // Worker node accesible ip
+	ControlNodeIp        string `json:"controlNodeIp"`
 	ContainerdSocketPath string `json:"containerdSocketPath"`
 
 	StoragePath string `json:"storagePath"` // Path for worker node volumes, must end in /

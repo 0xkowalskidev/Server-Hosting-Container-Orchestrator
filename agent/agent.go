@@ -51,7 +51,7 @@ func NewAgent(cfg *config.Config) *Agent {
 }
 
 func (a *Agent) Start() {
-	apiClient := api.NewApiWrapper(a.cfg.Namespace)
+	apiClient := api.NewApiWrapper(a.cfg.Namespace, a.cfg.ControlNodeIp)
 
 	nodeConfig := models.CreateNodeRequest{
 		ID:           "node-1",

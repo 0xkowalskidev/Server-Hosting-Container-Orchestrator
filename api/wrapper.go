@@ -17,13 +17,15 @@ const BaseURL = "http://localhost:8080"
 type WrapperClient struct {
 	HTTPClient *http.Client
 	Namespace  string
+	BaseURL    string
 }
 
 // NewClient creates a new API client
-func NewApiWrapper(namespace string) *WrapperClient {
+func NewApiWrapper(namespace string, baseUrl string) *WrapperClient {
 	return &WrapperClient{
 		HTTPClient: &http.Client{Timeout: 0},
 		Namespace:  namespace,
+		BaseURL:    fmt.Sprintf("http://%s:8080", baseUrl),
 	}
 }
 
@@ -38,7 +40,7 @@ func (c *WrapperClient) CreateContainer(req models.CreateContainerRequest) (*mod
 		return nil, err
 	}
 
-	url := fmt.Sprintf("%s/namespaces/%s/containers", BaseURL, c.Namespace)
+	url := fmt.Sprintf("%s/namespaces/%s/containers", c.BaseURL, c.Namespace)
 	response, err := c.HTTPClient.Post(url, "application/json", bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, err
@@ -70,7 +72,7 @@ func (c *WrapperClient) UpdateContainer(containerID string, req models.UpdateCon
 		return nil, err
 	}
 
-	url := fmt.Sprintf("%s/namespaces/%s/containers/%s", BaseURL, c.Namespace, containerID)
+	url := fmt.Sprintf("%s/namespaces/%s/containers/%s", c.BaseURL, c.Namespace, containerID)
 	request, err := http.NewRequest(http.MethodPatch, url, bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, err
@@ -101,7 +103,7 @@ func (c *WrapperClient) UpdateContainer(containerID string, req models.UpdateCon
 }
 
 func (c *WrapperClient) ListContainers() ([]models.Container, error) {
-	url := fmt.Sprintf("%s/namespaces/%s/containers", BaseURL, c.Namespace)
+	url := fmt.Sprintf("%s/namespaces/%s/containers", c.BaseURL, c.Namespace)
 	response, err := c.HTTPClient.Get(url)
 	if err != nil {
 		return nil, err
@@ -121,7 +123,7 @@ func (c *WrapperClient) ListContainers() ([]models.Container, error) {
 }
 
 func (c *WrapperClient) DeleteContainer(containerID string) (string, error) {
-	url := fmt.Sprintf("%s/namespaces/%s/containers/%s", BaseURL, c.Namespace, containerID)
+	url := fmt.Sprintf("%s/namespaces/%s/containers/%s", c.BaseURL, c.Namespace, containerID)
 	req, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
 		fmt.Println("Error creating request:", err)
@@ -142,7 +144,7 @@ func (c *WrapperClient) DeleteContainer(containerID string) (string, error) {
 }
 
 func (c *WrapperClient) StartContainer(containerID string) (string, error) {
-	url := fmt.Sprintf("%s/namespaces/%s/containers/%s/start", BaseURL, c.Namespace, containerID)
+	url := fmt.Sprintf("%s/namespaces/%s/containers/%s/start", c.BaseURL, c.Namespace, containerID)
 	req, err := http.NewRequest("POST", url, nil)
 	if err != nil {
 		fmt.Println("Error creating request:", err)
@@ -163,7 +165,7 @@ func (c *WrapperClient) StartContainer(containerID string) (string, error) {
 }
 
 func (c *WrapperClient) StopContainer(containerID string) (string, error) {
-	url := fmt.Sprintf("%s/namespaces/%s/containers/%s/stop", BaseURL, c.Namespace, containerID)
+	url := fmt.Sprintf("%s/namespaces/%s/containers/%s/stop", c.BaseURL, c.Namespace, containerID)
 	req, err := http.NewRequest("POST", url, nil)
 	if err != nil {
 		fmt.Println("Error creating request:", err)
@@ -188,7 +190,7 @@ type NodeResponse struct {
 }
 
 func (c *WrapperClient) GetNode(nodeID string) (*models.Node, error) {
-	url := fmt.Sprintf("%s/nodes/%s", BaseURL, nodeID)
+	url := fmt.Sprintf("%s/nodes/%s", c.BaseURL, nodeID)
 	response, err := c.HTTPClient.Get(url)
 	if err != nil {
 		return nil, err
@@ -213,7 +215,7 @@ type NodeListResponse struct {
 }
 
 func (c *WrapperClient) ListNodes() ([]models.Node, error) {
-	url := fmt.Sprintf("%s/nodes", BaseURL)
+	url := fmt.Sprintf("%s/nodes", c.BaseURL)
 	response, err := c.HTTPClient.Get(url)
 	if err != nil {
 		return nil, err
@@ -234,7 +236,7 @@ func (c *WrapperClient) ListNodes() ([]models.Node, error) {
 
 func (c *WrapperClient) WatchContainer(containerID string, handleData func(string)) error {
 	// Construct the URL to the orchestrator's watch endpoint
-	url := fmt.Sprintf("%s/namespaces/%s/containers/%s/watch", BaseURL, c.Namespace, containerID)
+	url := fmt.Sprintf("%s/namespaces/%s/containers/%s/watch", c.BaseURL, c.Namespace, containerID)
 
 	// Make a request to the orchestrator's watch endpoint
 	req, err := http.NewRequest("GET", url, nil)
@@ -267,7 +269,7 @@ func (c *WrapperClient) WatchContainer(containerID string, handleData func(strin
 
 func (c *WrapperClient) StreamContainerLogs(containerID string, handleData func(string)) error {
 	// Construct the URL to the control node's log streaming endpoint.
-	url := fmt.Sprintf("%s/namespaces/%s/containers/%s/logs", BaseURL, c.Namespace, containerID)
+	url := fmt.Sprintf("%s/namespaces/%s/containers/%s/logs", c.BaseURL, c.Namespace, containerID)
 
 	// Make a request to the control node's log streaming endpoint.
 	req, err := http.NewRequest("GET", url, nil)
@@ -306,7 +308,7 @@ func (c *WrapperClient) JoinCluster(req models.CreateNodeRequest) (*models.Node,
 		return nil, err
 	}
 
-	url := fmt.Sprintf("%s/nodes", BaseURL)
+	url := fmt.Sprintf("%s/nodes", c.BaseURL)
 	response, err := c.HTTPClient.Post(url, "application/json", bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, err
