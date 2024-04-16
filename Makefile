@@ -8,6 +8,19 @@ dev-worker-node:
 	echo "Starting worker-node..."
 	go run ./cmd/worker-node/worker-node.go
 
+.PHONY: build-control-node
+build-control-node:
+	go build -o ./bin/control-node ./cmd/control-node
+
+.PHONY: build-worker-node
+build-worker-node:
+	go build -o ./bin/worker-node ./cmd/worker-node
+
+.PHONY: build
+build:
+	make build-control-node
+	make build-worker-node
+
 # You probably shouldent ever use this
 .PHONY: reset-network
 reset-network:
