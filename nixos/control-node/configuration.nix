@@ -23,9 +23,6 @@ let
   controlNodeBinary = pkgs.copyPathToStore "/home/kowalski/dev/server-hosting/container-orchestrator/bin/control-node";
 in
 {
-  boot.loader.systemd-boot.enable = true;
-  boot.loader.efi.canTouchEfiVariables = true;
-
   users.users.admin = {
     isNormalUser = true;
     extraGroups = [ "wheel" ]; # Wheel is sudo

@@ -10,6 +10,7 @@ import (
 	"0xKowalski1/container-orchestrator/networking"
 	"0xKowalski1/container-orchestrator/runtime"
 	"0xKowalski1/container-orchestrator/storage"
+	"0xKowalski1/container-orchestrator/utils"
 )
 
 type ApiResponse struct {
@@ -34,7 +35,7 @@ func NewAgent(cfg *config.Config) *Agent {
 		log.Fatalf("Failed to initialize runtime: %v", err)
 	}
 
-	storage := storage.NewStorageManager(cfg)
+	storage := storage.NewStorageManager(cfg, &utils.FileOps{}, &utils.CmdRunner{})
 
 	networking := networking.NewNetworkingManager(cfg)
 

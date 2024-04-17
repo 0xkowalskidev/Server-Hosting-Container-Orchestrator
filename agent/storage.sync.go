@@ -31,11 +31,11 @@ func (a *Agent) syncStorage(desiredVolumes []models.Volume) error {
 		}
 	}
 
-	// Delete volumes that are in the actual state but not in the desired state
+	// Delete volumes that are in the actual state but not in the desired state (May want to handle this differently?)
 	for volumeID := range actualMap {
 		if _, desired := desiredMap[volumeID]; !desired {
 			if err := a.storage.RemoveVolume(volumeID); err != nil {
-				return fmt.Errorf("failed to remove volume %s: %v", volumeID, err)
+				return fmt.Errorf("failed to remove volume %s: %v", volumeID, err) // Probably dont want to return on error while syncing
 			}
 		}
 	}
