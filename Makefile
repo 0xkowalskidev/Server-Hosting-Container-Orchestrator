@@ -72,3 +72,6 @@ reset-full:
 	make reset-ctr
 	make reset-network
 
+.PHONY: test
+test:
+	go test -v ./tests/...	

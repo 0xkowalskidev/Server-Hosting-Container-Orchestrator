@@ -34,6 +34,7 @@ func (sm *StorageManager) RemoveVolume(volumeID string) error {
 		return fmt.Errorf("volume %s does not exist", volumeID)
 	}
 
+	// No return on errors so that the cleanup continues
 	// Unmount the volume
 	if err := sm.unmountVolume(volumePath); err != nil {
 		log.Printf("failed to unmount volume: %v", err)
@@ -44,7 +45,7 @@ func (sm *StorageManager) RemoveVolume(volumeID string) error {
 		log.Printf("failed to remove volume: %v", err)
 	}
 
-	// Remove the loopback file
+	// Remove the loopback file, we assume it exists, but dont error if it does not
 	if err := sm.FileOps.Remove(volumeFilePath); err != nil {
 		log.Printf("failed to remove loopback file: %v", err)
 	}
@@ -59,6 +60,7 @@ func (sm *StorageManager) ListVolumes() ([]models.Volume, error) {
 		return nil, fmt.Errorf("failed to list volumes directory: %v", err)
 	}
 
+	// We only want to return dirs
 	for _, entry := range entries {
 		if entry.IsDir() {
 			volumeID := entry.Name()
@@ -90,33 +92,39 @@ func (sm *StorageManager) CreateVolume(volumeID string, sizeLimit int64) (*model
 
 	// Create a fixed-size file
 	if err := sm.createFixedSizeFile(volumeFilePath, sizeLimit); err != nil {
+		sm.FileOps.RemoveAll(volumePath) //Rollback dir creation
 		return nil, err
 	}
 
 	// Format the file with a filesystem, e.g., ext4
 	if err := sm.formatAsExt4(volumeFilePath); err != nil {
+		sm.FileOps.Remove(volumeFilePath) // Rollback file creation
+		sm.FileOps.RemoveAll(volumePath)  //Rollback dir creation
 		return nil, err
 	}
 
 	// Mount the file
 	if err := sm.mountVolume(volumeFilePath, volumePath); err != nil {
+		sm.FileOps.Remove(volumeFilePath) // Rollback file creation
+		sm.FileOps.RemoveAll(volumePath)  //Rollback dir creation
 		return nil, err
 	}
 
-	// Remove lost and found as we wont be using it (and dont want users to see it)
+	// Remove lost and found as intialization expectes volume to be empty.
 	lfp := filepath.Join(volumePath, "lost+found")
 	err := sm.FileOps.RemoveAll(lfp)
 	if err != nil {
+		sm.unmountVolume(volumePath)      // Rollback the mount
+		sm.FileOps.Remove(volumeFilePath) // Rollback file creation
+		sm.FileOps.RemoveAll(volumePath)  //Rollback dir creation
 		return nil, fmt.Errorf("failed to remove lost and found dir: %v", err)
 	}
 
-	// Create and return the volume object
-	volume := models.Volume{
+	return &models.Volume{
 		ID:         volumeID,
 		MountPoint: volumePath,
 		SizeLimit:  sizeLimit,
-	}
-	return &volume, nil
+	}, nil
 }
 
 func (sm *StorageManager) createFixedSizeFile(filePath string, sizeLimit int64) error {

@@ -11,7 +11,7 @@
     "networkConfigFileName":"mynet",
     "networkNamespacePath":"/var/run/netns/" ,
 
-    "logPath": "/home/kowalski/dev/server-hosting/container-orchestrator/" 
+    "logPath": "/home/kowalski/dev/server-hosting/container-orchestrator/logs/" 
 }
 
 

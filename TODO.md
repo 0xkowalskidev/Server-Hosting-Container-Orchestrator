@@ -127,3 +127,7 @@
 ## Config should define acceptable port range (e.g 30000-32767) -
 
 ## Node healthcheck should check if network is using any of the needed ports when it shouldent (e.g, 30000 is taken by a non container) - 
+
+## lost+found will probably be put back on the volume if things crash -
+
+## Storage sync could also check for non dirs and remove them aswell, at the moment it just guesses that they exist - 
