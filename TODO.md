@@ -71,6 +71,10 @@
 
 # Full Refactor
 
+# Storage Manager - ✓
+## Tests - ✓
+## Rollback on failure - ✓
+
 ## Network manager -
 
 ## Switch from resourceUsed to resourceAllocated on node as its misleading - 

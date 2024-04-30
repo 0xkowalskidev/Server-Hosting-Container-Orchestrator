@@ -10,7 +10,6 @@ import (
 	"0xKowalski1/container-orchestrator/networking"
 	"0xKowalski1/container-orchestrator/runtime"
 	"0xKowalski1/container-orchestrator/storage"
-	"0xKowalski1/container-orchestrator/utils"
 )
 
 type ApiResponse struct {
@@ -27,18 +26,9 @@ type Agent struct {
 	cfg        *config.Config
 }
 
-func NewAgent(cfg *config.Config) *Agent {
-	// start runtime
-	runtime, err := runtime.NewContainerdRuntime(cfg)
-
-	if err != nil {
-		log.Fatalf("Failed to initialize runtime: %v", err)
-	}
-
-	storage := storage.NewStorageManager(cfg, &utils.FileOps{}, &utils.CmdRunner{})
-
-	networking := networking.NewNetworkingManager(cfg)
-
+func NewAgent(cfg *config.Config, runtime *runtime.ContainerdRuntime,
+	storage *storage.StorageManager,
+	networking *networking.NetworkingManager) *Agent {
 	agent := &Agent{
 		runtime:    runtime,
 		storage:    storage,
@@ -46,7 +36,7 @@ func NewAgent(cfg *config.Config) *Agent {
 		cfg:        cfg,
 	}
 
-	go agent.startLogApi()
+	go agent.startLogApi() // Not sure where to start this
 
 	return agent
 }
@@ -69,7 +59,7 @@ func (a *Agent) Start() {
 		_, err := apiClient.JoinCluster(nodeConfig)
 		if err != nil {
 			log.Printf("Error joining cluster: %v", err)
-			panic(err)
+			panic(err) // Probably want to retry & log
 		}
 	}
 
@@ -94,7 +84,7 @@ func (a *Agent) Start() {
 			desiredVolumes = append(desiredVolumes, newVolume)
 		}
 
-		err = a.syncStorage(desiredVolumes)
+		err = a.storage.SyncStorage(desiredVolumes)
 		if err != nil {
 			log.Printf("Error syncing storage: %v", err)
 			continue
