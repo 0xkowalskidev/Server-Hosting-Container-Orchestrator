@@ -30,7 +30,7 @@ func main() {
 
 	storage := storage.NewStorageManager(cfg, &utils.FileOps{}, &utils.CmdRunner{})
 
-	networking := networking.NewNetworkingManager(cfg)
+	networking := networking.NewNetworkingManager(cfg, &utils.CmdRunner{})
 
 	agent := agent.NewAgent(cfg, runtime, storage, networking)
 

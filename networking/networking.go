@@ -2,11 +2,10 @@ package networking
 
 import (
 	"0xKowalski1/container-orchestrator/config"
-	"bytes"
+	"0xKowalski1/container-orchestrator/utils"
 	"context"
 	"fmt"
 	"log"
-	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
@@ -17,43 +16,41 @@ import (
 )
 
 type NetworkingManager struct {
-	cfg *config.Config
+	cfg       *config.Config
+	cmdRunner utils.CmdRunnerInterface
 }
 
-func NewNetworkingManager(cfg *config.Config) *NetworkingManager {
+func NewNetworkingManager(cfg *config.Config, cmdRunner utils.CmdRunnerInterface) *NetworkingManager {
 	return &NetworkingManager{
-		cfg: cfg,
+		cfg:       cfg,
+		cmdRunner: cmdRunner,
 	}
 }
 
 func (nm *NetworkingManager) createNetworkNamespace(containerID string) error {
-	cmd := exec.Command("ip", "netns", "add", containerID)
-	if err := cmd.Run(); err != nil {
+	err := nm.cmdRunner.RunCommand("ip", "netns", "add", containerID)
+	if err != nil {
 		return fmt.Errorf("creating network namespace failed: %w", err)
 	}
 	return nil
 }
 
 func (nm *NetworkingManager) deleteNetworkNamespace(containerID string) error {
-	cmd := exec.Command("ip", "netns", "del", containerID)
-	if err := cmd.Run(); err != nil {
+	err := nm.cmdRunner.RunCommand("ip", "netns", "del", containerID)
+	if err != nil {
 		return fmt.Errorf("deleting network namespace failed: %w", err)
 	}
 	return nil
 }
 
 func (nm *NetworkingManager) ListNetworkNamespaces() ([]string, error) {
-	cmd := exec.Command("ip", "netns", "list")
-
-	var stdoutBuf bytes.Buffer
-	cmd.Stdout = &stdoutBuf
-
-	if err := cmd.Run(); err != nil {
+	output, err := nm.cmdRunner.RunCommandWithOutput("ip", "netns", "list")
+	if err != nil {
 		return nil, fmt.Errorf("running command failed: %w", err)
 	}
 
 	var namespaces []string
-	lines := strings.Split(stdoutBuf.String(), "\n")
+	lines := strings.Split(output, "\n")
 	for _, line := range lines {
 		if line == "" {
 			continue
@@ -67,13 +64,15 @@ func (nm *NetworkingManager) ListNetworkNamespaces() ([]string, error) {
 }
 
 func (nm *NetworkingManager) getContainerIP(containerID string) (string, error) {
-	cmd := exec.Command("nsenter", "--net="+nm.cfg.NetworkNamespacePath+containerID, "ip", "addr", "show", "eth0")
-	output, err := cmd.CombinedOutput()
+	command := "nsenter"
+	args := []string{"--net=" + nm.cfg.NetworkNamespacePath + containerID, "ip", "addr", "show", "eth0"}
+
+	output, err := nm.cmdRunner.RunCommandWithOutput(command, args...)
 	if err != nil {
 		return "", fmt.Errorf("failed to execute command: %w", err)
 	}
 
-	for _, line := range strings.Split(string(output), "\n") {
+	for _, line := range strings.Split(output, "\n") {
 		if strings.Contains(line, "inet ") && !strings.Contains(line, "inet6 ") {
 			fields := strings.Fields(line)
 			if len(fields) >= 2 {
@@ -138,13 +137,14 @@ func (nm *NetworkingManager) CleanupContainerNetwork(containerID string) error {
 		return fmt.Errorf("Failed to get container ip: %v", err)
 	}
 
-	cmd := exec.Command("bash", "-c", fmt.Sprintf(`sudo iptables -t nat -S | grep %s`, containerIP))
-	output, err := cmd.CombinedOutput()
+	command := "bash"
+	args := []string{"-c", fmt.Sprintf(`sudo iptables -t nat -S | grep %s`, containerIP)}
+	output, err := nm.cmdRunner.RunCommandWithOutput(command, args...)
 	if err != nil {
 		return fmt.Errorf("failed to execute iptables command: %v", err)
 	}
 
-	portMappings, err := nm.parseIpTablesOutput(string(output))
+	portMappings, err := nm.parseIpTablesOutput(output)
 	if err != nil {
 		return fmt.Errorf("failed to parse iptables output: %v", err)
 	}
@@ -178,7 +178,6 @@ func (nm *NetworkingManager) CleanupContainerNetwork(containerID string) error {
 }
 
 func (nm *NetworkingManager) parseIpTablesOutput(output string) ([]map[string]interface{}, error) {
-	log.Printf("%s", output)
 	var portMappings []map[string]interface{}
 	lines := strings.Split(output, "\n")
 	re := regexp.MustCompile(`-p (\w+) .* --dport (\d+) -j DNAT --to-destination \d+\.\d+\.\d+\.\d+:(\d+)`)

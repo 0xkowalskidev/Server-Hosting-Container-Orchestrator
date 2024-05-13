@@ -68,6 +68,8 @@
 
 ## Set up build process -
 
+## Crash when mem is set to 1GB - 
+
 
 # Full Refactor
 
