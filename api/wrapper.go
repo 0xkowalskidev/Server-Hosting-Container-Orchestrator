@@ -122,6 +122,26 @@ func (c *WrapperClient) ListContainers() ([]models.Container, error) {
 	return resp.Containers, nil // Return the slice of containers
 }
 
+func (c *WrapperClient) GetContainer(containerID string) (*models.Container, error) {
+	url := fmt.Sprintf("%s/namespaces/%s/containers/%s", c.BaseURL, c.Namespace, containerID)
+	response, err := c.HTTPClient.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("API request failed with status code %d", response.StatusCode)
+	}
+
+	var resp models.Container
+	if err := json.NewDecoder(response.Body).Decode(&resp); err != nil {
+		return nil, err
+	}
+
+	return &resp, nil // Return the slice of containers
+}
+
 func (c *WrapperClient) DeleteContainer(containerID string) (string, error) {
 	url := fmt.Sprintf("%s/namespaces/%s/containers/%s", c.BaseURL, c.Namespace, containerID)
 	req, err := http.NewRequest("DELETE", url, nil)
