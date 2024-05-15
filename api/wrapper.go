@@ -142,25 +142,26 @@ func (c *WrapperClient) GetContainer(containerID string) (*models.Container, err
 	return &resp, nil // Return the slice of containers
 }
 
-func (c *WrapperClient) DeleteContainer(containerID string) (string, error) {
+func (c *WrapperClient) DeleteContainer(containerID string) error {
 	url := fmt.Sprintf("%s/namespaces/%s/containers/%s", c.BaseURL, c.Namespace, containerID)
 	req, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
 		fmt.Println("Error creating request:", err)
-		return containerID, err
+		return err
 	}
 
 	response, err := c.HTTPClient.Do(req)
 	if err != nil {
-		return containerID, err
+		return err
 	}
 	defer response.Body.Close()
 
 	if response.StatusCode != http.StatusOK {
-		return containerID, fmt.Errorf("API request failed with status code %d", response.StatusCode)
+		return fmt.Errorf("API request failed with status code %d", response.StatusCode)
+
 	}
 
-	return containerID, nil
+	return nil
 }
 
 func (c *WrapperClient) StartContainer(containerID string) (string, error) {
