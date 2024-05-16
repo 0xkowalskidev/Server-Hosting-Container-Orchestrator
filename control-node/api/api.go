@@ -1,7 +1,7 @@
 package api
 
 import (
-	statemanager "0xKowalski1/container-orchestrator/state-manager"
+	statemanager "0xKowalski1/container-orchestrator/control-node/state-manager"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
@@ -33,8 +33,6 @@ func setupRoutes(router *gin.Engine, _statemanager *statemanager.StateManager) {
 	// Namespace routes
 	namespacesGroup := router.Group("/namespaces")
 	{
-		namespacesGroup.GET("", func(c *gin.Context) { getNamespaces(c, _statemanager) }) // Lists all namespaces
-
 		// Nested container routes
 		containersGroup := namespacesGroup.Group("/:namespace/containers")
 		{

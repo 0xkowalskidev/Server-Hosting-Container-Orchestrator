@@ -15,25 +15,29 @@ type StateManager struct {
 	mu            sync.Mutex
 }
 
-func Start(cfg *config.Config) (*StateManager, error) {
+func NewStateManager(cfg *config.Config) (*StateManager, error) {
 	cli, err := NewEtcdClient()
 	if err != nil {
 		fmt.Printf("Failed etcd setup: %v", err)
 		return nil, err
 	}
 
-	state := &StateManager{etcdClient: cli, listeners: []Listener{}, cfg: cfg, subscriptions: make(map[string]map[chan string]struct{})}
+	stateManager := &StateManager{
+		etcdClient:    cli,
+		listeners:     []Listener{},
+		cfg:           cfg,
+		subscriptions: make(map[string]map[chan string]struct{}),
+	}
 
 	// Check configured namespace is the only namespace that exists, create it if no namespaces exist.
-	namespaces, err := state.ListNamespaces()
+	namespaces, err := stateManager.ListNamespaces()
 	if err != nil {
 		return nil, err
 	}
 
 	switch len(namespaces) {
 	case 0:
-		// No namespaces exist; create the expected one
-		if err := state.AddNamespace(models.Namespace{ID: cfg.Namespace}); err != nil {
+		if err := stateManager.AddNamespace(models.Namespace{ID: cfg.Namespace}); err != nil {
 			fmt.Println("Error creating namespace:", err)
 			return nil, err
 		}
@@ -45,9 +49,10 @@ func Start(cfg *config.Config) (*StateManager, error) {
 		return nil, fmt.Errorf("etcd has multiple namespaces, there should only be one, panic!")
 	}
 
-	return state, nil
+	return stateManager, nil
+
 }
 
-func (_statemanager *StateManager) Close() error {
-	return _statemanager.etcdClient.Close()
+func (sm *StateManager) Close() error {
+	return sm.etcdClient.Close()
 }

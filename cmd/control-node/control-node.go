@@ -5,10 +5,10 @@ import (
 	"log"
 	"os"
 
-	"0xKowalski1/container-orchestrator/api"
 	"0xKowalski1/container-orchestrator/config"
-	"0xKowalski1/container-orchestrator/schedular"
-	statemanager "0xKowalski1/container-orchestrator/state-manager"
+	"0xKowalski1/container-orchestrator/control-node/api"
+	"0xKowalski1/container-orchestrator/control-node/schedular"
+	statemanager "0xKowalski1/container-orchestrator/control-node/state-manager"
 )
 
 func main() {
@@ -20,17 +20,17 @@ func main() {
 	}
 
 	// start state manager
-	_statemanager, err := statemanager.Start(cfg)
+	stateManager, err := statemanager.NewStateManager(cfg)
 	if err != nil {
 		log.Fatalf("Failed to initialize statemanager: %v", err)
 	}
-	defer _statemanager.Close()
+	defer stateManager.Close()
 
 	// start api
-	go api.Start(_statemanager)
+	go api.Start(stateManager)
 
 	// start schedular
-	go schedular.Start(_statemanager)
+	go schedular.Start(stateManager)
 
 	// Block main from ending
 	done := make(chan struct{})

@@ -7,8 +7,8 @@ import (
 	"syscall"
 	"time"
 
-	"0xKowalski1/container-orchestrator/api"
 	"0xKowalski1/container-orchestrator/config"
+	"0xKowalski1/container-orchestrator/control-node/api"
 	"0xKowalski1/container-orchestrator/models"
 
 	"github.com/containerd/containerd"
@@ -77,7 +77,7 @@ func (_runtime *ContainerdRuntime) CreateContainer(containerSpec models.Containe
 			Path: _runtime.cfg.NetworkNamespacePath + containerSpec.ID,
 		}),
 		oci.WithImageConfig(image),
-		oci.WithEnv(containerSpec.Env),
+		oci.WithEnv(containerSpec.Env), // Should apply memory to env
 		oci.WithMemoryLimit(uint64(containerSpec.MemoryLimit * 1024 * 1024 * 1024)), // in bytes
 		oci.WithCPUs(fmt.Sprint(containerSpec.CpuLimit)),
 	}

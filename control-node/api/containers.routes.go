@@ -8,8 +8,8 @@ import (
 	"net/url"
 	"time"
 
+	statemanager "0xKowalski1/container-orchestrator/control-node/state-manager"
 	"0xKowalski1/container-orchestrator/models"
-	statemanager "0xKowalski1/container-orchestrator/state-manager"
 
 	"github.com/gin-gonic/gin"
 )

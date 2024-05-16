@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"os"
 
-	"0xKowalski1/container-orchestrator/agent"
 	"0xKowalski1/container-orchestrator/config"
-	"0xKowalski1/container-orchestrator/networking"
-	"0xKowalski1/container-orchestrator/runtime"
-	"0xKowalski1/container-orchestrator/storage"
 	"0xKowalski1/container-orchestrator/utils"
+	"0xKowalski1/container-orchestrator/worker-node/agent"
+	"0xKowalski1/container-orchestrator/worker-node/networking"
+	"0xKowalski1/container-orchestrator/worker-node/runtime"
+	"0xKowalski1/container-orchestrator/worker-node/storage"
 )
 
 func main() {

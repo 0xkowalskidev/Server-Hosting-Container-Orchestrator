@@ -4,12 +4,12 @@ import (
 	"log"
 	"time"
 
-	"0xKowalski1/container-orchestrator/api"
 	"0xKowalski1/container-orchestrator/config"
+	"0xKowalski1/container-orchestrator/control-node/api"
 	"0xKowalski1/container-orchestrator/models"
-	"0xKowalski1/container-orchestrator/networking"
-	"0xKowalski1/container-orchestrator/runtime"
-	"0xKowalski1/container-orchestrator/storage"
+	"0xKowalski1/container-orchestrator/worker-node/networking"
+	"0xKowalski1/container-orchestrator/worker-node/runtime"
+	"0xKowalski1/container-orchestrator/worker-node/storage"
 )
 
 type ApiResponse struct {
