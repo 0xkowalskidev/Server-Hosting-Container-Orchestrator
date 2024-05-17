@@ -1,6 +1,7 @@
-package statemanager
+package controlnode
 
 import (
+	"0xKowalski1/container-orchestrator/config"
 	"0xKowalski1/container-orchestrator/models"
 	"context"
 	"encoding/json"
@@ -10,8 +11,22 @@ import (
 	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
+type NodeService struct {
+	cfg              *config.Config
+	etcdClient       *EtcdClient
+	containerService *ContainerService
+}
+
+func NewNodeService(cfg *config.Config, etcdClient *EtcdClient, containerService *ContainerService) *NodeService {
+	return &NodeService{
+		cfg:              cfg,
+		etcdClient:       etcdClient,
+		containerService: containerService,
+	}
+}
+
 // AddNode adds a new node to the cluster
-func (sm *StateManager) AddNode(newNode models.CreateNodeRequest) error {
+func (service *NodeService) CreateNode(newNode models.CreateNodeRequest) error {
 	node := models.Node{
 		ID:           newNode.ID,
 		MemoryLimit:  newNode.MemoryLimit,
@@ -19,26 +34,26 @@ func (sm *StateManager) AddNode(newNode models.CreateNodeRequest) error {
 		StorageLimit: newNode.StorageLimit,
 		NodeIp:       newNode.NodeIp,
 	}
-	return sm.etcdClient.SaveEntity(node)
+	return service.etcdClient.SaveEntity(node)
 }
 
 // RemoveNode removes a node from the cluster by its ID
-func (sm *StateManager) RemoveNode(nodeID string) error {
+func (service *NodeService) DeleteNode(nodeID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	key := "/nodes/" + nodeID
-	_, err := sm.etcdClient.Delete(ctx, key)
+	_, err := service.etcdClient.Delete(ctx, key)
 	return err
 }
 
 // GetNode retrieves a node by its ID
-func (sm *StateManager) GetNode(nodeID string) (*models.Node, error) {
+func (service *NodeService) GetNode(nodeID string) (*models.Node, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	key := "/nodes/" + nodeID
-	resp, err := sm.etcdClient.Get(ctx, key)
+	resp, err := service.etcdClient.Get(ctx, key)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +70,7 @@ func (sm *StateManager) GetNode(nodeID string) (*models.Node, error) {
 	}
 	populatedContainers := make([]models.Container, 0, len(node.Containers))
 	for _, container := range node.Containers {
-		container, err := sm.GetContainer(container.ID)
+		container, err := service.containerService.GetContainer(container.ID)
 		if err != nil {
 			fmt.Printf("Failed to populate container for node: %v", err)
 			continue
@@ -73,12 +88,11 @@ func (sm *StateManager) GetNode(nodeID string) (*models.Node, error) {
 	return &node, nil
 }
 
-// ListNode lists all nodes in the cluster
-func (sm *StateManager) ListNodes() ([]models.Node, error) {
+func (service *NodeService) GetNodes() ([]models.Node, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	resp, err := sm.etcdClient.Get(ctx, "/nodes/", clientv3.WithPrefix())
+	resp, err := service.etcdClient.Get(ctx, "/nodes/", clientv3.WithPrefix())
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +107,7 @@ func (sm *StateManager) ListNodes() ([]models.Node, error) {
 
 		populatedContainers := make([]models.Container, 0, len(node.Containers))
 		for _, container := range node.Containers {
-			container, err := sm.GetContainer(container.ID)
+			container, err := service.containerService.GetContainer(container.ID)
 			if err != nil {
 				fmt.Printf("Failed to populate container for node: %v", err)
 				continue
@@ -113,37 +127,37 @@ func (sm *StateManager) ListNodes() ([]models.Node, error) {
 	return nodes, nil
 }
 
-func (sm *StateManager) AssignContainerToNode(containerID, nodeID string) error {
-	node, err := sm.GetNode(nodeID)
+func (service *NodeService) AssignContainerToNode(containerID, nodeID string) error {
+	node, err := service.GetNode(nodeID)
 	if err != nil {
 		return err
 	}
 
-	container, err := sm.GetContainer(containerID)
+	container, err := service.containerService.GetContainer(containerID)
 
 	if err != nil {
 		return err
 	}
 
 	containerPatch := models.UpdateContainerRequest{NodeID: &nodeID}
-	if err := sm.PatchContainer(containerID, containerPatch); err != nil {
+	if err := service.containerService.UpdateContainer(containerID, containerPatch); err != nil {
 		return err
 	}
 
 	node.Containers = append(node.Containers, models.Container{ID: container.ID, NamespaceID: container.NamespaceID}) // Other data is fetched in getNodes/listNodes
 
-	return sm.etcdClient.SaveEntity(node)
+	return service.etcdClient.SaveEntity(node)
 }
 
-func (sm *StateManager) RemoveContainerFromNode(containerID string) error {
-	container, err := sm.GetContainer(containerID)
+func (service *NodeService) RemoveContainerFromNode(containerID string) error {
+	container, err := service.containerService.GetContainer(containerID)
 	if err != nil {
 		return err
 	}
 
 	nodeID := container.NodeID
 
-	node, err := sm.GetNode(nodeID)
+	node, err := service.GetNode(nodeID)
 	if err != nil {
 		return err
 	}
@@ -165,5 +179,5 @@ func (sm *StateManager) RemoveContainerFromNode(containerID string) error {
 	node.Containers[containerIndex] = node.Containers[len(node.Containers)-1]
 	node.Containers = node.Containers[:len(node.Containers)-1]
 
-	return sm.etcdClient.SaveEntity(node)
+	return service.etcdClient.SaveEntity(node)
 }

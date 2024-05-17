@@ -7,8 +7,8 @@ import (
 	"syscall"
 	"time"
 
+	"0xKowalski1/container-orchestrator/api-wrapper"
 	"0xKowalski1/container-orchestrator/config"
-	"0xKowalski1/container-orchestrator/control-node/api"
 	"0xKowalski1/container-orchestrator/models"
 
 	"github.com/containerd/containerd"
@@ -308,7 +308,7 @@ func (_runtime *ContainerdRuntime) SubscribeToEvents() {
 func (_runtime *ContainerdRuntime) processEvent(envelope *events.Envelope, namespace string) error {
 	// MAKE SURE NAMESPACE IS CORRECT HERE
 
-	apiClient := api.NewApiWrapper(namespace, _runtime.cfg.ControlNodeIp)
+	apiClient := api.NewApiWrapper(_runtime.cfg.ControlNodeIp)
 	//Should probably check namespace here
 	event, err := typeurl.UnmarshalAny(envelope.Event)
 	if err != nil {

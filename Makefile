@@ -1,12 +1,12 @@
 .PHONY: dev-control-node
 dev-control-node:
 	echo "Starting control-node..."
-	go run ./cmd/control-node/control-node.go
+	go run ./cmd/control-node/main.go
 
 .PHONY: dev-worker-node
 dev-worker-node:
 	echo "Starting worker-node..."
-	go run ./cmd/worker-node/worker-node.go
+	go run ./cmd/worker-node/main.go
 
 .PHONY: build-control-node
 build-control-node:

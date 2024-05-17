@@ -16,15 +16,13 @@ const BaseURL = "http://localhost:8080"
 // Client represents the API client
 type WrapperClient struct {
 	HTTPClient *http.Client
-	Namespace  string
 	BaseURL    string
 }
 
 // NewClient creates a new API client
-func NewApiWrapper(namespace string, baseUrl string) *WrapperClient {
+func NewApiWrapper(baseUrl string) *WrapperClient {
 	return &WrapperClient{
 		HTTPClient: &http.Client{Timeout: 0},
-		Namespace:  namespace,
 		BaseURL:    fmt.Sprintf("http://%s:8080", baseUrl),
 	}
 }
@@ -33,14 +31,14 @@ type ContainerListResponse struct {
 	Containers []models.Container `json:"containers"`
 }
 
-// CreateContainer creates a new container in the specified namespace
+// CreateContainer creates a new container
 func (c *WrapperClient) CreateContainer(req models.CreateContainerRequest) (*models.Container, error) {
 	requestBody, err := json.Marshal(req)
 	if err != nil {
 		return nil, err
 	}
 
-	url := fmt.Sprintf("%s/namespaces/%s/containers", c.BaseURL, c.Namespace)
+	url := fmt.Sprintf("%s/containers", c.BaseURL)
 	response, err := c.HTTPClient.Post(url, "application/json", bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, err
@@ -65,14 +63,14 @@ func (c *WrapperClient) CreateContainer(req models.CreateContainerRequest) (*mod
 	return &containerResponse.Container, nil
 }
 
-// UpdateContainer updates an existing container's configuration in the specified namespace.
+// UpdateContainer updates an existing container's configuration.
 func (c *WrapperClient) UpdateContainer(containerID string, req models.UpdateContainerRequest) (*models.Container, error) {
 	requestBody, err := json.Marshal(req)
 	if err != nil {
 		return nil, err
 	}
 
-	url := fmt.Sprintf("%s/namespaces/%s/containers/%s", c.BaseURL, c.Namespace, containerID)
+	url := fmt.Sprintf("%s/containers/%s", c.BaseURL, containerID)
 	request, err := http.NewRequest(http.MethodPatch, url, bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, err
@@ -103,7 +101,7 @@ func (c *WrapperClient) UpdateContainer(containerID string, req models.UpdateCon
 }
 
 func (c *WrapperClient) ListContainers() ([]models.Container, error) {
-	url := fmt.Sprintf("%s/namespaces/%s/containers", c.BaseURL, c.Namespace)
+	url := fmt.Sprintf("%s/containers", c.BaseURL)
 	response, err := c.HTTPClient.Get(url)
 	if err != nil {
 		return nil, err
@@ -123,7 +121,7 @@ func (c *WrapperClient) ListContainers() ([]models.Container, error) {
 }
 
 func (c *WrapperClient) GetContainer(containerID string) (*models.Container, error) {
-	url := fmt.Sprintf("%s/namespaces/%s/containers/%s", c.BaseURL, c.Namespace, containerID)
+	url := fmt.Sprintf("%s/containers/%s", c.BaseURL, containerID)
 	response, err := c.HTTPClient.Get(url)
 	if err != nil {
 		return nil, err
@@ -139,11 +137,11 @@ func (c *WrapperClient) GetContainer(containerID string) (*models.Container, err
 		return nil, err
 	}
 
-	return &resp, nil // Return the slice of containers
+	return &resp, nil // Return the container
 }
 
 func (c *WrapperClient) DeleteContainer(containerID string) error {
-	url := fmt.Sprintf("%s/namespaces/%s/containers/%s", c.BaseURL, c.Namespace, containerID)
+	url := fmt.Sprintf("%s/containers/%s", c.BaseURL, containerID)
 	req, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
 		fmt.Println("Error creating request:", err)
@@ -158,14 +156,13 @@ func (c *WrapperClient) DeleteContainer(containerID string) error {
 
 	if response.StatusCode != http.StatusOK {
 		return fmt.Errorf("API request failed with status code %d", response.StatusCode)
-
 	}
 
 	return nil
 }
 
 func (c *WrapperClient) StartContainer(containerID string) (string, error) {
-	url := fmt.Sprintf("%s/namespaces/%s/containers/%s/start", c.BaseURL, c.Namespace, containerID)
+	url := fmt.Sprintf("%s/containers/%s/start", c.BaseURL, containerID)
 	req, err := http.NewRequest("POST", url, nil)
 	if err != nil {
 		fmt.Println("Error creating request:", err)
@@ -186,7 +183,7 @@ func (c *WrapperClient) StartContainer(containerID string) (string, error) {
 }
 
 func (c *WrapperClient) StopContainer(containerID string) (string, error) {
-	url := fmt.Sprintf("%s/namespaces/%s/containers/%s/stop", c.BaseURL, c.Namespace, containerID)
+	url := fmt.Sprintf("%s/containers/%s/stop", c.BaseURL, containerID)
 	req, err := http.NewRequest("POST", url, nil)
 	if err != nil {
 		fmt.Println("Error creating request:", err)
@@ -227,8 +224,7 @@ func (c *WrapperClient) GetNode(nodeID string) (*models.Node, error) {
 		return nil, err
 	}
 
-	return &resp.Node, nil // Return the slice of containers
-
+	return &resp.Node, nil // Return the node
 }
 
 type NodeListResponse struct {
@@ -256,10 +252,7 @@ func (c *WrapperClient) ListNodes() ([]models.Node, error) {
 }
 
 func (c *WrapperClient) WatchContainer(containerID string, handleData func(string)) error {
-	// Construct the URL to the orchestrator's watch endpoint
-	url := fmt.Sprintf("%s/namespaces/%s/containers/%s/watch", c.BaseURL, c.Namespace, containerID)
-
-	// Make a request to the orchestrator's watch endpoint
+	url := fmt.Sprintf("%s/containers/%s/watch", c.BaseURL, containerID)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return err
@@ -270,7 +263,6 @@ func (c *WrapperClient) WatchContainer(containerID string, handleData func(strin
 	}
 	defer resp.Body.Close()
 
-	// Assuming the response body streams updates as plain text or JSON lines
 	reader := bufio.NewReader(resp.Body)
 	for {
 		line, err := reader.ReadBytes('\n')
@@ -281,7 +273,6 @@ func (c *WrapperClient) WatchContainer(containerID string, handleData func(strin
 			return err // Stream error
 		}
 
-		// Pass the received data to the handler function
 		handleData(string(line))
 	}
 
@@ -289,10 +280,7 @@ func (c *WrapperClient) WatchContainer(containerID string, handleData func(strin
 }
 
 func (c *WrapperClient) StreamContainerLogs(containerID string, handleData func(string)) error {
-	// Construct the URL to the control node's log streaming endpoint.
-	url := fmt.Sprintf("%s/namespaces/%s/containers/%s/logs", c.BaseURL, c.Namespace, containerID)
-
-	// Make a request to the control node's log streaming endpoint.
+	url := fmt.Sprintf("%s/containers/%s/logs", c.BaseURL, containerID)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return err
@@ -304,7 +292,6 @@ func (c *WrapperClient) StreamContainerLogs(containerID string, handleData func(
 	}
 	defer resp.Body.Close()
 
-	// Stream the response body to the handler function.
 	reader := bufio.NewReader(resp.Body)
 	for {
 		line, err := reader.ReadBytes('\n')
@@ -315,7 +302,6 @@ func (c *WrapperClient) StreamContainerLogs(containerID string, handleData func(
 			return err // Handle errors during the stream.
 		}
 
-		// Pass the received log line to the handler function.
 		handleData(string(line))
 	}
 
@@ -336,7 +322,6 @@ func (c *WrapperClient) JoinCluster(req models.CreateNodeRequest) (*models.Node,
 	}
 	defer response.Body.Close()
 
-	// Read the body irrespective of the response status
 	body, readErr := io.ReadAll(response.Body)
 	if readErr != nil {
 		return nil, fmt.Errorf("failed to read response body: %v", readErr)
@@ -347,7 +332,6 @@ func (c *WrapperClient) JoinCluster(req models.CreateNodeRequest) (*models.Node,
 			Error string `json:"error"`
 		}{}
 		if err := json.Unmarshal(body, &apiError); err != nil {
-			// If unmarshalling the error failed, return the status code error
 			return nil, fmt.Errorf("API request failed with status code %d: unable to parse API error response", response.StatusCode)
 		}
 		return nil, fmt.Errorf("API request failed: %s", apiError.Error)

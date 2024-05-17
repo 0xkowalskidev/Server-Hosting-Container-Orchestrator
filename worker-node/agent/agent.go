@@ -4,8 +4,8 @@ import (
 	"log"
 	"time"
 
+	"0xKowalski1/container-orchestrator/api-wrapper"
 	"0xKowalski1/container-orchestrator/config"
-	"0xKowalski1/container-orchestrator/control-node/api"
 	"0xKowalski1/container-orchestrator/models"
 	"0xKowalski1/container-orchestrator/worker-node/networking"
 	"0xKowalski1/container-orchestrator/worker-node/runtime"
@@ -42,7 +42,7 @@ func NewAgent(cfg *config.Config, runtime *runtime.ContainerdRuntime,
 }
 
 func (a *Agent) Start() {
-	apiClient := api.NewApiWrapper(a.cfg.Namespace, a.cfg.ControlNodeIp)
+	apiClient := api.NewApiWrapper(a.cfg.ControlNodeIp)
 
 	nodeConfig := models.CreateNodeRequest{
 		ID:           "node-1",

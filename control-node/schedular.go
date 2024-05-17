@@ -1,32 +1,44 @@
-package schedular
+package controlnode
 
 import (
 	"log"
-
-	statemanager "0xKowalski1/container-orchestrator/control-node/state-manager"
 )
 
-func Start(_statemanager *statemanager.StateManager) {
-	// Run schedule once on start, incase there where missed unscheduled events while offlien
-	scheduleContainers(_statemanager)
+type Schedular struct {
+	etcdClient       *EtcdClient
+	containerService *ContainerService
+	nodeService      *NodeService
+}
 
-	_statemanager.Subscribe(func(event statemanager.Event) {
+func NewSchedular(etcdClient *EtcdClient, containerService *ContainerService, nodeService *NodeService) *Schedular {
+	schedular := &Schedular{
+		etcdClient:       etcdClient,
+		containerService: containerService,
+		nodeService:      nodeService,
+	}
+
+	// Run schedule once on start, incase there where missed unscheduled events while offline
+	schedular.scheduleContainers()
+
+	schedular.etcdClient.Subscribe(func(event Event) {
 		switch event.Type {
-		case statemanager.ContainerAdded:
-			scheduleContainers(_statemanager)
+		case ContainerAdded:
+			schedular.scheduleContainers()
 		}
 	})
+
+	return schedular
 }
 
 // scheduleContainers checks and updates the _statemanager to schedule containers to nodes.
-func scheduleContainers(sm *statemanager.StateManager) {
-	unscheduledContainers, err := sm.ListUnscheduledContainers()
+func (s *Schedular) scheduleContainers() {
+	unscheduledContainers, err := s.containerService.GetUnscheduledContainers()
 	if err != nil {
 		log.Printf("Error fetching unscheduled containers: %v", err)
 		return
 	}
 
-	nodes, err := sm.ListNodes()
+	nodes, err := s.nodeService.GetNodes()
 	if err != nil {
 		log.Printf("Error fetching nodes: %v", err)
 		return
@@ -58,7 +70,7 @@ func scheduleContainers(sm *statemanager.StateManager) {
 					continue
 				}
 
-				err := sm.AssignContainerToNode(container.ID, node.ID)
+				err := s.nodeService.AssignContainerToNode(container.ID, node.ID)
 				if err != nil {
 					log.Printf("Failed to assign container %s to node %s: %v", container.ID, node.ID, err)
 					continue

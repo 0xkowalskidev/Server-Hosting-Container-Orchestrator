@@ -1,17 +1,33 @@
-package statemanager
+package controlnode
 
 import (
-	"0xKowalski1/container-orchestrator/models"
 	"context"
 	"encoding/json"
 	"fmt"
 	"time"
 
+	"0xKowalski1/container-orchestrator/config"
+	"0xKowalski1/container-orchestrator/models"
+
 	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
+// ContainerService handles operations related to containers
+type ContainerService struct {
+	cfg        *config.Config
+	etcdClient *EtcdClient
+}
+
+// NewContainerService creates a new ContainerService
+func NewContainerService(cfg *config.Config, etcdClient *EtcdClient) *ContainerService {
+	return &ContainerService{
+		cfg:        cfg,
+		etcdClient: etcdClient,
+	}
+}
+
 // AddContainer adds a new container to a namespace
-func (sm *StateManager) AddContainer(containerRequest models.CreateContainerRequest) (*models.Container, error) {
+func (cs *ContainerService) CreateContainer(containerRequest models.CreateContainerRequest) (*models.Container, error) {
 	container := models.Container{
 		ID:            containerRequest.ID,
 		Image:         containerRequest.Image,
@@ -20,29 +36,28 @@ func (sm *StateManager) AddContainer(containerRequest models.CreateContainerRequ
 		MemoryLimit:   containerRequest.MemoryLimit,
 		CpuLimit:      containerRequest.CpuLimit,
 		StorageLimit:  containerRequest.StorageLimit,
-		NamespaceID:   sm.cfg.Namespace, // Ensure the container knows its namespaceID
+		NamespaceID:   cs.cfg.Namespace, // Ensure the container knows its namespaceID
 		DesiredStatus: "running",
 		Ports:         containerRequest.Ports,
 	}
 
-	err := sm.etcdClient.SaveEntity(container)
+	err := cs.etcdClient.SaveEntity(container)
 	if err != nil {
 		return nil, err
 	}
 
-	sm.emit(Event{Type: ContainerAdded, Data: container})
+	cs.etcdClient.emit(Event{Type: ContainerAdded, Data: container})
 
 	return &container, nil
 }
 
 // RemoveContainer removes a container from a namespace by its ID
-func (sm *StateManager) RemoveContainer(containerID string) error {
-	namespaceID := sm.cfg.Namespace
+func (cs *ContainerService) DeleteContainer(containerID string, nodeService *NodeService) error {
+	namespaceID := cs.cfg.Namespace
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	// IMPORTANT Should probably check if namespaces match here (and everywhere else we change state)
 
-	err := sm.RemoveContainerFromNode(containerID)
+	err := nodeService.RemoveContainerFromNode(containerID)
 
 	if err != nil {
 		fmt.Printf("Failed to remove container from node: %v", err)
@@ -51,26 +66,25 @@ func (sm *StateManager) RemoveContainer(containerID string) error {
 	}
 
 	key := "/namespaces/" + namespaceID + "/containers/" + containerID
-	_, err = sm.etcdClient.Client.Delete(ctx, key)
-
+	_, err = cs.etcdClient.Client.Delete(ctx, key)
 	if err != nil {
 		fmt.Printf("Failed to delete container: %v", err)
 		return err
 	}
 
-	sm.emit(Event{Type: ContainerRemoved, Data: containerID})
+	cs.etcdClient.emit(Event{Type: ContainerRemoved, Data: containerID})
 
 	return nil
 }
 
 // GetContainer retrieves a container by its ID and namespaceID
-func (sm *StateManager) GetContainer(containerID string) (*models.Container, error) {
-	namespaceID := sm.cfg.Namespace
+func (cs *ContainerService) GetContainer(containerID string) (*models.Container, error) {
+	namespaceID := cs.cfg.Namespace
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	key := "/namespaces/" + namespaceID + "/containers/" + containerID
-	resp, err := sm.etcdClient.Client.Get(ctx, key)
+	resp, err := cs.etcdClient.Client.Get(ctx, key)
 	if err != nil {
 		return nil, err
 	}
@@ -89,13 +103,13 @@ func (sm *StateManager) GetContainer(containerID string) (*models.Container, err
 }
 
 // ListContainers lists all containers in a namespace
-func (sm *StateManager) ListContainers() ([]models.Container, error) {
-	namespaceID := sm.cfg.Namespace
+func (cs *ContainerService) GetContainers() ([]models.Container, error) {
+	namespaceID := cs.cfg.Namespace
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	prefix := "/namespaces/" + namespaceID + "/containers/"
-	resp, err := sm.etcdClient.Client.Get(ctx, prefix, clientv3.WithPrefix())
+	resp, err := cs.etcdClient.Client.Get(ctx, prefix, clientv3.WithPrefix())
 	if err != nil {
 		return nil, err
 	}
@@ -113,8 +127,8 @@ func (sm *StateManager) ListContainers() ([]models.Container, error) {
 }
 
 // ListUnscheduledContainers lists all containers that do not have a NodeID set.
-func (sm *StateManager) ListUnscheduledContainers() ([]models.Container, error) {
-	containers, err := sm.ListContainers()
+func (cs *ContainerService) GetUnscheduledContainers() ([]models.Container, error) {
+	containers, err := cs.GetContainers()
 	if err != nil {
 		return nil, err
 	}
@@ -131,8 +145,8 @@ func (sm *StateManager) ListUnscheduledContainers() ([]models.Container, error) 
 }
 
 // PatchContainer updates specific fields of a container in a namespace.
-func (sm *StateManager) PatchContainer(containerID string, patch models.UpdateContainerRequest) error {
-	container, err := sm.GetContainer(containerID)
+func (cs *ContainerService) UpdateContainer(containerID string, patch models.UpdateContainerRequest) error {
+	container, err := cs.GetContainer(containerID)
 	if err != nil {
 		return err
 	}
@@ -148,32 +162,34 @@ func (sm *StateManager) PatchContainer(containerID string, patch models.UpdateCo
 		container.Status = *patch.Status
 	}
 
-	return sm.etcdClient.SaveEntity(*container)
+	return cs.etcdClient.SaveEntity(*container)
 }
 
-func (sm *StateManager) SubscribeToStatus(containerID string) (chan string, error) {
-	sm.mu.Lock()
-	defer sm.mu.Unlock()
+// SubscribeToStatus subscribes to status updates for a container
+func (cs *ContainerService) SubscribeToStatus(containerID string) (chan string, error) {
+	cs.etcdClient.mu.Lock()
+	defer cs.etcdClient.mu.Unlock()
 
 	// Create a new channel for this subscription
 	statusChan := make(chan string)
 
-	if _, ok := sm.subscriptions[containerID]; !ok {
-		sm.subscriptions[containerID] = make(map[chan string]struct{})
+	if _, ok := cs.etcdClient.subscriptions[containerID]; !ok {
+		cs.etcdClient.subscriptions[containerID] = make(map[chan string]struct{})
 		// Start watching etcd for changes to this container's status
-		go sm.watchStatus(containerID)
+		go cs.watchStatus(containerID)
 	}
 
-	sm.subscriptions[containerID][statusChan] = struct{}{}
+	cs.etcdClient.subscriptions[containerID][statusChan] = struct{}{}
 
 	return statusChan, nil
 }
 
-func (sm *StateManager) UnsubscribeFromStatus(containerID string, statusChan chan string) {
-	sm.mu.Lock()
-	defer sm.mu.Unlock()
+// UnsubscribeFromStatus unsubscribes from status updates for a container
+func (cs *ContainerService) UnsubscribeFromStatus(containerID string, statusChan chan string) {
+	cs.etcdClient.mu.Lock()
+	defer cs.etcdClient.mu.Unlock()
 
-	subscribers, ok := sm.subscriptions[containerID]
+	subscribers, ok := cs.etcdClient.subscriptions[containerID]
 	if !ok {
 		return
 	}
@@ -184,22 +200,23 @@ func (sm *StateManager) UnsubscribeFromStatus(containerID string, statusChan cha
 
 	// If there are no more subscribers, stop watching this container's status
 	if len(subscribers) == 0 {
-		delete(sm.subscriptions, containerID)
+		delete(cs.etcdClient.subscriptions, containerID)
 	}
 }
 
-func (sm *StateManager) watchStatus(containerID string) {
+// watchStatus watches the status of a container for changes
+func (cs *ContainerService) watchStatus(containerID string) {
 	ctx := context.Background()
-	watchChan := sm.etcdClient.Watch(ctx, "/namespaces/"+sm.cfg.Namespace+"/containers/"+containerID)
+	watchChan := cs.etcdClient.Watch(ctx, "/namespaces/"+cs.cfg.Namespace+"/containers/"+containerID)
 
 	for watchResp := range watchChan {
 		for _, event := range watchResp.Events {
-			sm.mu.Lock()
+			cs.etcdClient.mu.Lock()
 			containerData := string(event.Kv.Value)
-			for subscriberChan := range sm.subscriptions[containerID] {
+			for subscriberChan := range cs.etcdClient.subscriptions[containerID] {
 				subscriberChan <- containerData
 			}
-			sm.mu.Unlock()
+			cs.etcdClient.mu.Unlock()
 		}
 	}
 }
