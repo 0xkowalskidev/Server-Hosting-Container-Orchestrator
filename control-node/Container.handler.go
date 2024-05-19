@@ -124,7 +124,6 @@ func (handler *ContainerHandler) StopContainer(c echo.Context) error {
 	return c.JSON(http.StatusOK, echo.Map{"message": "Container stopping"})
 }
 
-// StreamContainerLogs handles GET /containers/:id/logs
 func (handler *ContainerHandler) StreamContainerLogs(c echo.Context) error {
 	containerID := c.Param("id")
 	namespace := handler.ContainerService.cfg.Namespace
@@ -158,7 +157,6 @@ func (handler *ContainerHandler) StreamContainerLogs(c echo.Context) error {
 	return nil
 }
 
-// GetContainerStatus handles GET /containers/:id/watch
 func (handler *ContainerHandler) GetContainerStatus(c echo.Context) error {
 	containerID := c.Param("id")
 

@@ -17,7 +17,7 @@ func main() {
 	cfgPath := "config.json" // Take me from env
 	cfg, err := config.LoadConfig(cfgPath)
 	if err != nil {
-		fmt.Printf("Error loading config: %v\n", err)
+		fmt.Printf("Error loading config: %v", err)
 		os.Exit(1)
 	}
 
@@ -26,7 +26,7 @@ func main() {
 	// Etcd
 	etcdClient, err := controlnode.NewEtcdClient()
 	if err != nil {
-		fmt.Printf("Error create ETCD Client: %v\n", err)
+		fmt.Printf("Error creating Etcd Client: %v", err)
 		os.Exit(1)
 	}
 
