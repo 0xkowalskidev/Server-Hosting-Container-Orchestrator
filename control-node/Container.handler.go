@@ -126,7 +126,6 @@ func (handler *ContainerHandler) StopContainer(c echo.Context) error {
 
 func (handler *ContainerHandler) StreamContainerLogs(c echo.Context) error {
 	containerID := c.Param("id")
-	namespace := handler.ContainerService.cfg.Namespace
 
 	container, err := handler.ContainerService.GetContainer(containerID)
 	if err != nil {
@@ -148,7 +147,7 @@ func (handler *ContainerHandler) StreamContainerLogs(c echo.Context) error {
 	originalDirector := proxy.Director
 	proxy.Director = func(req *http.Request) {
 		originalDirector(req)
-		req.URL.Path = "/namespaces/" + namespace + "/containers/" + containerID + "/logs"
+		req.URL.Path = "/containers/" + containerID + "/logs"
 		req.URL.Scheme = targetURL.Scheme
 		req.URL.Host = targetURL.Host
 	}

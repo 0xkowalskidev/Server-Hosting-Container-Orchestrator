@@ -48,7 +48,7 @@ func main() {
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
 	}))
 
-	// Start Schedular
+	// New Schedular
 	controlnode.NewSchedular(etcdClient, containerService, nodeService)
 
 	// Routes

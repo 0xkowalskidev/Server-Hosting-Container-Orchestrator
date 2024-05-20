@@ -73,17 +73,31 @@
 
 # Full Refactor
 
-# Storage Manager - ✓
-## Tests - ✓
-## Rollback on failure - ✓
+## Control node - ✓
+### API - ✓
+#### Tests -
 
-## Network manager -
+### Schedular - ✓
+#### Tests -
 
-## Switch from resourceUsed to resourceAllocated on node as its misleading - 
+## Worker Node - 
+### Storage Manager - ✓
+#### Tests - ✓
+#### Rollback on failure - ✓
 
-## syncContainers - 
+### Network Manager  - 
+#### Tests - 
+#### Rollback on failure - 
+
+### Containers Manager - 
+#### Tests -
+#### Rollback on failure - 
+
+### Agent -
 
 # Later
+
+## Switch from resourceUsed to resourceAllocated on node as its misleading - 
 
 ## Schedular should pick a port if none provided -
 

@@ -1,4 +1,4 @@
-package runtime
+package workernode
 
 import (
 	"context"
@@ -45,6 +45,81 @@ func NewContainerdRuntime(cfg *config.Config) (*ContainerdRuntime, error) {
 	runtime.SubscribeToEvents()
 
 	return runtime, nil
+}
+
+func (r *ContainerdRuntime) SyncContainers(node *models.Node) error {
+	desiredContainers := node.Containers
+
+	// List actual containers
+	actualContainers, err := r.ListContainers()
+	if err != nil {
+		log.Printf("Error listing containers: %v", err)
+		return err
+	}
+
+	// Map actual container IDs for easier lookup
+	actualMap := make(map[string]models.Container)
+	for _, c := range actualContainers {
+		ic, err := r.InspectContainer(c.ID)
+		if err != nil {
+			log.Printf("Error inspecting container: %v", err)
+		}
+		actualMap[c.ID] = ic
+	}
+
+	for _, desiredContainer := range desiredContainers {
+		// Create missing containers
+		if _, exists := actualMap[desiredContainer.ID]; !exists {
+			// Create container if it does not exist in actual state
+
+			_, err := r.CreateContainer(desiredContainer)
+			if err != nil {
+				log.Printf("Failed to create container: %v", err)
+				continue
+			}
+		}
+
+		r.reconcileContainerState(desiredContainer, actualMap[desiredContainer.ID])
+	}
+
+	// Stop extra containers
+	for _, c := range actualContainers {
+		found := false
+		for _, d := range desiredContainers {
+			if d.ID == c.ID {
+				found = true
+				break
+			}
+		}
+		if !found {
+			// Check errors
+			r.StopContainer(c.ID, c.StopTimeout)
+			r.RemoveContainer(c.ID)
+		}
+	}
+
+	return nil
+}
+
+func (r *ContainerdRuntime) reconcileContainerState(desiredContainer models.Container, actualContainer models.Container) {
+	switch desiredContainer.DesiredStatus {
+	case "running":
+		if actualContainer.Status != "running" {
+
+			err := r.StartContainer(desiredContainer.ID)
+			if err != nil {
+				log.Fatalf("Failed to start container: %v", err)
+			}
+
+		}
+	case "stopped":
+		if actualContainer.Status != "stopped" {
+			err := r.StopContainer(desiredContainer.ID, desiredContainer.StopTimeout)
+			if err != nil {
+				log.Fatalf("Failed to stop container: %v", err)
+			}
+		}
+	}
 }
 
 // This should return a pointer to a container
@@ -205,8 +280,6 @@ func (_runtime *ContainerdRuntime) RemoveContainer(containerID string) error {
 	}
 
 	log.Printf("Successfully deleted container %s", containerID)
-
-	log.Printf("Successfully deleted container network rules %s", containerID)
 
 	return nil
 }

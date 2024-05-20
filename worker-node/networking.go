@@ -1,4 +1,4 @@
-package networking
+package workernode
 
 import (
 	"0xKowalski1/container-orchestrator/config"
@@ -25,6 +25,44 @@ func NewNetworkingManager(cfg *config.Config, cmdRunner utils.CmdRunnerInterface
 		cfg:       cfg,
 		cmdRunner: cmdRunner,
 	}
+}
+
+func (nm *NetworkingManager) SyncNetworking(desiredContainers []models.Container) error {
+	actualNamespaces, err := nm.ListNetworkNamespaces()
+	if err != nil {
+		return err
+	}
+
+	desiredMap := make(map[string]models.Container)
+	for _, container := range desiredContainers {
+		desiredMap[container.ID] = container
+	}
+
+	actualMap := make(map[string]bool)
+	for _, namespace := range actualNamespaces { // Namespace is a containerID
+		actualMap[namespace] = true
+	}
+
+	for containerID, container := range desiredMap {
+		if !actualMap[containerID] {
+			err := nm.SetupContainerNetwork(containerID, container.Ports)
+			if err != nil {
+				return fmt.Errorf("Failed to setup container network: %v", err)
+			}
+
+		}
+	}
+
+	for namespace := range actualMap {
+		if _, desired := desiredMap[namespace]; !desired {
+			err := nm.CleanupContainerNetwork(namespace)
+			if err != nil {
+				return fmt.Errorf("Failed to cleanup container network: %v", err)
+			}
+		}
+	}
+
+	return nil
 }
 
 func (nm *NetworkingManager) createNetworkNamespace(containerID string) error {

@@ -2,18 +2,25 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
+	"time"
 
+	"0xKowalski1/container-orchestrator/api-wrapper"
 	"0xKowalski1/container-orchestrator/config"
+	"0xKowalski1/container-orchestrator/models"
 	"0xKowalski1/container-orchestrator/utils"
-	"0xKowalski1/container-orchestrator/worker-node/agent"
-	"0xKowalski1/container-orchestrator/worker-node/networking"
-	"0xKowalski1/container-orchestrator/worker-node/runtime"
-	"0xKowalski1/container-orchestrator/worker-node/storage"
+	workernode "0xKowalski1/container-orchestrator/worker-node"
 )
 
-func main() {
+type ApiResponse struct {
+	Node struct {
+		ID         string             `json:"ID"`
+		Containers []models.Container `json:"Containers"`
+	} `json:"node"`
+}
 
+func main() {
 	cfgPath := "config.json"
 	cfg, err := config.LoadConfig(cfgPath)
 	if err != nil {
@@ -21,19 +28,81 @@ func main() {
 		os.Exit(1)
 	}
 
-	runtime, err := runtime.NewContainerdRuntime(cfg)
+	runtime, err := workernode.NewContainerdRuntime(cfg)
 
 	if err != nil {
 		fmt.Printf("Error initializing runtime: %v\n", err)
 		os.Exit(1)
 	}
 
-	storage := storage.NewStorageManager(cfg, &utils.FileOps{}, &utils.CmdRunner{})
+	storage := workernode.NewStorageManager(cfg, &utils.FileOps{}, &utils.CmdRunner{})
 
-	networking := networking.NewNetworkingManager(cfg, &utils.CmdRunner{})
+	networking := workernode.NewNetworkingManager(cfg, &utils.CmdRunner{})
 
-	agent := agent.NewAgent(cfg, runtime, storage, networking)
+	metricsAndLogsApi := workernode.NewMetricsAndLogsApi(cfg)
 
-	// start agent
-	agent.Start()
+	go metricsAndLogsApi.Start()
+
+	apiClient := api.NewApiWrapper(cfg.ControlNodeIp)
+
+	// Should do self discovery/cfg for this
+	nodeConfig := models.CreateNodeRequest{
+		ID:           "node-1",
+		MemoryLimit:  16,
+		CpuLimit:     4,
+		StorageLimit: 10,
+		NodeIp:       cfg.NodeIp,
+	}
+
+	// Check if node exists
+	_, err = apiClient.GetNode(nodeConfig.ID)
+	if err != nil {
+		// If it does not (or not authed, which will fail) try and Join Cluster
+		_, err := apiClient.JoinCluster(nodeConfig)
+		if err != nil {
+			log.Printf("Error joining cluster: %v", err)
+			panic(err) // Probably want to retry & log
+		}
+	}
+
+	// If node already exists and it isnt use, then auth should catch it
+
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		node, err := apiClient.GetNode(nodeConfig.ID) //temp
+		if err != nil {
+			log.Printf("Error checking for nodes desired state: %v", err)
+			continue
+		}
+
+		var desiredVolumes []models.Volume
+		desiredContainers := node.Containers
+		//Define wanted storage/containers/networking
+		// Why am I even doing this?
+		for _, desiredContainer := range node.Containers {
+			newVolume := models.Volume{ID: desiredContainer.ID, SizeLimit: int64(desiredContainer.StorageLimit)}
+			desiredVolumes = append(desiredVolumes, newVolume)
+		}
+
+		err = storage.SyncStorage(desiredVolumes)
+		if err != nil {
+			log.Printf("Error syncing storage: %v", err)
+			continue
+		}
+
+		err = networking.SyncNetworking(desiredContainers)
+		if err != nil {
+			log.Printf("Error syncing network: %v", err)
+			continue
+		}
+
+		err = runtime.SyncContainers(node)
+		if err != nil {
+			log.Printf("Error syncing containers: %v", err)
+			continue
+		}
+
+	}
 }

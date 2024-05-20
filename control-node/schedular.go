@@ -6,32 +6,32 @@ import (
 	"log"
 )
 
-type Scheduler struct {
+type Schedular struct {
 	etcdClient       *EtcdClient
 	containerService *ContainerService
 	nodeService      *NodeService
 }
 
-func NewScheduler(etcdClient *EtcdClient, containerService *ContainerService, nodeService *NodeService) *Scheduler {
-	scheduler := &Scheduler{
+func NewSchedular(etcdClient *EtcdClient, containerService *ContainerService, nodeService *NodeService) *Schedular {
+	schedular := &Schedular{
 		etcdClient:       etcdClient,
 		containerService: containerService,
 		nodeService:      nodeService,
 	}
 
 	// Run schedule once on start to handle any missed events while offline.
-	scheduler.scheduleContainers()
+	schedular.scheduleContainers()
 
-	scheduler.etcdClient.Subscribe(func(event Event) {
+	schedular.etcdClient.Subscribe(func(event Event) {
 		if event.Type == ContainerAdded {
-			scheduler.scheduleContainers()
+			schedular.scheduleContainers()
 		}
 	})
 
-	return scheduler
+	return schedular
 }
 
-func (s *Scheduler) scheduleContainers() {
+func (s *Schedular) scheduleContainers() {
 	unscheduledContainers, err := s.containerService.GetUnscheduledContainers()
 	if err != nil {
 		log.Printf("Error fetching unscheduled containers: %v", err)
@@ -55,7 +55,7 @@ func (s *Scheduler) scheduleContainers() {
 	}
 }
 
-func (s *Scheduler) scheduleContainer(container models.Container, nodes []models.Node) error {
+func (s *Schedular) scheduleContainer(container models.Container, nodes []models.Node) error {
 	for _, node := range nodes {
 		if !s.doesNodeHaveFreeResources(container, node) {
 			log.Printf("Node %s does not have resources free to schedule container %s", node.ID, container.ID)
@@ -79,7 +79,7 @@ func (s *Scheduler) scheduleContainer(container models.Container, nodes []models
 	return fmt.Errorf("failed to assign container %s, nodes at capacity", container.ID)
 }
 
-func (s *Scheduler) doesNodeHaveFreeResources(container models.Container, node models.Node) bool {
+func (s *Schedular) doesNodeHaveFreeResources(container models.Container, node models.Node) bool {
 	if node.MemoryLimit-node.MemoryUsed < container.MemoryLimit ||
 		node.CpuLimit-node.CpuUsed < container.CpuLimit ||
 		node.StorageLimit-node.StorageUsed < container.StorageLimit {
@@ -88,7 +88,7 @@ func (s *Scheduler) doesNodeHaveFreeResources(container models.Container, node m
 	return true
 }
 
-func (s *Scheduler) doesNodeHavePortsAvailable(container models.Container, node models.Node) bool {
+func (s *Schedular) doesNodeHavePortsAvailable(container models.Container, node models.Node) bool {
 	usedPortsMap := make(map[int]bool)
 	for _, c := range node.Containers {
 		for _, port := range c.Ports {
