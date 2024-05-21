@@ -67,38 +67,29 @@ func main() {
 
 	// If node already exists and it isnt use, then auth should catch it
 
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(5 * time.Second) // Switch to SSE instead of polling at some point
 	defer ticker.Stop()
 
 	for range ticker.C {
-		node, err := apiClient.GetNode(nodeConfig.ID) //temp
+		node, err := apiClient.GetNode(nodeConfig.ID)
 		if err != nil {
 			log.Printf("Error checking for nodes desired state: %v", err)
 			continue
 		}
 
-		var desiredVolumes []models.Volume
-		desiredContainers := node.Containers
-		//Define wanted storage/containers/networking
-		// Why am I even doing this?
-		for _, desiredContainer := range node.Containers {
-			newVolume := models.Volume{ID: desiredContainer.ID, SizeLimit: int64(desiredContainer.StorageLimit)}
-			desiredVolumes = append(desiredVolumes, newVolume)
-		}
-
-		err = storage.SyncStorage(desiredVolumes)
+		err = storage.SyncStorage(node.Containers)
 		if err != nil {
 			log.Printf("Error syncing storage: %v", err)
 			continue
 		}
 
-		err = networking.SyncNetworking(desiredContainers)
+		err = networking.SyncNetworking(node.Containers)
 		if err != nil {
 			log.Printf("Error syncing network: %v", err)
 			continue
 		}
 
-		err = runtime.SyncContainers(node)
+		err = runtime.SyncContainers(node.Containers)
 		if err != nil {
 			log.Printf("Error syncing containers: %v", err)
 			continue

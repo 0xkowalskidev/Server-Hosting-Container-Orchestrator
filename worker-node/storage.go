@@ -25,8 +25,7 @@ func NewStorageManager(cfg *config.Config, fileOps utils.FileOpsInterface, cmdRu
 	}
 }
 
-func (sm *StorageManager) SyncStorage(desiredVolumes []models.Volume) error {
-	// Get list of storage paths
+func (sm *StorageManager) SyncStorage(desiredContainers []models.Container) error {
 	actualVolumes, err := sm.ListVolumes()
 	if err != nil {
 		return err
@@ -38,7 +37,8 @@ func (sm *StorageManager) SyncStorage(desiredVolumes []models.Volume) error {
 	}
 
 	desiredMap := make(map[string]models.Volume)
-	for _, volume := range desiredVolumes {
+	for _, desiredContainer := range desiredContainers {
+		volume := models.Volume{ID: desiredContainer.ID, SizeLimit: int64(desiredContainer.StorageLimit)}
 		desiredMap[volume.ID] = volume
 	}
 

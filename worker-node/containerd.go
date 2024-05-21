@@ -47,8 +47,7 @@ func NewContainerdRuntime(cfg *config.Config) (*ContainerdRuntime, error) {
 	return runtime, nil
 }
 
-func (r *ContainerdRuntime) SyncContainers(node *models.Node) error {
-	desiredContainers := node.Containers
+func (r *ContainerdRuntime) SyncContainers(desiredContainers []models.Container) error {
 
 	// List actual containers
 	actualContainers, err := r.ListContainers()
