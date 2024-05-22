@@ -39,9 +39,9 @@ func main() {
 
 	networking := workernode.NewNetworkingManager(cfg, &utils.CmdRunner{})
 
-	metricsAndLogsApi := workernode.NewMetricsAndLogsApi(cfg)
+	metricsApi := workernode.NewMetricsApi(cfg)
 
-	go metricsAndLogsApi.Start()
+	go metricsApi.Start()
 
 	apiClient := api.NewApiWrapper(cfg.ControlNodeIp)
 

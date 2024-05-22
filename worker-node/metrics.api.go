@@ -8,17 +8,17 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type MetricsAndLogsApi struct {
+type MetricsApi struct {
 	cfg *config.Config
 }
 
-func NewMetricsAndLogsApi(cfg *config.Config) *MetricsAndLogsApi {
-	return &MetricsAndLogsApi{
+func NewMetricsApi(cfg *config.Config) *MetricsApi {
+	return &MetricsApi{
 		cfg: cfg,
 	}
 }
 
-func (api *MetricsAndLogsApi) StreamLogsHandler(c echo.Context) error {
+func (api *MetricsApi) StreamLogsHandler(c echo.Context) error {
 	namespace := api.cfg.Namespace
 	containerID := c.Param("containerID")
 	logFilePath := api.cfg.LogPath + namespace + "-" + containerID + ".log"
@@ -51,7 +51,7 @@ func (api *MetricsAndLogsApi) StreamLogsHandler(c echo.Context) error {
 }
 
 // Start starts the Echo server and sets up routes.
-func (api *MetricsAndLogsApi) Start() {
+func (api *MetricsApi) Start() {
 	e := echo.New()
 
 	e.GET("/containers/:containerID/logs", api.StreamLogsHandler)
