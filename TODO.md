@@ -66,40 +66,19 @@
 
 ## Live container metrics - 
 
-## Set up build process -
+## SFTP Daemon set - 
 
-## Crash when mem is set to 1GB - 
-
-
-# Full Refactor
-
-## Control node - ✓
-### API - ✓
-#### Tests -
-
-### Schedular - ✓
-#### Tests -
-
-## Worker Node - 
-### Storage Manager - ✓
-#### Tests - ✓
-#### Rollback on failure - ✓
-
-### Network Manager  - 
-#### Tests - 
-#### Rollback on failure - 
-
-### Containers Manager - 
-#### Tests -
-#### Rollback on failure - 
+## Readiness probe -
 
 ### Agent -
 
 # Later
 
+## Crash when mem is set to 1GB - 
+
 ## Switch from resourceUsed to resourceAllocated on node as its misleading - 
 
-## Schedular should pick a port if none provided -
+## Schedular should pick a port if none provided? -
 
 ## Does not seem like cpu limit is working properly - 
 
@@ -109,13 +88,13 @@
 
 ## Switch delete to mark for deletion instead of just removing container from state -
 
-## Figure out how to containerize the dev environment (nix?) - 
+## Figure out how to containerize the dev environment (nix?) -  ✓
 
-## Node should use a different volume/partition just for container storage -
+## Node should use a different volume/partition just for container storage? -
 
 ## Switch to SSE for worker node agent instead of polling - 
 
-## Make sure node agent always syncs on reconnect -
+## Make sure node agent always syncs on reconnect - ✓
 
 ## Logs & Monitoring (low level, not container level) -
 
@@ -133,14 +112,10 @@
 
 ## Remove fatal errors, make sure agent cant crash -
 
-## sftp daemonset -
-
-## Readiness probe -
-
 ## Controllers/managers?
 ## Consensus?
 
-## Remove namespaces from routes as we are setting it in config anyway -
+## Remove namespaces from routes as we are setting it in config anyway - ✓
 
 ## Permissions -
 
@@ -150,4 +125,4 @@
 
 ## lost+found will probably be put back on the volume if things crash -
 
-## Storage sync could also check for non dirs and remove them aswell, at the moment it just guesses that they exist - 
+## Storage sync could also check for non dirs and remove them aswell (mount files), at the moment it just guesses that they exist - 
