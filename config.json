@@ -1,17 +1,12 @@
 {
-    "namespace": "development",
-    "nodeIp": "localhost",
-    "controlNodeIp": "localhost",
-    "containerdSocketPath": "/run/containerd/containerd.sock",
-
-    "storagePath": "/home/kowalski/dev/server-hosting/container-orchestrator/mounts/",
-
-    "cniPath":"/run/current-system/sw/bin",
-    "networkConfigPath":"/etc/cni/net.d",
-    "networkConfigFileName":"mynet",
-    "networkNamespacePath":"/var/run/netns/" ,
-
-    "logPath": "/home/kowalski/dev/server-hosting/container-orchestrator/logs/" 
+        "namespace": "development",
+        "nodeIp": "localhost",
+        "controlNodeIp": "localhost",
+        "containerdSocketPath": "/run/containerd/containerd.sock",
+        "storagePath": "/home/kowalski/dev/server-hosting/container-orchestrator/mounts/",
+        "cniPath": "/run/current-system/sw/bin",
+        "networkConfigPath": "/etc/cni/net.d",
+        "networkConfigFileName": "mynet",
+        "networkNamespacePath": "/var/run/netns/",
+        "logPath": "/home/kowalski/dev/server-hosting/container-orchestrator/logs/"
 }
-
-

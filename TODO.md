@@ -125,4 +125,6 @@
 
 ## lost+found will probably be put back on the volume if things crash -
 
-## Storage sync could also check for non dirs and remove them aswell (mount files), at the moment it just guesses that they exist - 
+## Storage sync could also check for non dirs and remove them aswell (mount files), at the moment it just guesses that they exist -
+
+## Containers should store names - 
