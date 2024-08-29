@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/0xKowalski1/Server-Hosting-Container-Orchestrator/config"
 	"github.com/containerd/containerd"
 )
 
@@ -11,10 +12,10 @@ type Runtime interface {
 	CreateContainer(ctx context.Context, id string, image string) (containerd.Container, error)
 }
 
-func NewRuntime(runtimeType string) (Runtime, error) {
-	switch runtimeType {
+func NewRuntime(cfg config.Config) (Runtime, error) {
+	switch cfg.RuntimeType {
 	case "containerd":
-		return newContainerdRuntime("/run/containerd/containerd.sock")
+		return newContainerdRuntime(cfg)
 	default:
 		return nil, errors.New("unsupported runtime type")
 	}

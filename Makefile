@@ -2,19 +2,17 @@
 dev-worker-node:
 	sudo go run ./cmd/worker_node/main.go
 
-CTR_NAMESPACE=default
-
 .PHONY: reset-ctr
 reset-ctr:
 	# Stop and delete all running tasks
-	@sudo ctr -n $(CTR_NAMESPACE) tasks ls -q | xargs -r -I{} sudo ctr -n $(CTR_NAMESPACE) tasks kill -s SIGKILL {} || true
+	@sudo ctr -n $(NAMESPACE_MAIN) tasks ls -q | xargs -r -I{} sudo ctr -n $(NAMESPACE_MAIN) tasks kill -s SIGKILL {} || true
 	# Ensure all tasks are stopped before deletion
 	@sleep 1
-	@sudo ctr -n $(CTR_NAMESPACE) tasks ls -q | xargs -r -I{} sudo ctr -n $(CTR_NAMESPACE) tasks delete {} || true
-
+	@sudo ctr -n $(NAMESPACE_MAIN) tasks ls -q | xargs -r -I{} sudo ctr -n $(NAMESPACE_MAIN) tasks delete {} || true
 	# Delete all containers
-	@sudo ctr -n $(CTR_NAMESPACE) containers ls -q | xargs -r -I{} sudo ctr -n $(CTR_NAMESPACE) containers delete {} || true
+	@sudo ctr -n $(NAMESPACE_MAIN) containers ls -q | xargs -r -I{} sudo ctr -n $(NAMESPACE_MAIN) containers delete {} || true
 
 .PHONY: test
 test:
-	sudo go test ./...
+	sudo NAMESPACE_MAIN=test make reset-ctr
+	sudo NAMESPACE_MAIN=test go test ./...

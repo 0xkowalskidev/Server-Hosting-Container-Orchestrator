@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/0xKowalski1/Server-Hosting-Container-Orchestrator/config"
 	workernode "github.com/0xKowalski1/Server-Hosting-Container-Orchestrator/worker_node"
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/namespaces"
@@ -13,11 +14,14 @@ import (
 )
 
 func TestCreateContainer(t *testing.T) {
-	runtime, err := workernode.NewRuntime("containerd")
+	var cfg config.Config
+	config.ParseConfigFromEnv(&cfg)
+
+	runtime, err := workernode.NewRuntime(cfg)
 	require.NoError(t, err)
 	require.NotNil(t, runtime)
 
-	ctx := namespaces.WithNamespace(context.Background(), "default")
+	ctx := namespaces.WithNamespace(context.Background(), cfg.NamespaceMain)
 
 	// Define the container ID and image to use
 	containerID := "integration-test-container"

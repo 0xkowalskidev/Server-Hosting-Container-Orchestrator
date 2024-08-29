@@ -1,39 +1,42 @@
 package config
 
 import (
-	"encoding/json"
 	"os"
+	"reflect"
+	"strconv"
 )
 
 type Config struct {
-	Namespace            string `json:"namespace"` // Production, Development or Test
-	NodeIp               string `json:"nodeIp"`    // Worker node accesible ip
-	ControlNodeIp        string `json:"controlNodeIp"`
-	ContainerdSocketPath string `json:"containerdSocketPath"`
-
-	StoragePath string `json:"storagePath"` // Path for worker node volumes, must end in /
-
-	CNIPath               string `json:"cniPath"`
-	NetworkConfigPath     string `json:"networkConfigPath"`
-	NetworkConfigFileName string `json:"networkConfigFileName"`
-	NetworkNamespacePath  string `json:"networkNamespacePath"`
-
-	LogPath string `json:"logPath"`
+	NamespaceMain  string `env:"NAMESPACE_MAIN" default:"gameservers"`
+	RuntimeType    string `env:"RUNTIME_TYPE" default:"containerd"`
+	ContainerdPath string `env:"CONTAINERD_PATH" default:"/run/containerd/containerd.sock"`
 }
 
-func LoadConfig(configFile string) (*Config, error) {
-	// Read the file
-	file, err := os.ReadFile(configFile)
-	if err != nil {
-		return nil, err
-	}
+func ParseConfigFromEnv(cfg interface{}) {
+	val := reflect.ValueOf(cfg).Elem()
+	typ := val.Type()
 
-	// Parse the file
-	var config Config
-	err = json.Unmarshal(file, &config)
-	if err != nil {
-		return nil, err
-	}
+	for i := 0; i < val.NumField(); i++ {
+		field := val.Field(i)
+		fieldType := typ.Field(i)
 
-	return &config, nil
+		envKey := fieldType.Tag.Get("env")
+		defaultValue := fieldType.Tag.Get("default")
+
+		// Get the environment variable value
+		value := os.Getenv(envKey)
+		if value == "" {
+			value = defaultValue
+		}
+
+		// Set the value on the struct field
+		switch field.Kind() {
+		case reflect.String:
+			field.SetString(value)
+		case reflect.Int:
+			if intValue, err := strconv.Atoi(value); err == nil {
+				field.SetInt(int64(intValue))
+			}
+		}
+	}
 }

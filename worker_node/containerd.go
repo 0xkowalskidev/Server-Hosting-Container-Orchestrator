@@ -3,7 +3,9 @@ package workernode
 import (
 	"context"
 	"fmt"
+	"log"
 
+	"github.com/0xKowalski1/Server-Hosting-Container-Orchestrator/config"
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/cio"
 	"github.com/containerd/containerd/namespaces"
@@ -12,20 +14,22 @@ import (
 
 type ContainerdRuntime struct {
 	client *containerd.Client
+	cfg    config.Config
 }
 
-func newContainerdRuntime(socketPath string) (Runtime, error) {
-	client, err := containerd.New(socketPath)
+func newContainerdRuntime(cfg config.Config) (Runtime, error) {
+	client, err := containerd.New(cfg.ContainerdPath)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &ContainerdRuntime{client: client}, nil
+	return &ContainerdRuntime{client: client, cfg: cfg}, nil
 }
 
 func (c *ContainerdRuntime) CreateContainer(ctx context.Context, id string, image string) (containerd.Container, error) {
-	ctx = namespaces.WithNamespace(ctx, "default")
+	log.Println(c.cfg.NamespaceMain)
+	ctx = namespaces.WithNamespace(ctx, c.cfg.NamespaceMain)
 
 	// Pull the image if it doesn't exist locally
 	imageRef, err := c.client.Pull(ctx, image, containerd.WithPullUnpack)

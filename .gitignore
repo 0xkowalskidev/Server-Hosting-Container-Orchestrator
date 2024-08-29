@@ -1,15 +1,1 @@
-# For air
-tmp
-
-# Dirs for container mounts and logs
-mounts
-logs
-
-# Build dir
-bin
-
-# VMs 
-nixos/control-node/control-node.qcow2 
-nixos/control-node/result
-nixos/worker-node/worker-node.qcow2 
-nixos/worker-node/result
+.direnv

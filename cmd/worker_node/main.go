@@ -4,11 +4,15 @@ import (
 	"context"
 	"log"
 
+	"github.com/0xKowalski1/Server-Hosting-Container-Orchestrator/config"
 	workernode "github.com/0xKowalski1/Server-Hosting-Container-Orchestrator/worker_node"
 )
 
 func main() {
-	runtime, err := workernode.NewRuntime("containerd")
+	var cfg config.Config
+	config.ParseConfigFromEnv(&cfg)
+
+	runtime, err := workernode.NewRuntime(cfg)
 
 	if err != nil {
 		log.Fatalf("Failed to initialize runtime: %v", err)
