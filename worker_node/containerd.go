@@ -24,7 +24,7 @@ func newContainerdRuntime(socketPath string) (Runtime, error) {
 	return &ContainerdRuntime{client: client}, nil
 }
 
-func (c *ContainerdRuntime) CreateContainer(ctx context.Context, id string, image string) (*containerd.Container, error) {
+func (c *ContainerdRuntime) CreateContainer(ctx context.Context, id string, image string) (containerd.Container, error) {
 	ctx = namespaces.WithNamespace(ctx, "default")
 
 	// Pull the image if it doesn't exist locally
@@ -59,5 +59,5 @@ func (c *ContainerdRuntime) CreateContainer(ctx context.Context, id string, imag
 		return nil, fmt.Errorf("failed to start task for container: %w", err)
 	}
 
-	return &container, nil
+	return container, nil
 }
