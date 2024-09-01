@@ -9,7 +9,7 @@ import (
 )
 
 type Runtime interface {
-	CreateContainer(ctx context.Context, id string, image string) (containerd.Container, error)
+	CreateContainer(ctx context.Context, id string, namespace string, image string) (containerd.Container, error)
 }
 
 func NewRuntime(cfg config.Config) (Runtime, error) {

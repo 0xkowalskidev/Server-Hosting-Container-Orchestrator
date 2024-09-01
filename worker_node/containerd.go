@@ -3,7 +3,6 @@ package workernode
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"github.com/0xKowalski1/Server-Hosting-Container-Orchestrator/config"
 	"github.com/containerd/containerd"
@@ -27,9 +26,8 @@ func newContainerdRuntime(cfg config.Config) (Runtime, error) {
 	return &ContainerdRuntime{client: client, cfg: cfg}, nil
 }
 
-func (c *ContainerdRuntime) CreateContainer(ctx context.Context, id string, image string) (containerd.Container, error) {
-	log.Println(c.cfg.NamespaceMain)
-	ctx = namespaces.WithNamespace(ctx, c.cfg.NamespaceMain)
+func (c *ContainerdRuntime) CreateContainer(ctx context.Context, id string, namespace string, image string) (containerd.Container, error) {
+	ctx = namespaces.WithNamespace(ctx, namespace)
 
 	// Pull the image if it doesn't exist locally
 	imageRef, err := c.client.Pull(ctx, image, containerd.WithPullUnpack)

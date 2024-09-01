@@ -14,5 +14,11 @@ reset-ctr:
 
 .PHONY: test
 test:
+	make test-worker-node
+
+
+.PHONY: test-worker-node
+test-worker-node:
 	sudo NAMESPACE_MAIN=test make reset-ctr
-	sudo NAMESPACE_MAIN=test go test ./...
+	sudo NAMESPACE_MAIN=test go test -v ./...
+	sudo NAMESPACE_MAIN=test make reset-ctr

@@ -19,7 +19,7 @@ func main() {
 	}
 
 	ctx := context.Background()
-	_, err = runtime.CreateContainer(ctx, "test", "ghcr.io/0xkowalski1/minecraft-server:latest")
+	_, err = runtime.CreateContainer(ctx, "test", cfg.NamespaceMain, "ghcr.io/0xkowalski1/minecraft-server:latest")
 
 	if err != nil {
 		log.Fatalf("Failed to create container: %v", err)
