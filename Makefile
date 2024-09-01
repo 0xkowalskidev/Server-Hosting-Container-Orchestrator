@@ -19,6 +19,4 @@ test:
 
 .PHONY: test-worker-node
 test-worker-node:
-	sudo NAMESPACE_MAIN=test make reset-ctr
-	sudo NAMESPACE_MAIN=test go test -v ./...
-	sudo NAMESPACE_MAIN=test make reset-ctr
+	sudo NAMESPACE_MAIN="test" go test -count=1 -v ./...
