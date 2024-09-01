@@ -293,7 +293,7 @@ func TestStopContainer_Valid(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, containerd.Running, status.Status)
 
-	exitCh, err := runtime.StopContainer(ctx, containerID, cfg.NamespaceMain)
+	exitCh, err := runtime.StopContainer(ctx, containerID, cfg.NamespaceMain, syscall.SIGKILL)
 	require.NoError(t, err)
 
 	// Wait for the exit status
@@ -314,7 +314,7 @@ func TestStopContainer_NonExistentContainer(t *testing.T) {
 	nonExistentContainerID := "non-existent-container"
 
 	// Attempt to stop a non-existent container
-	exitCh, err := runtime.StopContainer(ctx, nonExistentContainerID, cfg.NamespaceMain)
+	exitCh, err := runtime.StopContainer(ctx, nonExistentContainerID, cfg.NamespaceMain, syscall.SIGKILL)
 	require.Error(t, err, "Stopping a non-existent container should return an error")
 	require.Nil(t, exitCh, "Exit channel should be nil for a non-existent container")
 }
@@ -337,7 +337,7 @@ func TestStopContainer_AlreadyStoppedContainer(t *testing.T) {
 	require.NotNil(t, task)
 
 	// Stop the container
-	exitCh, err := runtime.StopContainer(ctx, containerID, cfg.NamespaceMain)
+	exitCh, err := runtime.StopContainer(ctx, containerID, cfg.NamespaceMain, syscall.SIGKILL)
 	require.NoError(t, err)
 
 	// Wait for the exit status
@@ -349,7 +349,7 @@ func TestStopContainer_AlreadyStoppedContainer(t *testing.T) {
 	require.Equal(t, containerd.Stopped, status.Status)
 
 	// Attempt to stop the container again
-	exitCh, err = runtime.StopContainer(ctx, containerID, cfg.NamespaceMain)
+	exitCh, err = runtime.StopContainer(ctx, containerID, cfg.NamespaceMain, syscall.SIGKILL)
 	require.Error(t, err, "Stopping an already stopped container should return an error")
 	require.Nil(t, exitCh, "Exit channel should be nil when the container is already stopped")
 }

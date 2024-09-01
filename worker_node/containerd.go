@@ -81,7 +81,7 @@ func (c *ContainerdRuntime) StartContainer(ctx context.Context, id string, names
 	return task, nil
 }
 
-func (c *ContainerdRuntime) StopContainer(ctx context.Context, id string, namespace string) (<-chan containerd.ExitStatus, error) {
+func (c *ContainerdRuntime) StopContainer(ctx context.Context, id string, namespace string, signal syscall.Signal) (<-chan containerd.ExitStatus, error) {
 	ctx = namespaces.WithNamespace(ctx, namespace)
 
 	container, err := c.GetContainer(ctx, id, namespace)
@@ -94,7 +94,7 @@ func (c *ContainerdRuntime) StopContainer(ctx context.Context, id string, namesp
 		return nil, fmt.Errorf("failed to load task for container with id %s in namespace %s: %w", id, namespace, err)
 	}
 
-	if err := task.Kill(ctx, syscall.SIGKILL); err != nil {
+	if err := task.Kill(ctx, signal); err != nil {
 		return nil, fmt.Errorf("failed to send SIGKILL to kill task for container with id %s in namespace %s: %w", id, namespace, err)
 	}
 
