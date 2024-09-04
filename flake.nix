@@ -17,7 +17,6 @@
         export CONTAINERD_PATH="/run/containerd/containerd.sock"
         echo "Environment variables set for development:"
         echo "NAMESPACE_MAIN=$NAMESPACE_MAIN"
-        echo "RUNTIME_TYPE=$RUNTIME_TYPE"
         echo "CONTAINERD_PATH=$CONTAINERD_PATH"
       '';
 

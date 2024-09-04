@@ -8,7 +8,6 @@ import (
 
 type Config struct {
 	NamespaceMain  string `env:"NAMESPACE_MAIN" default:"gameservers"`
-	RuntimeType    string `env:"RUNTIME_TYPE" default:"containerd"`
 	ContainerdPath string `env:"CONTAINERD_PATH" default:"/run/containerd/containerd.sock"`
 }
 

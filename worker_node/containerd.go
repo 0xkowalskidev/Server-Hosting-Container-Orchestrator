@@ -17,7 +17,7 @@ type ContainerdRuntime struct {
 	cfg    config.Config
 }
 
-func newContainerdRuntime(cfg config.Config) (Runtime, error) {
+func NewRuntime(cfg config.Config) (*ContainerdRuntime, error) {
 	client, err := containerd.New(cfg.ContainerdPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create containerd client: %w", err)

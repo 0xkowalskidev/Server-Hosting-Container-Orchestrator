@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func setup(t *testing.T) (workernode.Runtime, config.Config) {
+func setup(t *testing.T) (*workernode.ContainerdRuntime, config.Config) {
 	var cfg config.Config
 	config.ParseConfigFromEnv(&cfg)
 
