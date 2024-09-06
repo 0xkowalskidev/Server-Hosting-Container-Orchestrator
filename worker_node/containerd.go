@@ -10,6 +10,7 @@ import (
 	"github.com/containerd/containerd/cio"
 	"github.com/containerd/containerd/namespaces"
 	"github.com/containerd/containerd/oci"
+	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
 type ContainerdRuntime struct {
@@ -33,11 +34,16 @@ func (c *ContainerdRuntime) CreateContainer(ctx context.Context, id string, name
 		return nil, fmt.Errorf("failed to pull image %s for container with id %s in namespace %s: %w", image, namespace, id, err)
 	}
 
+	specOpts := []oci.SpecOpts{
+		oci.WithImageConfig(imageRef),
+		oci.WithHostNamespace(specs.NetworkNamespace),
+	}
+
 	container, err := c.client.NewContainer(
 		ctx,
 		id,
 		containerd.WithNewSnapshot(id+"-snapshot", imageRef),
-		containerd.WithNewSpec(oci.WithImageConfig(imageRef)),
+		containerd.WithNewSpec(specOpts...),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create container with id %s in namespace %s: %w", id, namespace, err)

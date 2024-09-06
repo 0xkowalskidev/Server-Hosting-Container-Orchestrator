@@ -24,4 +24,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create container: %v", err)
 	}
+
+	_, err = runtime.StartContainer(ctx, "test", cfg.NamespaceMain)
+
+	if err != nil {
+		log.Fatalf("Failed to start container: %v", err)
+	}
+
 }
