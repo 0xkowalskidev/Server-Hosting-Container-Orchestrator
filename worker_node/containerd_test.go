@@ -13,23 +13,25 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func setup(t *testing.T) (*workernode.ContainerdRuntime, workernode.Config) {
-	var cfg workernode.Config
-	utils.ParseConfigFromEnv(&cfg)
+var namespace string = "test"
 
-	runtime, err := workernode.NewRuntime(cfg)
+func setup(t *testing.T) (*workernode.ContainerdRuntime, workernode.Config) {
+	var config workernode.Config
+	utils.ParseConfigFromEnv(&config)
+
+	runtime, err := workernode.NewRuntime(config)
 	require.NoError(t, err)
 	require.NotNil(t, runtime)
 
-	teardown(t, cfg)
+	teardown(t, config)
 
-	return runtime, cfg
+	return runtime, config
 }
 
-func teardown(t *testing.T, cfg workernode.Config) {
-	ctx := namespaces.WithNamespace(context.Background(), cfg.NamespaceMain)
+func teardown(t *testing.T, config workernode.Config) {
+	ctx := namespaces.WithNamespace(context.Background(), namespace)
 
-	client, err := containerd.New(cfg.ContainerdPath)
+	client, err := containerd.New(config.ContainerdPath)
 	require.NoError(t, err)
 
 	containers, err := client.Containers(ctx)
@@ -78,127 +80,127 @@ func teardown(t *testing.T, cfg workernode.Config) {
 		}
 	}
 
-	t.Logf("Successfully cleaned up containerd namespace: %s", cfg.NamespaceMain)
+	t.Logf("Successfully cleaned up containerd namespace: %s", namespace)
 }
 
 // CreateContainer
 func TestCreateContainer_Valid(t *testing.T) {
-	runtime, cfg := setup(t)
-	defer teardown(t, cfg)
+	runtime, config := setup(t)
+	defer teardown(t, config)
 
-	ctx := namespaces.WithNamespace(context.Background(), cfg.NamespaceMain)
+	ctx := namespaces.WithNamespace(context.Background(), namespace)
 
 	containerID := "test-create-container"
 	image := "docker.io/library/alpine:latest"
 
-	createdContainer, err := runtime.CreateContainer(ctx, containerID, cfg.NamespaceMain, image)
+	createdContainer, err := runtime.CreateContainer(ctx, containerID, namespace, image)
 	require.NoError(t, err)
 	require.NotNil(t, createdContainer)
 }
 
 func TestCreateContainer_EmptyContainerID(t *testing.T) {
-	runtime, cfg := setup(t)
-	defer teardown(t, cfg)
+	runtime, config := setup(t)
+	defer teardown(t, config)
 
-	ctx := namespaces.WithNamespace(context.Background(), cfg.NamespaceMain)
+	ctx := namespaces.WithNamespace(context.Background(), namespace)
 
 	emptyContainerID := ""
 	image := "docker.io/library/alpine:latest"
 
-	_, err := runtime.CreateContainer(ctx, emptyContainerID, cfg.NamespaceMain, image)
+	_, err := runtime.CreateContainer(ctx, emptyContainerID, namespace, image)
 	require.Error(t, err, "Creating a container with an empty ID should return an error")
 }
 
 func TestCreateContainer_EmptyImageName(t *testing.T) {
-	runtime, cfg := setup(t)
-	defer teardown(t, cfg)
+	runtime, config := setup(t)
+	defer teardown(t, config)
 
-	ctx := namespaces.WithNamespace(context.Background(), cfg.NamespaceMain)
+	ctx := namespaces.WithNamespace(context.Background(), namespace)
 
 	containerID := "test-create-container-empty-image"
 	emptyImage := ""
 
-	_, err := runtime.CreateContainer(ctx, containerID, cfg.NamespaceMain, emptyImage)
+	_, err := runtime.CreateContainer(ctx, containerID, namespace, emptyImage)
 	require.Error(t, err, "Creating a container with an empty image name should return an error")
 }
 
 func TestCreateContainer_InvalidImageName(t *testing.T) {
-	runtime, cfg := setup(t)
-	defer teardown(t, cfg)
+	runtime, config := setup(t)
+	defer teardown(t, config)
 
-	ctx := namespaces.WithNamespace(context.Background(), cfg.NamespaceMain)
+	ctx := namespaces.WithNamespace(context.Background(), namespace)
 
 	containerID := "test-create-container-invalid-image"
 	invalidImage := "invalid-image-name"
 
-	_, err := runtime.CreateContainer(ctx, containerID, cfg.NamespaceMain, invalidImage)
+	_, err := runtime.CreateContainer(ctx, containerID, namespace, invalidImage)
 	require.Error(t, err, "Creating a container with an invalid image name should return an error")
 }
 
 func TestCreateContainer_DuplicateContainerID(t *testing.T) {
-	runtime, cfg := setup(t)
-	defer teardown(t, cfg)
+	runtime, config := setup(t)
+	defer teardown(t, config)
 
-	ctx := namespaces.WithNamespace(context.Background(), cfg.NamespaceMain)
+	ctx := namespaces.WithNamespace(context.Background(), namespace)
 
 	containerID := "test-create-container-duplicate"
 	image := "docker.io/library/alpine:latest"
 
 	// Create the first container
-	_, err := runtime.CreateContainer(ctx, containerID, cfg.NamespaceMain, image)
+	_, err := runtime.CreateContainer(ctx, containerID, namespace, image)
 	require.NoError(t, err)
 
 	// Attempt to create another container with the same ID
-	_, err = runtime.CreateContainer(ctx, containerID, cfg.NamespaceMain, image)
+	_, err = runtime.CreateContainer(ctx, containerID, namespace, image)
 	require.Error(t, err, "Creating a container with a duplicate ID should return an error")
 }
 
 // RemoveContainer
 func TestRemoveContainer(t *testing.T) {
-	runtime, cfg := setup(t)
-	defer teardown(t, cfg)
+	runtime, config := setup(t)
+	defer teardown(t, config)
 
-	ctx := namespaces.WithNamespace(context.Background(), cfg.NamespaceMain)
+	ctx := namespaces.WithNamespace(context.Background(), namespace)
 
 	containerID := "test-remove-container"
 	image := "docker.io/library/alpine:latest"
 
-	createdContainer, err := runtime.CreateContainer(ctx, containerID, cfg.NamespaceMain, image)
+	createdContainer, err := runtime.CreateContainer(ctx, containerID, namespace, image)
 	require.NoError(t, err)
 	require.NotNil(t, createdContainer)
 
-	err = runtime.RemoveContainer(ctx, containerID, cfg.NamespaceMain)
+	err = runtime.RemoveContainer(ctx, containerID, namespace)
 	require.NoError(t, err)
 
-	_, err = runtime.GetContainer(ctx, containerID, cfg.NamespaceMain)
+	_, err = runtime.GetContainer(ctx, containerID, namespace)
 	require.Error(t, err)
 	require.True(t, errdefs.IsNotFound(err))
 }
 
 func TestRemoveContainer_NonExistentContainer(t *testing.T) {
-	runtime, cfg := setup(t)
-	defer teardown(t, cfg)
+	runtime, config := setup(t)
+	defer teardown(t, config)
 
-	ctx := namespaces.WithNamespace(context.Background(), cfg.NamespaceMain)
+	ctx := namespaces.WithNamespace(context.Background(), namespace)
 
 	nonExistentContainerID := "non-existent-container"
 
 	// Attempt to remove a non-existent container
-	err := runtime.RemoveContainer(ctx, nonExistentContainerID, cfg.NamespaceMain)
+	err := runtime.RemoveContainer(ctx, nonExistentContainerID, namespace)
 	require.Error(t, err, "Removing a non-existent container should return an error")
 	require.True(t, errdefs.IsNotFound(err), "Error should be of type NotFound")
 }
 
 func TestRemoveContainer_AlreadyRemovedContainer(t *testing.T) {
-	runtime, cfg := setup(t)
-	defer teardown(t, cfg)
+	runtime, config := setup(t)
+	defer teardown(t, config)
 
-	ctx := namespaces.WithNamespace(context.Background(), cfg.NamespaceMain)
+	ctx := namespaces.WithNamespace(context.Background(), namespace)
 
 	containerID := "test-already-removed-container"
 	image := "docker.io/library/alpine:latest"
 
-	createdContainer, err := runtime.CreateContainer(ctx, containerID, cfg.NamespaceMain, image)
+	createdContainer, err := runtime.CreateContainer(ctx, containerID, namespace, image)
 	require.NoError(t, err)
 	require.NotNil(t, createdContainer)
 
@@ -206,26 +208,26 @@ func TestRemoveContainer_AlreadyRemovedContainer(t *testing.T) {
 	require.NoError(t, err)
 
 	// Attempt to remove the container again
-	err = runtime.RemoveContainer(ctx, containerID, cfg.NamespaceMain)
+	err = runtime.RemoveContainer(ctx, containerID, namespace)
 	require.Error(t, err, "Removing an already removed container should return an error")
 	require.True(t, errdefs.IsNotFound(err), "Error should be of type NotFound")
 }
 
 // StartContainer
 func TestStartContainer_Valid(t *testing.T) {
-	runtime, cfg := setup(t)
-	defer teardown(t, cfg)
+	runtime, config := setup(t)
+	defer teardown(t, config)
 
-	ctx := namespaces.WithNamespace(context.Background(), cfg.NamespaceMain)
+	ctx := namespaces.WithNamespace(context.Background(), namespace)
 
 	containerID := "test-start-container"
 	image := "docker.io/library/alpine:latest"
 
-	createdContainer, err := runtime.CreateContainer(ctx, containerID, cfg.NamespaceMain, image)
+	createdContainer, err := runtime.CreateContainer(ctx, containerID, namespace, image)
 	require.NoError(t, err)
 	require.NotNil(t, createdContainer)
 
-	task, err := runtime.StartContainer(ctx, containerID, cfg.NamespaceMain)
+	task, err := runtime.StartContainer(ctx, containerID, namespace)
 	require.NoError(t, err)
 	require.NotNil(t, task)
 
@@ -235,57 +237,57 @@ func TestStartContainer_Valid(t *testing.T) {
 }
 
 func TestStartContainer_NonExistentContainer(t *testing.T) {
-	runtime, cfg := setup(t)
-	defer teardown(t, cfg)
+	runtime, config := setup(t)
+	defer teardown(t, config)
 
-	ctx := namespaces.WithNamespace(context.Background(), cfg.NamespaceMain)
+	ctx := namespaces.WithNamespace(context.Background(), namespace)
 
 	nonExistentContainerID := "non-existent-container"
 
 	// Attempt to start a non-existent container
-	task, err := runtime.StartContainer(ctx, nonExistentContainerID, cfg.NamespaceMain)
+	task, err := runtime.StartContainer(ctx, nonExistentContainerID, namespace)
 	require.Error(t, err, "Starting a non-existent container should return an error")
 	require.Nil(t, task, "Task should be nil for a non-existent container")
 }
 
 func TestStartContainer_AlreadyRunningContainer(t *testing.T) {
-	runtime, cfg := setup(t)
-	defer teardown(t, cfg)
+	runtime, config := setup(t)
+	defer teardown(t, config)
 
-	ctx := namespaces.WithNamespace(context.Background(), cfg.NamespaceMain)
+	ctx := namespaces.WithNamespace(context.Background(), namespace)
 
 	containerID := "test-already-running-container"
 	image := "docker.io/library/alpine:latest"
 
-	createdContainer, err := runtime.CreateContainer(ctx, containerID, cfg.NamespaceMain, image)
+	createdContainer, err := runtime.CreateContainer(ctx, containerID, namespace, image)
 	require.NoError(t, err)
 	require.NotNil(t, createdContainer)
 
-	task, err := runtime.StartContainer(ctx, containerID, cfg.NamespaceMain)
+	task, err := runtime.StartContainer(ctx, containerID, namespace)
 	require.NoError(t, err)
 	require.NotNil(t, task)
 
 	// Attempt to start the container again while it's already running
-	taskAgain, err := runtime.StartContainer(ctx, containerID, cfg.NamespaceMain)
+	taskAgain, err := runtime.StartContainer(ctx, containerID, namespace)
 	require.Error(t, err, "Starting an already running container should return an error")
 	require.Nil(t, taskAgain, "Task should be nil when the container is already running")
 }
 
 // StopContainer
 func TestStopContainer_Valid(t *testing.T) {
-	runtime, cfg := setup(t)
-	defer teardown(t, cfg)
+	runtime, config := setup(t)
+	defer teardown(t, config)
 
-	ctx := namespaces.WithNamespace(context.Background(), cfg.NamespaceMain)
+	ctx := namespaces.WithNamespace(context.Background(), namespace)
 
 	containerID := "test-stop-container"
 	image := "docker.io/library/alpine:latest"
 
-	createdContainer, err := runtime.CreateContainer(ctx, containerID, cfg.NamespaceMain, image)
+	createdContainer, err := runtime.CreateContainer(ctx, containerID, namespace, image)
 	require.NoError(t, err)
 	require.NotNil(t, createdContainer)
 
-	task, err := runtime.StartContainer(ctx, containerID, cfg.NamespaceMain)
+	task, err := runtime.StartContainer(ctx, containerID, namespace)
 	require.NoError(t, err)
 	require.NotNil(t, task)
 
@@ -293,7 +295,7 @@ func TestStopContainer_Valid(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, containerd.Running, status.Status)
 
-	exitCh, err := runtime.StopContainer(ctx, containerID, cfg.NamespaceMain, syscall.SIGKILL)
+	exitCh, err := runtime.StopContainer(ctx, containerID, namespace, syscall.SIGKILL)
 	require.NoError(t, err)
 
 	// Wait for the exit status
@@ -306,38 +308,38 @@ func TestStopContainer_Valid(t *testing.T) {
 }
 
 func TestStopContainer_NonExistentContainer(t *testing.T) {
-	runtime, cfg := setup(t)
-	defer teardown(t, cfg)
+	runtime, config := setup(t)
+	defer teardown(t, config)
 
-	ctx := namespaces.WithNamespace(context.Background(), cfg.NamespaceMain)
+	ctx := namespaces.WithNamespace(context.Background(), namespace)
 
 	nonExistentContainerID := "non-existent-container"
 
 	// Attempt to stop a non-existent container
-	exitCh, err := runtime.StopContainer(ctx, nonExistentContainerID, cfg.NamespaceMain, syscall.SIGKILL)
+	exitCh, err := runtime.StopContainer(ctx, nonExistentContainerID, namespace, syscall.SIGKILL)
 	require.Error(t, err, "Stopping a non-existent container should return an error")
 	require.Nil(t, exitCh, "Exit channel should be nil for a non-existent container")
 }
 
 func TestStopContainer_AlreadyStoppedContainer(t *testing.T) {
-	runtime, cfg := setup(t)
-	defer teardown(t, cfg)
+	runtime, config := setup(t)
+	defer teardown(t, config)
 
-	ctx := namespaces.WithNamespace(context.Background(), cfg.NamespaceMain)
+	ctx := namespaces.WithNamespace(context.Background(), namespace)
 
 	containerID := "test-already-stopped-container"
 	image := "docker.io/library/alpine:latest"
 
-	createdContainer, err := runtime.CreateContainer(ctx, containerID, cfg.NamespaceMain, image)
+	createdContainer, err := runtime.CreateContainer(ctx, containerID, namespace, image)
 	require.NoError(t, err)
 	require.NotNil(t, createdContainer)
 
-	task, err := runtime.StartContainer(ctx, containerID, cfg.NamespaceMain)
+	task, err := runtime.StartContainer(ctx, containerID, namespace)
 	require.NoError(t, err)
 	require.NotNil(t, task)
 
 	// Stop the container
-	exitCh, err := runtime.StopContainer(ctx, containerID, cfg.NamespaceMain, syscall.SIGKILL)
+	exitCh, err := runtime.StopContainer(ctx, containerID, namespace, syscall.SIGKILL)
 	require.NoError(t, err)
 
 	// Wait for the exit status
@@ -349,26 +351,26 @@ func TestStopContainer_AlreadyStoppedContainer(t *testing.T) {
 	require.Equal(t, containerd.Stopped, status.Status)
 
 	// Attempt to stop the container again
-	exitCh, err = runtime.StopContainer(ctx, containerID, cfg.NamespaceMain, syscall.SIGKILL)
+	exitCh, err = runtime.StopContainer(ctx, containerID, namespace, syscall.SIGKILL)
 	require.Error(t, err, "Stopping an already stopped container should return an error")
 	require.Nil(t, exitCh, "Exit channel should be nil when the container is already stopped")
 }
 
 // GetContainer
 func TestGetContainer_Valid(t *testing.T) {
-	runtime, cfg := setup(t)
-	defer teardown(t, cfg)
+	runtime, config := setup(t)
+	defer teardown(t, config)
 
-	ctx := namespaces.WithNamespace(context.Background(), cfg.NamespaceMain)
+	ctx := namespaces.WithNamespace(context.Background(), namespace)
 
 	containerID := "test-get-container"
 	image := "docker.io/library/alpine:latest"
 
-	createdContainer, err := runtime.CreateContainer(ctx, containerID, cfg.NamespaceMain, image)
+	createdContainer, err := runtime.CreateContainer(ctx, containerID, namespace, image)
 	require.NoError(t, err)
 	require.NotNil(t, createdContainer)
 
-	retrievedContainer, err := runtime.GetContainer(ctx, containerID, cfg.NamespaceMain)
+	retrievedContainer, err := runtime.GetContainer(ctx, containerID, namespace)
 	require.NoError(t, err)
 	require.NotNil(t, retrievedContainer)
 
@@ -376,29 +378,29 @@ func TestGetContainer_Valid(t *testing.T) {
 }
 
 func TestGetContainer_NonExistentContainer(t *testing.T) {
-	runtime, cfg := setup(t)
-	defer teardown(t, cfg)
+	runtime, config := setup(t)
+	defer teardown(t, config)
 
-	ctx := namespaces.WithNamespace(context.Background(), cfg.NamespaceMain)
+	ctx := namespaces.WithNamespace(context.Background(), namespace)
 
 	nonExistentContainerID := "non-existent-container"
 
 	// Attempt to retrieve a non-existent container
-	retrievedContainer, err := runtime.GetContainer(ctx, nonExistentContainerID, cfg.NamespaceMain)
+	retrievedContainer, err := runtime.GetContainer(ctx, nonExistentContainerID, namespace)
 	require.Error(t, err, "Retrieving a non-existent container should return an error")
 	require.Nil(t, retrievedContainer, "Retrieved container should be nil for a non-existent container")
 }
 
 func TestGetContainer_AfterRemoval(t *testing.T) {
-	runtime, cfg := setup(t)
-	defer teardown(t, cfg)
+	runtime, config := setup(t)
+	defer teardown(t, config)
 
-	ctx := namespaces.WithNamespace(context.Background(), cfg.NamespaceMain)
+	ctx := namespaces.WithNamespace(context.Background(), namespace)
 
 	containerID := "test-get-container-after-removal"
 	image := "docker.io/library/alpine:latest"
 
-	createdContainer, err := runtime.CreateContainer(ctx, containerID, cfg.NamespaceMain, image)
+	createdContainer, err := runtime.CreateContainer(ctx, containerID, namespace, image)
 	require.NoError(t, err)
 	require.NotNil(t, createdContainer)
 
@@ -406,28 +408,28 @@ func TestGetContainer_AfterRemoval(t *testing.T) {
 	require.NoError(t, err)
 
 	// Attempt to retrieve the container after it has been removed
-	retrievedContainer, err := runtime.GetContainer(ctx, containerID, cfg.NamespaceMain)
+	retrievedContainer, err := runtime.GetContainer(ctx, containerID, namespace)
 	require.Error(t, err, "Retrieving a container after it has been removed should return an error")
 	require.Nil(t, retrievedContainer, "Retrieved container should be nil for a removed container")
 }
 
 // GetContainers
 func TestGetContainers_Valid(t *testing.T) {
-	runtime, cfg := setup(t)
-	defer teardown(t, cfg)
+	runtime, config := setup(t)
+	defer teardown(t, config)
 
-	ctx := namespaces.WithNamespace(context.Background(), cfg.NamespaceMain)
+	ctx := namespaces.WithNamespace(context.Background(), namespace)
 
 	containerIDs := []string{"test-get-containers-1", "test-get-containers-2", "test-get-containers-3"}
 	image := "docker.io/library/alpine:latest"
 
 	for _, containerID := range containerIDs {
-		createdContainer, err := runtime.CreateContainer(ctx, containerID, cfg.NamespaceMain, image)
+		createdContainer, err := runtime.CreateContainer(ctx, containerID, namespace, image)
 		require.NoError(t, err)
 		require.NotNil(t, createdContainer)
 	}
 
-	containers, err := runtime.GetContainers(ctx, cfg.NamespaceMain)
+	containers, err := runtime.GetContainers(ctx, namespace)
 	require.NoError(t, err)
 	require.NotNil(t, containers)
 	require.Len(t, containers, len(containerIDs), "The number of containers retrieved should match the number created")
@@ -443,37 +445,37 @@ func TestGetContainers_Valid(t *testing.T) {
 }
 
 func TestGetContainers_NoContainers(t *testing.T) {
-	runtime, cfg := setup(t)
-	defer teardown(t, cfg)
+	runtime, config := setup(t)
+	defer teardown(t, config)
 
-	ctx := namespaces.WithNamespace(context.Background(), cfg.NamespaceMain)
+	ctx := namespaces.WithNamespace(context.Background(), namespace)
 
 	// Attempt to retrieve containers when none exist
-	containers, err := runtime.GetContainers(ctx, cfg.NamespaceMain)
+	containers, err := runtime.GetContainers(ctx, namespace)
 	require.NoError(t, err, "Retrieving containers in an empty namespace should not return an error")
 	require.Empty(t, containers, "The containers list should be empty when no containers exist")
 }
 
 func TestGetContainers_AfterSomeAreRemoved(t *testing.T) {
-	runtime, cfg := setup(t)
-	defer teardown(t, cfg)
+	runtime, config := setup(t)
+	defer teardown(t, config)
 
-	ctx := namespaces.WithNamespace(context.Background(), cfg.NamespaceMain)
+	ctx := namespaces.WithNamespace(context.Background(), namespace)
 
 	containerIDs := []string{"test-get-containers-1", "test-get-containers-2", "test-get-containers-3"}
 	image := "docker.io/library/alpine:latest"
 
 	for _, containerID := range containerIDs {
-		createdContainer, err := runtime.CreateContainer(ctx, containerID, cfg.NamespaceMain, image)
+		createdContainer, err := runtime.CreateContainer(ctx, containerID, namespace, image)
 		require.NoError(t, err)
 		require.NotNil(t, createdContainer)
 	}
 
 	// Remove one of the containers
-	err := runtime.RemoveContainer(ctx, containerIDs[1], cfg.NamespaceMain)
+	err := runtime.RemoveContainer(ctx, containerIDs[1], namespace)
 	require.NoError(t, err, "Removing a container should not return an error")
 
-	containers, err := runtime.GetContainers(ctx, cfg.NamespaceMain)
+	containers, err := runtime.GetContainers(ctx, namespace)
 	require.NoError(t, err)
 	require.NotNil(t, containers)
 	require.Len(t, containers, len(containerIDs)-1, "The number of containers retrieved should match the number remaining")

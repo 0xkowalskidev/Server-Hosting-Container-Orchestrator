@@ -15,17 +15,17 @@ test:
 
 .PHONY: test-worker-node
 test-worker-node:
-	sudo NAMESPACE_MAIN="test" go test -count=1 -v ./...
+	sudo go test -count=1 -v ./...
 
 .PHONY: reset-ctr
 reset-ctr:
 	# Stop and delete all running tasks
-	@sudo ctr -n $(NAMESPACE_MAIN) tasks ls -q | xargs -r -I{} sudo ctr -n $(NAMESPACE_MAIN) tasks kill -s SIGKILL {} || true
+	@sudo ctr -n $(NAMESPACE) tasks ls -q | xargs -r -I{} sudo ctr -n $(NAMESPACE) tasks kill -s SIGKILL {} || true
 	# Ensure all tasks are stopped before deletion
 	@sleep 1
-	@sudo ctr -n $(NAMESPACE_MAIN) tasks ls -q | xargs -r -I{} sudo ctr -n $(NAMESPACE_MAIN) tasks delete {} || true
+	@sudo ctr -n $(NAMESPACE) tasks ls -q | xargs -r -I{} sudo ctr -n $(NAMESPACE) tasks delete {} || true
 	# Delete all containers
-	@sudo ctr -n $(NAMESPACE_MAIN) containers ls -q | xargs -r -I{} sudo ctr -n $(NAMESPACE_MAIN) containers delete {} || true
+	@sudo ctr -n $(NAMESPACE) containers ls -q | xargs -r -I{} sudo ctr -n $(NAMESPACE) containers delete {} || true
 
 .PHONY: reset-etcd
 reset-etcd:

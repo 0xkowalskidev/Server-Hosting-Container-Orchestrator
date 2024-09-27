@@ -11,11 +11,15 @@ import (
 )
 
 type NodeService struct {
+	config     Config
 	etcdClient *clientv3.Client
 }
 
-func NewNodeService(etcdClient *clientv3.Client) *NodeService {
-	return &NodeService{etcdClient: etcdClient}
+func NewNodeService(config Config, etcdClient *clientv3.Client) *NodeService {
+	return &NodeService{
+		config:     config,
+		etcdClient: etcdClient,
+	}
 }
 
 func (ns *NodeService) GetNodes() ([]models.Node, error) {
@@ -24,7 +28,7 @@ func (ns *NodeService) GetNodes() ([]models.Node, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	resp, err := ns.etcdClient.Get(ctx, "/nodes", clientv3.WithPrefix())
+	resp, err := ns.etcdClient.Get(ctx, fmt.Sprintf("/%s/nodes", ns.config.Namespace), clientv3.WithPrefix())
 	if err != nil {
 		return nodes, fmt.Errorf("Failed to get nodes from etcd: %v", err)
 	}
@@ -50,7 +54,7 @@ func (ns *NodeService) CreateNode(node models.Node) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	_, err = ns.etcdClient.Put(ctx, "/nodes/"+node.ID, string(nodeData))
+	_, err = ns.etcdClient.Put(ctx, fmt.Sprintf("/%s/nodes/%s", ns.config.Namespace, node.ID), string(nodeData))
 	if err != nil {
 		return fmt.Errorf("Failed to store node data in etcd: %v", err)
 	}

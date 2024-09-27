@@ -9,23 +9,23 @@ import (
 )
 
 func main() {
-	var cfg workernode.Config
-	utils.ParseConfigFromEnv(&cfg)
+	var config workernode.Config
+	utils.ParseConfigFromEnv(&config)
 
-	runtime, err := workernode.NewRuntime(cfg)
+	runtime, err := workernode.NewRuntime(config)
 
 	if err != nil {
 		log.Fatalf("Failed to initialize runtime: %v", err)
 	}
 
 	ctx := context.Background()
-	_, err = runtime.CreateContainer(ctx, "test", cfg.NamespaceMain, "ghcr.io/0xKowalskiDev/minecraft-server:latest")
+	_, err = runtime.CreateContainer(ctx, "test", "gameservers", "ghcr.io/0xKowalskiDev/minecraft-server:latest")
 
 	if err != nil {
 		log.Fatalf("Failed to create container: %v", err)
 	}
 
-	_, err = runtime.StartContainer(ctx, "test", cfg.NamespaceMain)
+	_, err = runtime.StartContainer(ctx, "test", "gameservers")
 
 	if err != nil {
 		log.Fatalf("Failed to start container: %v", err)

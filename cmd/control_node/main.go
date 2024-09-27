@@ -5,12 +5,14 @@ import (
 	"time"
 
 	controlnode "github.com/0xKowalskiDev/Server-Hosting-Container-Orchestrator/control_node"
+	"github.com/0xKowalskiDev/Server-Hosting-Container-Orchestrator/utils"
 	"github.com/gofiber/fiber/v3"
 	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
 func main() {
-	app := fiber.New()
+	var config controlnode.Config
+	utils.ParseConfigFromEnv(&config)
 
 	client, err := clientv3.New(clientv3.Config{
 		Endpoints:   []string{"localhost:2379"},
@@ -21,9 +23,11 @@ func main() {
 		panic(err)
 	}
 
+	app := fiber.New()
+
 	// Services
-	containerService := controlnode.NewContainerService(client)
-	nodeService := controlnode.NewNodeService(client)
+	containerService := controlnode.NewContainerService(config, client)
+	nodeService := controlnode.NewNodeService(config, client)
 
 	// Handlers
 	containerHandler := controlnode.NewContainerHandler(containerService)

@@ -14,15 +14,15 @@ import (
 
 type ContainerdRuntime struct {
 	client *containerd.Client
-	cfg    Config
+	config Config
 }
 
-func NewRuntime(cfg Config) (*ContainerdRuntime, error) {
-	client, err := containerd.New(cfg.ContainerdPath)
+func NewRuntime(config Config) (*ContainerdRuntime, error) {
+	client, err := containerd.New(config.ContainerdPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create containerd client: %w", err)
 	}
-	return &ContainerdRuntime{client: client, cfg: cfg}, nil
+	return &ContainerdRuntime{client: client, config: config}, nil
 }
 
 func (c *ContainerdRuntime) CreateContainer(ctx context.Context, id string, namespace string, image string) (containerd.Container, error) {

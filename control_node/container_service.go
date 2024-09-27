@@ -11,11 +11,15 @@ import (
 )
 
 type ContainerService struct {
+	config     Config
 	etcdClient *clientv3.Client
 }
 
-func NewContainerService(etcdClient *clientv3.Client) *ContainerService {
-	return &ContainerService{etcdClient: etcdClient}
+func NewContainerService(config Config, etcdClient *clientv3.Client) *ContainerService {
+	return &ContainerService{
+		config:     config,
+		etcdClient: etcdClient,
+	}
 }
 
 func (cs *ContainerService) GetContainers() ([]models.Container, error) {
@@ -24,7 +28,7 @@ func (cs *ContainerService) GetContainers() ([]models.Container, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	resp, err := cs.etcdClient.Get(ctx, "/containers", clientv3.WithPrefix())
+	resp, err := cs.etcdClient.Get(ctx, fmt.Sprintf("/%s/containers", cs.config.Namespace), clientv3.WithPrefix())
 	if err != nil {
 		return containers, fmt.Errorf("Failed to get containers from etcd: %v", err)
 	}
@@ -50,7 +54,7 @@ func (cs *ContainerService) CreateContainer(container models.Container) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, err = cs.etcdClient.Put(ctx, "/containers/"+container.ID, string(containerData))
+	_, err = cs.etcdClient.Put(ctx, fmt.Sprintf("/%s/containers/%s", cs.config.Namespace, container.ID), string(containerData))
 	if err != nil {
 		return fmt.Errorf("Failed to store container data in etcd: %v", err)
 	}
