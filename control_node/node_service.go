@@ -36,7 +36,6 @@ func (ns *NodeService) GetNodes() ([]models.Node, error) {
 	for _, kv := range resp.Kvs {
 		var node models.Node
 		if err := json.Unmarshal(kv.Value, &node); err != nil {
-			// Might want to handle this more gracefully
 			return nodes, fmt.Errorf("Failed to decode node data from etcd: %v", err)
 		}
 		nodes = append(nodes, node)

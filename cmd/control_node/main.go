@@ -11,35 +11,37 @@ import (
 )
 
 func main() {
+	// Config
 	var config controlnode.Config
 	utils.ParseConfigFromEnv(&config)
 
+	// Etcd
 	client, err := clientv3.New(clientv3.Config{
-		Endpoints:   []string{"localhost:2379"},
+		Endpoints:   []string{"localhost:2379"}, // TODO: Get these from config
 		DialTimeout: 5 * time.Second,
 	})
-
 	if err != nil {
-		panic(err)
+		log.Fatalf("Failed to connect to Etcd: %v", err)
 	}
 
+	// Api
 	app := fiber.New()
 
-	// Services
+	/// Services
 	containerService := controlnode.NewContainerService(config, client)
 	nodeService := controlnode.NewNodeService(config, client)
 
-	// Handlers
+	/// Handlers
 	containerHandler := controlnode.NewContainerHandler(containerService)
 	nodeHandler := controlnode.NewNodeHandler(nodeService)
-	// Routes
+
+	/// Routes
 	//// /containers
 	app.Get("/api/v1/containers", containerHandler.GetContainers)
 	app.Post("/api/v1/containers", containerHandler.CreateContainer)
-
 	//// /nodes
 	app.Get("/api/v1/nodes", nodeHandler.GetNodes)
 	app.Post("/api/v1/nodes", nodeHandler.CreateNode)
 
-	log.Fatal(app.Listen(":3000"))
+	log.Fatal(app.Listen(":3000")) // TODO: Get this from config
 }

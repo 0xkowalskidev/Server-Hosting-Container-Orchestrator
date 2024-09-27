@@ -36,7 +36,6 @@ func (cs *ContainerService) GetContainers() ([]models.Container, error) {
 	for _, kv := range resp.Kvs {
 		var container models.Container
 		if err := json.Unmarshal(kv.Value, &container); err != nil {
-			// Might want to handle this more gracefully
 			return containers, fmt.Errorf("Failed to decode container data from etcd: %v", err)
 		}
 		containers = append(containers, container)

@@ -13,7 +13,6 @@
 
       shellHook = ''
         export NAMESPACE="gameservers"
-        export RUNTIME_TYPE="containerd"
         export CONTAINERD_PATH="/run/containerd/containerd.sock"
         echo "Environment variables set for development:"
         echo "NAMESPACE=$NAMESPACE"
