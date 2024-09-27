@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/0xKowalski1/Server-Hosting-Container-Orchestrator/models"
+	"github.com/0xKowalskiDev/Server-Hosting-Container-Orchestrator/models"
 	"github.com/gofiber/fiber/v3"
 	clientv3 "go.etcd.io/etcd/client/v3"
 )

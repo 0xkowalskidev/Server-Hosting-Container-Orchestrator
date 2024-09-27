@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"syscall"
 
-	"github.com/0xKowalski1/Server-Hosting-Container-Orchestrator/config"
+	"github.com/0xKowalskiDev/Server-Hosting-Container-Orchestrator/config"
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/cio"
 	"github.com/containerd/containerd/namespaces"

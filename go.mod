@@ -1,4 +1,4 @@
-module github.com/0xKowalski1/Server-Hosting-Container-Orchestrator
+module github.com/0xKowalskiDev/Server-Hosting-Container-Orchestrator
 
 go 1.21.8
 
