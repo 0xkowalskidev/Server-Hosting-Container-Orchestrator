@@ -5,7 +5,7 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/0xKowalskiDev/Server-Hosting-Container-Orchestrator/config"
+	"github.com/0xKowalskiDev/Server-Hosting-Container-Orchestrator/utils"
 	workernode "github.com/0xKowalskiDev/Server-Hosting-Container-Orchestrator/worker_node"
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/namespaces"
@@ -13,9 +13,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func setup(t *testing.T) (*workernode.ContainerdRuntime, config.Config) {
-	var cfg config.Config
-	config.ParseConfigFromEnv(&cfg)
+func setup(t *testing.T) (*workernode.ContainerdRuntime, workernode.Config) {
+	var cfg workernode.Config
+	utils.ParseConfigFromEnv(&cfg)
 
 	runtime, err := workernode.NewRuntime(cfg)
 	require.NoError(t, err)
@@ -26,7 +26,7 @@ func setup(t *testing.T) (*workernode.ContainerdRuntime, config.Config) {
 	return runtime, cfg
 }
 
-func teardown(t *testing.T, cfg config.Config) {
+func teardown(t *testing.T, cfg workernode.Config) {
 	ctx := namespaces.WithNamespace(context.Background(), cfg.NamespaceMain)
 
 	client, err := containerd.New(cfg.ContainerdPath)

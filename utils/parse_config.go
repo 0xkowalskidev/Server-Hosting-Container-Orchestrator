@@ -1,15 +1,10 @@
-package config
+package utils
 
 import (
 	"os"
 	"reflect"
 	"strconv"
 )
-
-type Config struct {
-	NamespaceMain  string `env:"NAMESPACE_MAIN" default:"gameservers"`
-	ContainerdPath string `env:"CONTAINERD_PATH" default:"/run/containerd/containerd.sock"`
-}
 
 func ParseConfigFromEnv(cfg interface{}) {
 	val := reflect.ValueOf(cfg).Elem()

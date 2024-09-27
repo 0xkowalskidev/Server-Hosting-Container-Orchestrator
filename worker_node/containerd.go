@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"syscall"
 
-	"github.com/0xKowalskiDev/Server-Hosting-Container-Orchestrator/config"
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/cio"
 	"github.com/containerd/containerd/namespaces"
@@ -15,10 +14,10 @@ import (
 
 type ContainerdRuntime struct {
 	client *containerd.Client
-	cfg    config.Config
+	cfg    Config
 }
 
-func NewRuntime(cfg config.Config) (*ContainerdRuntime, error) {
+func NewRuntime(cfg Config) (*ContainerdRuntime, error) {
 	client, err := containerd.New(cfg.ContainerdPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create containerd client: %w", err)

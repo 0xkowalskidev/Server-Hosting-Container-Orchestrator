@@ -4,13 +4,13 @@ import (
 	"context"
 	"log"
 
-	"github.com/0xKowalskiDev/Server-Hosting-Container-Orchestrator/config"
+	"github.com/0xKowalskiDev/Server-Hosting-Container-Orchestrator/utils"
 	workernode "github.com/0xKowalskiDev/Server-Hosting-Container-Orchestrator/worker_node"
 )
 
 func main() {
-	var cfg config.Config
-	config.ParseConfigFromEnv(&cfg)
+	var cfg workernode.Config
+	utils.ParseConfigFromEnv(&cfg)
 
 	runtime, err := workernode.NewRuntime(cfg)
 
