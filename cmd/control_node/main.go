@@ -24,7 +24,7 @@ func main() {
 		log.Fatalf("Failed to connect to Etcd: %v", err)
 	}
 
-	// Api
+	// HTTP Server
 	app := fiber.New()
 
 	/// Services
@@ -35,13 +35,18 @@ func main() {
 	containerHandler := controlnode.NewContainerHandler(containerService)
 	nodeHandler := controlnode.NewNodeHandler(nodeService)
 
-	/// Routes
+	/// Api Routes
 	//// /containers
-	app.Get("/api/v1/containers", containerHandler.GetContainers)
-	app.Post("/api/v1/containers", containerHandler.CreateContainer)
+	app.Get("/api/containers", containerHandler.GetContainers)
+	app.Post("/api/containers", containerHandler.CreateContainer)
 	//// /nodes
-	app.Get("/api/v1/nodes", nodeHandler.GetNodes)
-	app.Post("/api/v1/nodes", nodeHandler.CreateNode)
+	app.Get("/api/nodes", nodeHandler.GetNodes)
+	app.Post("/api/nodes", nodeHandler.CreateNode)
+
+	/// Control Panel Routes
+	app.Get("/", func(c fiber.Ctx) error {
+		return c.SendFile("./control_node/index.html")
+	})
 
 	log.Fatal(app.Listen(":3000")) // TODO: Get this from config
 }

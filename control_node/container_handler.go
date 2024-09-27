@@ -1,6 +1,8 @@
 package controlnode
 
 import (
+	"html/template"
+
 	"github.com/0xKowalskiDev/Server-Hosting-Container-Orchestrator/models"
 	"github.com/gofiber/fiber/v3"
 )
@@ -19,7 +21,23 @@ func (ch *ContainerHandler) GetContainers(c fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"error": "Error getting containers", "details": err.Error()})
 	}
 
-	return c.JSON(containers)
+	if c.Get("HX-Request") == "true" {
+		tmplStr := `
+			<ul id="containers">
+				{{range .}}
+				<li>Container ID: {{.ID}}</li>
+				{{end}}
+			</ul>
+		`
+		engine := template.New("containers")
+
+		t, _ := engine.Parse(tmplStr)
+
+		return t.Execute(c.Response().BodyWriter(), containers)
+
+	} else {
+		return c.JSON(containers)
+	}
 
 }
 
@@ -34,5 +52,17 @@ func (ch *ContainerHandler) CreateContainer(c fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"error": "Error creating container", "details": err.Error()})
 	}
 
-	return c.Status(201).JSON(container)
+	if c.Get("HX-Request") == "true" {
+		tmplStr := `
+				<li>Container ID: {{.ID}}</li>
+		`
+		engine := template.New("container")
+
+		t, _ := engine.Parse(tmplStr)
+
+		return t.Execute(c.Response().BodyWriter(), container)
+
+	} else {
+		return c.Status(201).JSON(container)
+	}
 }
