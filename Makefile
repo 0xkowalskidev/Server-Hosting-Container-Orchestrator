@@ -2,7 +2,7 @@ REFLEX_REGEX='\.go$|\.html$$'
 
 .PHONY: dev-worker-node
 dev-worker-node:
-	sudo go run ./cmd/worker_node/main.go
+	sudo NODE_ID=node_1 CONTROL_NODE_URI=http://localhost:3000/api go run ./cmd/worker_node/main.go
 
 .PHONY: dev-control-node
 dev-control-node:

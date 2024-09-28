@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"time"
 
@@ -19,7 +20,7 @@ func main() {
 	utils.ParseConfigFromEnv(&config)
 
 	// Etcd
-	client, err := clientv3.New(clientv3.Config{
+	etcdClient, err := clientv3.New(clientv3.Config{
 		Endpoints:   []string{"localhost:2379"}, // TODO: Get these from config
 		DialTimeout: 5 * time.Second,
 	})
@@ -32,11 +33,11 @@ func main() {
 	app := fiber.New(fiber.Config{
 		Views: engine,
 	})
-	app.Use(compress.New()) // Enable gzip compression
+	app.Use(compress.New())
 
 	/// Services
-	containerService := controlnode.NewContainerService(config, client)
-	nodeService := controlnode.NewNodeService(config, client)
+	containerService := controlnode.NewContainerService(config, etcdClient)
+	nodeService := controlnode.NewNodeService(config, etcdClient)
 
 	/// Handlers
 	containerHandler := controlnode.NewContainerHandler(containerService)
@@ -48,6 +49,7 @@ func main() {
 	app.Post("/api/containers", containerHandler.CreateContainer)
 	//// /nodes
 	app.Get("/api/nodes", nodeHandler.GetNodes)
+	app.Get("/api/nodes/:id", nodeHandler.GetNode)
 	app.Post("/api/nodes", nodeHandler.CreateNode)
 
 	/// Control Panel Routes
@@ -72,6 +74,24 @@ func main() {
 			return c.Render("containers_page", fiber.Map{"Containers": containers}, "layout")
 		}
 	})
+
+	// Schedular
+	schedular := controlnode.NewSchedular(containerService, nodeService)
+
+	schedular.ScheduleContainers() // Initial run incase events where missed while offline
+
+	// Watch for changes to /containers in etcd
+	go func() {
+		watchChannel := etcdClient.Watch(context.Background(), "/containers")
+		for watchResp := range watchChannel {
+			for _, ev := range watchResp.Events {
+				switch ev.Type {
+				case clientv3.EventTypePut:
+					schedular.ScheduleContainers() // Will run on container updates aswell as create.
+				}
+			}
+		}
+	}()
 
 	log.Fatal(app.Listen(":3000")) // TODO: Get this from config
 }

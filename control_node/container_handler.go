@@ -18,7 +18,7 @@ func NewContainerHandler(containerService *ContainerService) *ContainerHandler {
 func (ch *ContainerHandler) GetContainers(c fiber.Ctx) error {
 	containers, err := ch.containerService.GetContainers()
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "Error getting containers", "details": err.Error()})
+		return c.Status(500).JSON(fiber.Map{"error": "Internal Server Error", "details": err.Error()})
 	}
 
 	if c.Get("HX-Request") == "true" {
@@ -44,12 +44,12 @@ func (ch *ContainerHandler) GetContainers(c fiber.Ctx) error {
 func (ch *ContainerHandler) CreateContainer(c fiber.Ctx) error {
 	var container models.Container
 	if err := c.Bind().Body(&container); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Bad request data", "details": err.Error()})
+		return c.Status(400).JSON(fiber.Map{"error": "Bad Request", "details": err.Error()})
 	}
 
 	err := ch.containerService.CreateContainer(container)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "Error creating container", "details": err.Error()})
+		return c.Status(500).JSON(fiber.Map{"error": "Internal Server Error", "details": err.Error()})
 	}
 
 	if c.Get("HX-Request") == "true" {

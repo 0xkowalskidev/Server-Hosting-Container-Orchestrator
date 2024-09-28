@@ -22,6 +22,28 @@ func NewNodeService(config Config, etcdClient *clientv3.Client) *NodeService {
 	}
 }
 
+func (ns *NodeService) GetNode(nodeID string) (models.Node, error) {
+	var node models.Node
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	resp, err := ns.etcdClient.Get(ctx, fmt.Sprintf("/%s/nodes/%s", ns.config.Namespace, nodeID), clientv3.WithPrefix())
+	if err != nil {
+		return node, fmt.Errorf("Failed to get node with id %s from etcd: %v", nodeID, err)
+	}
+
+	if len(resp.Kvs) == 0 {
+		return node, nil // Empty node
+	}
+
+	if err := json.Unmarshal(resp.Kvs[0].Value, &node); err != nil {
+		return node, fmt.Errorf("Failed to decode node data from etcd: %v", err)
+	}
+
+	return node, nil
+}
+
 func (ns *NodeService) GetNodes() ([]models.Node, error) {
 	nodes := make([]models.Node, 0)
 

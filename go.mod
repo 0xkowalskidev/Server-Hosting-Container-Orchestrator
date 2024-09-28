@@ -5,6 +5,7 @@ go 1.21.8
 require (
 	github.com/containerd/containerd v1.7.21
 	github.com/containerd/errdefs v0.1.0
+	github.com/go-resty/resty/v2 v2.15.3
 	github.com/gofiber/fiber/v3 v3.0.0-beta.3
 	github.com/gofiber/template/html/v2 v2.1.2
 	github.com/opencontainers/runtime-spec v1.1.0
@@ -70,7 +71,7 @@ require (
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.17.0 // indirect
-	golang.org/x/net v0.26.0 // indirect
+	golang.org/x/net v0.27.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/sys v0.24.0 // indirect
 	golang.org/x/text v0.16.0 // indirect

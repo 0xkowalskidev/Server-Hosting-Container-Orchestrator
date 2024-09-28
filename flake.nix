@@ -12,10 +12,16 @@
       ];
 
       shellHook = ''
+        echo "Setting control node variables"
         export NAMESPACE="gameservers"
-        export CONTAINERD_PATH="/run/containerd/containerd.sock"
-        echo "Environment variables set for development:"
         echo "NAMESPACE=$NAMESPACE"
+
+        echo "Setting worker node variables"
+        export NODE_ID="node-1"
+        echo "NODE_ID=$NODE_ID"
+        export CONTROL_NODE_URI="http://localhost:3000/api"
+        echo "CONTROL_NODE_URI=$CONTROL_NODE_URI"
+        export CONTAINERD_PATH="/run/containerd/containerd.sock"
         echo "CONTAINERD_PATH=$CONTAINERD_PATH"
       '';
 

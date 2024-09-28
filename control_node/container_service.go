@@ -60,3 +60,21 @@ func (cs *ContainerService) CreateContainer(container models.Container) error {
 
 	return nil
 }
+
+// This is the same as CreateContainer
+func (cs *ContainerService) UpdateContainer(container models.Container) error {
+	containerData, err := json.Marshal(container)
+	if err != nil {
+		return fmt.Errorf("Failed to serialize container: %v", err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err = cs.etcdClient.Put(ctx, fmt.Sprintf("/%s/containers/%s", cs.config.Namespace, container.ID), string(containerData))
+	if err != nil {
+		return fmt.Errorf("Failed to store container data in etcd: %v", err)
+	}
+
+	return nil
+}

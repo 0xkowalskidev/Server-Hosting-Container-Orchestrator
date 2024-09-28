@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"log"
 	"os"
 	"reflect"
 	"strconv"
@@ -21,6 +22,9 @@ func ParseConfigFromEnv(cfg interface{}) {
 		value := os.Getenv(envKey)
 		if value == "" {
 			value = defaultValue
+			if value == "" {
+				log.Fatalf("Key '%s' is not in env", envKey)
+			}
 		}
 
 		// Set the value on the struct field
