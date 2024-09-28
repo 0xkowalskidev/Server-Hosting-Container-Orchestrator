@@ -7,6 +7,8 @@ import (
 	controlnode "github.com/0xKowalskiDev/Server-Hosting-Container-Orchestrator/control_node"
 	"github.com/0xKowalskiDev/Server-Hosting-Container-Orchestrator/utils"
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/compress"
+	"github.com/gofiber/fiber/v3/middleware/static"
 	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
@@ -27,6 +29,8 @@ func main() {
 	// HTTP Server
 	app := fiber.New()
 
+	app.Use(compress.New()) // Enable gzip compression
+
 	/// Services
 	containerService := controlnode.NewContainerService(config, client)
 	nodeService := controlnode.NewNodeService(config, client)
@@ -44,6 +48,10 @@ func main() {
 	app.Post("/api/nodes", nodeHandler.CreateNode)
 
 	/// Control Panel Routes
+	//// Static Files
+	app.Get("/static*", static.New("./control_node/control_panel/static"))
+
+	//// Routes
 	app.Get("/", func(c fiber.Ctx) error {
 		return c.SendFile("./control_node/index.html")
 	})
