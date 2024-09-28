@@ -1,3 +1,4 @@
 logs
 mounts
 .direnv
+*.fiber.br

@@ -52,13 +52,17 @@ func main() {
 
 	/// Control Panel Routes
 	//// Static Files
-	app.Get("/static*", static.New("./control_node/static"))
+	app.Use("/static*", static.New("./control_node/static", static.Config{
+		CacheDuration: 60 * time.Second, // Cache file handlers for 1 minute
+		MaxAge:        86400,            // Cache files on the client for 1 day
+		Compress:      true,             // Compress and cache static files
+	}))
 
 	//// Routes
 	app.Get("/", func(c fiber.Ctx) error {
 		containers, err := containerService.GetContainers()
 		if err != nil {
-			// Do something else here
+			// TODO: Do something else here
 			return c.Status(500).JSON(fiber.Map{"error": "Error getting containers", "details": err.Error()})
 		}
 
