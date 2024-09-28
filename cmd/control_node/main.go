@@ -28,7 +28,6 @@ func main() {
 
 	// HTTP Server
 	app := fiber.New()
-
 	app.Use(compress.New()) // Enable gzip compression
 
 	/// Services
@@ -49,7 +48,7 @@ func main() {
 
 	/// Control Panel Routes
 	//// Static Files
-	app.Get("/static*", static.New("./control_node/control_panel/static"))
+	app.Get("/static*", static.New("./control_node/static"))
 
 	//// Routes
 	app.Get("/", func(c fiber.Ctx) error {
