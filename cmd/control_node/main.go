@@ -9,6 +9,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/compress"
 	"github.com/gofiber/fiber/v3/middleware/static"
+	"github.com/gofiber/template/html/v2"
 	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
@@ -27,7 +28,10 @@ func main() {
 	}
 
 	// HTTP Server
-	app := fiber.New()
+	engine := html.New("./control_node/templates", ".html") // Template engine
+	app := fiber.New(fiber.Config{
+		Views: engine,
+	})
 	app.Use(compress.New()) // Enable gzip compression
 
 	/// Services
@@ -52,7 +56,17 @@ func main() {
 
 	//// Routes
 	app.Get("/", func(c fiber.Ctx) error {
-		return c.SendFile("./control_node/index.html")
+		containers, err := containerService.GetContainers()
+		if err != nil {
+			// Do something else here
+			return c.Status(500).JSON(fiber.Map{"error": "Error getting containers", "details": err.Error()})
+		}
+
+		if c.Get("X-Partial-Content") == "true" {
+			return c.Render("containers_page", fiber.Map{"Containers": containers})
+		} else {
+			return c.Render("containers_page", fiber.Map{"Containers": containers}, "layout")
+		}
 	})
 
 	log.Fatal(app.Listen(":3000")) // TODO: Get this from config

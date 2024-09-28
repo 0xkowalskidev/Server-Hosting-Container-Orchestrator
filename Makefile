@@ -1,4 +1,4 @@
-REFLEX_REGEX='\.go$$'
+REFLEX_REGEX='\.go$|\.html$$'
 
 .PHONY: dev-worker-node
 dev-worker-node:
@@ -6,7 +6,7 @@ dev-worker-node:
 
 .PHONY: dev-control-node
 dev-control-node:
-	 reflex -r $(REFLEX_REGEX) -s -- go run cmd/control_node/main.go
+	 reflex -s -- go run cmd/control_node/main.go
 
 .PHONY: test
 test:

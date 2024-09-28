@@ -1,0 +1,7 @@
+<form hx-post="/api/containers" hx-target="#containers" hx-swap="beforeend">
+        <label for="container-id">ID: </label>
+        <input name="id" id="container-id" />
+        <button type="submit">Submit</button>
+</form>
+
+{{template "containers" .}}

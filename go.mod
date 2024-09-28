@@ -6,6 +6,7 @@ require (
 	github.com/containerd/containerd v1.7.21
 	github.com/containerd/errdefs v0.1.0
 	github.com/gofiber/fiber/v3 v3.0.0-beta.3
+	github.com/gofiber/template/html/v2 v2.1.2
 	github.com/opencontainers/runtime-spec v1.1.0
 	github.com/stretchr/testify v1.9.0
 	go.etcd.io/etcd/client/v3 v3.5.15
@@ -33,6 +34,8 @@ require (
 	github.com/felixge/httpsnoop v1.0.3 // indirect
 	github.com/go-logr/logr v1.3.0 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/gofiber/template v1.8.3 // indirect
+	github.com/gofiber/utils v1.1.0 // indirect
 	github.com/gofiber/utils/v2 v2.0.0-beta.4 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
