@@ -1,5 +1,5 @@
 package controlnode
 
 type Config struct {
-	Namespace string `env:"NAMESPACE" default:"gameservers"` // Namespace for etcd/containerd
+	EtcdNamespace string `env:"ETCD_NAMESPACE" default:"gameservers"` // Namespace prefix for etcd
 }

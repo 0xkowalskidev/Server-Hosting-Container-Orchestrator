@@ -1,6 +1,8 @@
 <form hx-post="/api/containers" hx-target="#containers" hx-swap="beforeend">
         <label for="container-id">ID: </label>
-        <input name="id" id="container-id" />
+        <input name="id" value="container-test" id="container-id" />
+        <label for="container-image">Image: </label>
+        <input name="image" value="ghcr.io/0xkowalskidev/minecraft-server:latest" id="container-image" />
         <button type="submit">Submit</button>
 </form>
 

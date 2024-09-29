@@ -28,7 +28,7 @@ func (ns *NodeService) GetNode(nodeID string) (models.Node, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	resp, err := ns.etcdClient.Get(ctx, fmt.Sprintf("/%s/nodes/%s", ns.config.Namespace, nodeID), clientv3.WithPrefix())
+	resp, err := ns.etcdClient.Get(ctx, fmt.Sprintf("/%s/nodes/%s", ns.config.EtcdNamespace, nodeID), clientv3.WithPrefix())
 	if err != nil {
 		return node, fmt.Errorf("Failed to get node with id %s from etcd: %v", nodeID, err)
 	}
@@ -50,7 +50,7 @@ func (ns *NodeService) GetNodes() ([]models.Node, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	resp, err := ns.etcdClient.Get(ctx, fmt.Sprintf("/%s/nodes", ns.config.Namespace), clientv3.WithPrefix())
+	resp, err := ns.etcdClient.Get(ctx, fmt.Sprintf("/%s/nodes", ns.config.EtcdNamespace), clientv3.WithPrefix())
 	if err != nil {
 		return nodes, fmt.Errorf("Failed to get nodes from etcd: %v", err)
 	}
@@ -75,7 +75,7 @@ func (ns *NodeService) PutNode(node models.Node) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	_, err = ns.etcdClient.Put(ctx, fmt.Sprintf("/%s/nodes/%s", ns.config.Namespace, node.ID), string(nodeData))
+	_, err = ns.etcdClient.Put(ctx, fmt.Sprintf("/%s/nodes/%s", ns.config.EtcdNamespace, node.ID), string(nodeData))
 	if err != nil {
 		return fmt.Errorf("Failed to store node data in etcd: %v", err)
 	}

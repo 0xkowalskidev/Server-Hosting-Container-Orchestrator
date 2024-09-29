@@ -83,10 +83,10 @@ func main() {
 	schedular.ScheduleContainers() // Initial run incase events where missed while offline
 
 	go func() {
-		watchChannel := etcdClient.Watch(context.Background(), fmt.Sprintf("/%s", config.Namespace), clientv3.WithPrefix())
+		watchChannel := etcdClient.Watch(context.Background(), fmt.Sprintf("/%s", config.EtcdNamespace), clientv3.WithPrefix())
 		for watchResp := range watchChannel {
 			for _, ev := range watchResp.Events {
-				if strings.HasPrefix(string(ev.Kv.Key), fmt.Sprintf("/%s/containers", config.Namespace)) {
+				if strings.HasPrefix(string(ev.Kv.Key), fmt.Sprintf("/%s/containers", config.EtcdNamespace)) {
 					switch ev.Type {
 					// Schedule containers when a new container is added, as it will be unscheduled
 					// And when a container is deleted, incase containers are waiting on space to be free.
@@ -96,7 +96,7 @@ func main() {
 						schedular.ScheduleContainers()
 						// TODO: Remove container from node
 					}
-				} else if strings.HasPrefix(string(ev.Kv.Key), fmt.Sprintf("/%s/nodes", config.Namespace)) {
+				} else if strings.HasPrefix(string(ev.Kv.Key), fmt.Sprintf("/%s/nodes", config.EtcdNamespace)) {
 					// Schedule containers if a new node is added, incase unscheduled containers are waiting if nodes are all full
 					switch ev.Type {
 					case clientv3.EventTypePut:
