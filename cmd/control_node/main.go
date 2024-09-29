@@ -94,6 +94,7 @@ func main() {
 						schedular.ScheduleContainers()
 					case clientv3.EventTypeDelete:
 						schedular.ScheduleContainers()
+						// TODO: Remove container from node
 					}
 				} else if strings.HasPrefix(string(ev.Kv.Key), fmt.Sprintf("/%s/nodes", config.Namespace)) {
 					// Schedule containers if a new node is added, incase unscheduled containers are waiting if nodes are all full

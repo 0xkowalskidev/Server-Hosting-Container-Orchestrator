@@ -44,7 +44,7 @@ func (nh *NodeHandler) CreateNode(c fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Bad Request", "details": err.Error()})
 	}
 
-	err := nh.nodeService.CreateNode(node)
+	err := nh.nodeService.PutNode(node)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Internal Server Error", "details": err.Error()})
 	}

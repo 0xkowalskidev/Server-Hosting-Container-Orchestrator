@@ -53,6 +53,12 @@ func (s *Schedular) scheduleContainer(container models.Container, nodes []models
 				// TODO: Handle me
 			}
 
+			node.Containers = append(node.Containers, container)
+			err = s.nodeService.PutNode(node)
+			if err != nil {
+				// TODO: Handle me
+			}
+
 			return nil
 		}
 	}
