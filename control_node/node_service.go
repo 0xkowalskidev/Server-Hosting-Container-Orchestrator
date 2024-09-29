@@ -66,7 +66,7 @@ func (ns *NodeService) GetNodes() ([]models.Node, error) {
 	return nodes, nil
 }
 
-func (ns *NodeService) CreateNode(node models.Node) error {
+func (ns *NodeService) PutNode(node models.Node) error {
 	nodeData, err := json.Marshal(node)
 	if err != nil {
 		return fmt.Errorf("Failed to serialize node: %v", err)

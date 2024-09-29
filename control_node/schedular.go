@@ -48,7 +48,7 @@ func (s *Schedular) scheduleContainer(container models.Container, nodes []models
 	for _, node := range nodes {
 		if s.doesNodeHaveFreeResources(container, node) {
 			container.NodeID = node.ID
-			err := s.containerService.UpdateContainer(container)
+			err := s.containerService.PutContainer(container)
 			if err != nil {
 				// TODO: Handle me
 			}
