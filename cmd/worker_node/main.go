@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/0xKowalskiDev/Server-Hosting-Container-Orchestrator/models"
 	"github.com/0xKowalskiDev/Server-Hosting-Container-Orchestrator/utils"
@@ -21,30 +22,32 @@ func main() {
 
 	// Agent
 	client := resty.New()
-	nodesApiEndpoint := fmt.Sprintf("%s/nodes", config.ControlNodeURI)
-	var node models.Node
-	resp, err := client.R().
-		SetResult(&node).
-		Get(fmt.Sprintf("%s/%s", nodesApiEndpoint, config.NodeID))
-	if err != nil {
-		// TODO: Retry
-		log.Fatalf("Failed to connect to cluster endpoint: %v", err)
-	}
 
-	switch resp.StatusCode() {
-	case 200:
-		// Subscribe To cluster and do agent stuff
-	case 404:
-		// Join Cluster
-		newNode := models.Node{
-			ID: config.NodeID,
-		}
-		_, err := client.R().SetBody(newNode).SetResult(&node).Post(nodesApiEndpoint)
+	ticker := time.NewTicker(5 * time.Second) // TODO: Switch to SSE instead of polling at some point
+	defer ticker.Stop()
+	for range ticker.C {
+		nodesApiEndpoint := fmt.Sprintf("%s/nodes", config.ControlNodeURI)
+		var node models.Node
+		resp, err := client.R().
+			SetResult(&node).
+			Get(fmt.Sprintf("%s/%s", nodesApiEndpoint, config.NodeID))
 		if err != nil {
-			log.Fatalf("Failed to join cluster: %v", err)
+			log.Printf("Failed to connect to control node endpoint: %v", err)
 		}
-	default:
-		log.Fatalf("Failed to get node from cluster: %v", err)
+		switch resp.StatusCode() {
+		case 200:
+			// Subscribe To cluster and do agent stuff
+			log.Println(node.ID)
+		case 404:
+			newNode := models.Node{
+				ID: config.NodeID,
+			}
+			_, err := client.R().SetBody(newNode).SetResult(&node).Post(nodesApiEndpoint)
+			if err != nil {
+				log.Printf("Failed to join cluster: %v", err)
+			}
+		default:
+			log.Printf("Failed to get node from cluster: %v", err)
+		}
 	}
-
 }

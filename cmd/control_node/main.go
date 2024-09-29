@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	controlnode "github.com/0xKowalskiDev/Server-Hosting-Container-Orchestrator/control_node"
@@ -80,14 +82,26 @@ func main() {
 
 	schedular.ScheduleContainers() // Initial run incase events where missed while offline
 
-	// Watch for changes to /containers in etcd
 	go func() {
-		watchChannel := etcdClient.Watch(context.Background(), "/containers")
+		watchChannel := etcdClient.Watch(context.Background(), fmt.Sprintf("/%s", config.Namespace), clientv3.WithPrefix())
 		for watchResp := range watchChannel {
 			for _, ev := range watchResp.Events {
-				switch ev.Type {
-				case clientv3.EventTypePut:
-					schedular.ScheduleContainers() // Will run on container updates aswell as create.
+				log.Println(ev.Kv.Key)
+				if strings.HasPrefix(string(ev.Kv.Key), fmt.Sprintf("/%s/containers", config.Namespace)) {
+					switch ev.Type {
+					// Schedule containers when a new container is added, as it will be unscheduled
+					// And when a container is deleted, incase containers are waiting on space to be free.
+					case clientv3.EventTypePut:
+						schedular.ScheduleContainers()
+					case clientv3.EventTypeDelete:
+						schedular.ScheduleContainers()
+					}
+				} else if strings.HasPrefix(string(ev.Kv.Key), fmt.Sprintf("/%s/nodes", config.Namespace)) {
+					// Schedule containers if a new node is added, incase unscheduled containers are waiting if nodes are all full
+					switch ev.Type {
+					case clientv3.EventTypePut:
+						schedular.ScheduleContainers()
+					}
 				}
 			}
 		}
