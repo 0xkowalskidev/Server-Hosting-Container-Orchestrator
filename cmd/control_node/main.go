@@ -86,7 +86,6 @@ func main() {
 		watchChannel := etcdClient.Watch(context.Background(), fmt.Sprintf("/%s", config.Namespace), clientv3.WithPrefix())
 		for watchResp := range watchChannel {
 			for _, ev := range watchResp.Events {
-				log.Println(ev.Kv.Key)
 				if strings.HasPrefix(string(ev.Kv.Key), fmt.Sprintf("/%s/containers", config.Namespace)) {
 					switch ev.Type {
 					// Schedule containers when a new container is added, as it will be unscheduled
