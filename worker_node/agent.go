@@ -65,33 +65,61 @@ func (a *Agent) JoinCluster() error {
 }
 
 func (a *Agent) SyncNode(node models.Node) error {
-	// Sync with control node state
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	containerdContainers, err := a.runtime.GetContainers(ctx, node.Namespace)
+	actualContainers, err := a.runtime.GetContainers(ctx, node.Namespace)
 	if err != nil {
 		return err
 	}
-	containerdContainersMap := make(map[string]containerd.Container)
-	for _, containerdContainer := range containerdContainers {
-		containerdContainersMap[containerdContainer.ID()] = containerdContainer
+
+	// Build maps for quick lookup
+	actualContainerMap := make(map[string]containerd.Container)
+	for _, container := range actualContainers {
+		actualContainerMap[container.ID()] = container
 	}
-	// TODO: Loop over all containers, check state, make map of uncreated containers, create them
-	for _, desiredContainer := range node.Containers {
-		if containerdContainersMap[desiredContainer.ID] == nil {
-			// Create container
-			ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second) // TODO: not sure how long to make this
-			defer cancel()
-			_, err := a.runtime.CreateContainer(ctx, desiredContainer.ID, node.Namespace, desiredContainer.Image)
-			if err != nil {
-				return err
+
+	desiredContainerMap := make(map[string]models.Container)
+	for _, container := range node.Containers {
+		desiredContainerMap[container.ID] = container
+	}
+
+	// Delete containers not in the desired state or match state
+	for id, container := range actualContainerMap {
+		if _, exists := desiredContainerMap[id]; !exists {
+			deleteCtx, deleteCancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer deleteCancel()
+
+			// TODO: containers must be stopped to be deleted
+
+			if err := a.runtime.RemoveContainer(deleteCtx, container.ID(), node.Namespace); err != nil {
+				log.Printf("Failed to delete container: %v", err)
+				continue
 			}
+		} else {
+			a.MatchContainerState(desiredContainerMap[id], container)
 		}
 	}
+
+	// Create containers in desired state
+	for id, desiredContainer := range desiredContainerMap {
+		if _, exists := actualContainerMap[id]; !exists {
+			createCtx, createCancel := context.WithTimeout(context.Background(), 60*time.Second)
+			defer createCancel()
+
+			container, err := a.runtime.CreateContainer(createCtx, desiredContainer.ID, node.Namespace, desiredContainer.Image)
+			if err != nil {
+				log.Printf("Failed to create container: %v", err)
+				continue
+			}
+
+			a.MatchContainerState(desiredContainer, container)
+		}
+	}
+
 	return nil
 }
 
 func (a *Agent) MatchContainerState(desiredContainer models.Container, actualContainer containerd.Container) {
-
+	// Match status
 }

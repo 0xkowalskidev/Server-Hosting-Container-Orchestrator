@@ -19,7 +19,7 @@ func setup(t *testing.T) (*workernode.ContainerdRuntime, workernode.Config) {
 	var config workernode.Config
 	utils.ParseConfigFromEnv(&config)
 
-	runtime, err := workernode.NewRuntime(config)
+	runtime, err := workernode.NewContainerdRuntime(config)
 	require.NoError(t, err)
 	require.NotNil(t, runtime)
 
