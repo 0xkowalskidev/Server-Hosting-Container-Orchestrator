@@ -23,30 +23,46 @@ func NewAgent(config Config, client *resty.Client, runtime *ContainerdRuntime) *
 }
 
 func (a *Agent) StartAgent() {
-	ticker := time.NewTicker(5 * time.Second) // TODO: Switch to SSE instead of polling at some point
-	defer ticker.Stop()
-	for range ticker.C {
-		var node models.Node
-		resp, err := a.client.R().
-			SetResult(&node).
-			Get(fmt.Sprintf("%s/%s", fmt.Sprintf("%s/nodes", a.config.ControlNodeURI), a.config.NodeID))
-		if err != nil {
-			log.Printf("Failed to connect to control node endpoint: %v", err)
-			continue
+	var node models.Node
+
+	connectTicker := time.NewTicker(5 * time.Second)
+	defer connectTicker.Stop()
+
+ConnectLoop:
+	for {
+		select {
+		case <-connectTicker.C:
+			resp, err := a.client.R().
+				SetResult(&node).
+				Get(fmt.Sprintf("%s/nodes/%s", a.config.ControlNodeURI, a.config.NodeID))
+			if err != nil {
+				log.Printf("Failed to connect to control node endpoint: %v", err)
+				continue
+			}
+			switch resp.StatusCode() {
+			case 200:
+				connectTicker.Stop()
+				break ConnectLoop
+			case 404:
+				err := a.JoinCluster()
+				if err != nil {
+					log.Printf("Failed to join cluster: %v", err)
+				}
+				connectTicker.Stop()
+				break ConnectLoop
+			default:
+				log.Printf("Failed to get node from cluster: %v", err)
+			}
 		}
-		switch resp.StatusCode() {
-		case 200:
-			err := a.SyncNode(node)
-			if err != nil {
-				log.Printf("Failed to sync node: %v", err)
-			}
-		case 404:
-			err := a.JoinCluster()
-			if err != nil {
-				log.Printf("Failed to join cluster: %v", err)
-			}
-		default:
-			log.Printf("Failed to get node from cluster: %v", err)
+	}
+
+	syncTicker := time.NewTicker(2 * time.Second) // TODO: Switch to SSE instead of polling at some point
+	defer syncTicker.Stop()
+
+	for range syncTicker.C {
+		err := a.SyncNode(node)
+		if err != nil {
+			log.Printf("Failed to sync node: %v", err)
 		}
 	}
 }
@@ -68,9 +84,19 @@ func (a *Agent) SyncNode(node models.Node) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
+	var desiredContainers []models.Container
+
+	_, err := a.client.R().
+		SetResult(&desiredContainers).
+		SetQueryParam("nodeID", node.ID).
+		Get(fmt.Sprintf("%s/containers", a.config.ControlNodeURI))
+	if err != nil {
+		return fmt.Errorf("Failed to get nodes containers: %v", err)
+	}
+
 	actualContainers, err := a.runtime.GetContainers(ctx, node.Namespace)
 	if err != nil {
-		return err
+		return fmt.Errorf("Failed to get containers from runtime: %v", err)
 	}
 
 	// Build maps for quick lookup
@@ -80,7 +106,7 @@ func (a *Agent) SyncNode(node models.Node) error {
 	}
 
 	desiredContainerMap := make(map[string]models.Container)
-	for _, container := range node.Containers {
+	for _, container := range desiredContainers {
 		desiredContainerMap[container.ID] = container
 	}
 
@@ -140,7 +166,7 @@ func (a *Agent) MatchContainerState(namespace string, desiredContainer models.Co
 			}
 		case models.StatusStopped:
 			// TODO: use the channel
-			_, err := a.runtime.StopContainer(ctx, desiredContainer.ID, namespace, syscall.SIGKILL)
+			err := a.runtime.StopContainer(ctx, desiredContainer.ID, namespace, syscall.SIGKILL)
 			if err != nil {
 				return fmt.Errorf("Failed to stop container: %v", err)
 			}

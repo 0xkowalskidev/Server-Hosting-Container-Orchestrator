@@ -107,29 +107,44 @@ func (c *ContainerdRuntime) StartContainer(ctx context.Context, id string, names
 	return task, nil
 }
 
-func (c *ContainerdRuntime) StopContainer(ctx context.Context, id string, namespace string, signal syscall.Signal) (<-chan containerd.ExitStatus, error) {
+func (c *ContainerdRuntime) StopContainer(ctx context.Context, id string, namespace string, signal syscall.Signal) error {
 	ctx = namespaces.WithNamespace(ctx, namespace)
 
 	container, err := c.GetContainer(ctx, id, namespace)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	task, err := container.Task(ctx, cio.Load)
+	task, err := container.Task(ctx, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load task for container with id %s in namespace %s: %w", id, namespace, err)
+		if errdefs.IsNotFound(err) {
+			// Task doesn't exist, nothing to stop
+			return nil
+		}
+		return fmt.Errorf("failed to get task for container with id %s in namespace %s: %w", id, namespace, err)
 	}
 
-	if err := task.Kill(ctx, signal); err != nil {
-		return nil, fmt.Errorf("failed to send SIGKILL to kill task for container with id %s in namespace %s: %w", id, namespace, err)
+	if err := task.Kill(ctx, signal); err != nil && !errdefs.IsNotFound(err) {
+		return fmt.Errorf("failed to send signal to task for container with id %s in namespace %s: %w", id, namespace, err)
 	}
 
 	statusCh, err := task.Wait(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed waiting for task to exit for container with id %s in namespace %s: %w", id, namespace, err)
+		return fmt.Errorf("failed to wait for task of container %s in namespace %s: %w", id, namespace, err)
 	}
 
-	return statusCh, nil
+	// Wait for the exit status to be received
+	select {
+	case <-statusCh:
+	case <-ctx.Done():
+		return fmt.Errorf("context cancelled while waiting for task of container %s in namespace %s to exit", id, namespace)
+	}
+
+	if _, err := task.Delete(ctx); err != nil && !errdefs.IsNotFound(err) {
+		return fmt.Errorf("failed to delete task of container %s in namespace %s: %w", id, namespace, err)
+	}
+
+	return nil
 }
 
 func (c *ContainerdRuntime) GetContainer(ctx context.Context, id string, namespace string) (containerd.Container, error) {
@@ -178,6 +193,8 @@ func (c *ContainerdRuntime) GetContainerStatus(ctx context.Context, id string, n
 	switch status.Status {
 	case containerd.Running:
 		return models.StatusRunning, nil
+	case containerd.Stopped:
+		return models.StatusStopped, nil
 	default:
 		return models.StatusUnknown, fmt.Errorf("Unhandled task status type: %s", status.Status)
 	}

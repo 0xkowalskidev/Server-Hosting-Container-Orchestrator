@@ -20,7 +20,7 @@ func NewSchedular(containerService *ContainerService, nodeService *NodeService) 
 }
 
 func (s *Schedular) ScheduleContainers() error {
-	containers, err := s.containerService.GetContainers()
+	containers, err := s.containerService.GetContainers("")
 	if err != nil {
 		// TODO: Handle me
 	}
@@ -49,12 +49,6 @@ func (s *Schedular) scheduleContainer(container models.Container, nodes []models
 		if s.doesNodeHaveFreeResources(container, node) {
 			container.NodeID = node.ID
 			err := s.containerService.PutContainer(container)
-			if err != nil {
-				// TODO: Handle me
-			}
-
-			node.Containers = append(node.Containers, container)
-			err = s.nodeService.PutNode(node)
 			if err != nil {
 				// TODO: Handle me
 			}

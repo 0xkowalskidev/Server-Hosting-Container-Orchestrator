@@ -2,7 +2,6 @@ package controlnode
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/0xKowalskiDev/Server-Hosting-Container-Orchestrator/models"
 	"github.com/0xKowalskiDev/Server-Hosting-Container-Orchestrator/utils"
@@ -18,7 +17,9 @@ func NewContainerHandler(containerService *ContainerService) *ContainerHandler {
 }
 
 func (ch *ContainerHandler) GetContainers(c fiber.Ctx) error {
-	containers, err := ch.containerService.GetContainers()
+	nodeID := c.Query("nodeID")
+
+	containers, err := ch.containerService.GetContainers(nodeID)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Internal Server Error", "details": err.Error()})
 	}
@@ -33,8 +34,6 @@ func (ch *ContainerHandler) GetContainers(c fiber.Ctx) error {
 
 func (ch *ContainerHandler) CreateContainer(c fiber.Ctx) error {
 	var container models.Container
-
-	log.Println(string(c.Body()))
 
 	if err := c.Bind().Body(&container); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Bad Request", "details": err.Error()})
@@ -63,13 +62,10 @@ func (ch *ContainerHandler) UpdateContainer(c fiber.Ctx) error {
 		return c.Status(404).JSON(fiber.Map{"error": "Resource Not Found", "details": fmt.Sprintf("Container with ID=%s not found.", containerID)})
 	}
 
-	log.Println(string(c.Body()))
 	var patchContainer models.Container
 	if err := c.Bind().Body(&patchContainer); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Bad Request", "details": err.Error()})
 	}
-
-	log.Println(patchContainer)
 
 	err = container.Patch(&patchContainer)
 	if err != nil {
@@ -86,5 +82,23 @@ func (ch *ContainerHandler) UpdateContainer(c fiber.Ctx) error {
 	} else {
 		return c.Status(201).JSON(container)
 	}
+}
 
+func (ch *ContainerHandler) DeleteContainer(c fiber.Ctx) error {
+	containerID := c.Params("id")
+	container, err := ch.containerService.GetContainer(containerID)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Internal Server Error", "details": err.Error()})
+	}
+
+	if container.ID == "" {
+		return c.Status(404).JSON(fiber.Map{"error": "Resource Not Found", "details": fmt.Sprintf("Container with ID=%s not found.", containerID)})
+	}
+
+	err = ch.containerService.DeleteContainer(containerID)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Internal Server Error", "details": err.Error()})
+	}
+
+	return c.Status(200).Send(nil)
 }

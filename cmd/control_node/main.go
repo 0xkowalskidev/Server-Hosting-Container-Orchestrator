@@ -50,6 +50,7 @@ func main() {
 	app.Get("/api/containers", containerHandler.GetContainers)
 	app.Post("/api/containers", containerHandler.CreateContainer)
 	app.Patch("/api/containers/:id", containerHandler.UpdateContainer)
+	app.Delete("/api/containers/:id", containerHandler.DeleteContainer)
 	//// /nodes
 	app.Get("/api/nodes", nodeHandler.GetNodes)
 	app.Get("/api/nodes/:id", nodeHandler.GetNode)
@@ -65,7 +66,7 @@ func main() {
 
 	//// Routes
 	app.Get("/", func(c fiber.Ctx) error {
-		containers, err := containerService.GetContainers()
+		containers, err := containerService.GetContainers("")
 		if err != nil {
 			// TODO: Do something else here
 			return c.Status(500).JSON(fiber.Map{"error": "Error getting containers", "details": err.Error()})
