@@ -45,6 +45,9 @@ func (cs *ContainerService) GetContainers() ([]models.Container, error) {
 }
 
 func (cs *ContainerService) PutContainer(container models.Container) error {
+	container.SetDefaults()
+	// TODO: Validate here
+
 	containerData, err := json.Marshal(container)
 	if err != nil {
 		return fmt.Errorf("Failed to serialize container: %v", err)
