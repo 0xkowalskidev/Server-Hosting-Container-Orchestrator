@@ -23,7 +23,6 @@ func NewAgent(config Config, client *resty.Client, runtime *ContainerdRuntime) *
 }
 
 func (a *Agent) StartAgent() {
-
 	ticker := time.NewTicker(5 * time.Second) // TODO: Switch to SSE instead of polling at some point
 	defer ticker.Stop()
 	for range ticker.C {
@@ -88,12 +87,8 @@ func (a *Agent) SyncNode(node models.Node) error {
 	// Delete containers not in the desired state or match state
 	for id, container := range actualContainerMap {
 		if _, exists := desiredContainerMap[id]; !exists {
-			deleteCtx, deleteCancel := context.WithTimeout(context.Background(), 30*time.Second)
-			defer deleteCancel()
-
-			// TODO: containers must be stopped to be deleted
-
-			if err := a.runtime.RemoveContainer(deleteCtx, container.ID(), node.Namespace); err != nil {
+			ctx := context.Background()
+			if err := a.runtime.RemoveContainer(ctx, container.ID(), node.Namespace); err != nil {
 				log.Printf("Failed to delete container: %v", err)
 				continue
 			}
@@ -108,10 +103,9 @@ func (a *Agent) SyncNode(node models.Node) error {
 	// Create containers in desired state
 	for id, desiredContainer := range desiredContainerMap {
 		if _, exists := actualContainerMap[id]; !exists {
-			createCtx, createCancel := context.WithTimeout(context.Background(), 60*time.Second)
-			defer createCancel()
+			ctx := context.Background()
 
-			container, err := a.runtime.CreateContainer(createCtx, desiredContainer.ID, node.Namespace, desiredContainer.Image)
+			container, err := a.runtime.CreateContainer(ctx, desiredContainer.ID, node.Namespace, desiredContainer.Image)
 			if err != nil {
 				log.Printf("Failed to create container: %v", err)
 				continue

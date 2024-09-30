@@ -61,6 +61,25 @@ func (c *ContainerdRuntime) RemoveContainer(ctx context.Context, id string, name
 		return err
 	}
 
+	task, err := container.Task(ctx, nil)
+	if err == nil {
+		if err := task.Kill(ctx, syscall.SIGKILL); err != nil && !errdefs.IsNotFound(err) {
+			return fmt.Errorf("failed to kill task of container %s in namespace %s: %w", id, namespace, err)
+		}
+
+		statusC, err := task.Wait(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to wait for task of container %s in namespace %s: %w", id, namespace, err)
+		}
+		<-statusC
+
+		if _, err := task.Delete(ctx); err != nil && !errdefs.IsNotFound(err) {
+			return fmt.Errorf("failed to delete task of container %s in namespace %s: %w", id, namespace, err)
+		}
+	} else if !errdefs.IsNotFound(err) { // If task does not exist we can just delete the container
+		return fmt.Errorf("failed to get task for container %s in namespace %s: %w", id, namespace, err)
+	}
+
 	if err := container.Delete(ctx, containerd.WithSnapshotCleanup); err != nil {
 		return fmt.Errorf("failed to remove container with id %s in namespace %s: %w", id, namespace, err)
 	}
