@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"syscall"
 
+	"github.com/0xKowalskiDev/Server-Hosting-Container-Orchestrator/models"
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/cio"
 	"github.com/containerd/containerd/namespaces"
 	"github.com/containerd/containerd/oci"
+	"github.com/containerd/errdefs"
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
@@ -131,4 +133,33 @@ func (c *ContainerdRuntime) GetContainers(ctx context.Context, namespace string)
 	}
 
 	return containers, nil
+}
+
+func (c *ContainerdRuntime) GetContainerStatus(ctx context.Context, id string, namespace string) (models.ContainerStatus, error) {
+	ctx = namespaces.WithNamespace(ctx, namespace)
+
+	container, err := c.GetContainer(ctx, id, namespace)
+	if err != nil {
+		return models.StatusUnknown, err
+	}
+
+	task, err := container.Task(ctx, nil)
+	if err != nil {
+		if errdefs.IsNotFound(err) {
+			return models.StatusStopped, nil
+		} else {
+			return models.StatusUnknown, fmt.Errorf("Failed to get task: %v", err)
+		}
+	}
+
+	status, err := task.Status(ctx)
+	if err != nil {
+		return models.StatusUnknown, fmt.Errorf("Failed to get task status: %v", err)
+	}
+	switch status.Status {
+	case containerd.Running:
+		return models.StatusRunning, nil
+	default:
+		return models.StatusUnknown, fmt.Errorf("Unhandled task status type: %s", status.Status)
+	}
 }

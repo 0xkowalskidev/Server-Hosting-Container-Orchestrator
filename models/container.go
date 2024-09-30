@@ -3,9 +3,9 @@ package models
 type ContainerStatus string
 
 const (
-	StatusPending ContainerStatus = "Pending"
-	StatusRunning ContainerStatus = "Running"
-	StatusStopped ContainerStatus = "Stopped"
+	StatusRunning ContainerStatus = "running"
+	StatusStopped ContainerStatus = "stopped"
+	StatusUnknown ContainerStatus = "unknown"
 )
 
 type Container struct {

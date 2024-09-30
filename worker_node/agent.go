@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"syscall"
 	"time"
 
 	"github.com/0xKowalskiDev/Server-Hosting-Container-Orchestrator/models"
@@ -65,7 +66,7 @@ func (a *Agent) JoinCluster() error {
 }
 
 func (a *Agent) SyncNode(node models.Node) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
 	actualContainers, err := a.runtime.GetContainers(ctx, node.Namespace)
@@ -97,7 +98,10 @@ func (a *Agent) SyncNode(node models.Node) error {
 				continue
 			}
 		} else {
-			a.MatchContainerState(desiredContainerMap[id], container)
+			err := a.MatchContainerState(node.Namespace, desiredContainerMap[id], container)
+			if err != nil {
+				log.Printf("Failed to match container state: %v", err)
+			}
 		}
 	}
 
@@ -113,13 +117,41 @@ func (a *Agent) SyncNode(node models.Node) error {
 				continue
 			}
 
-			a.MatchContainerState(desiredContainer, container)
+			err = a.MatchContainerState(node.Namespace, desiredContainer, container)
+			if err != nil {
+				log.Printf("Failed to match container state: %v", err)
+			}
 		}
 	}
 
 	return nil
 }
 
-func (a *Agent) MatchContainerState(desiredContainer models.Container, actualContainer containerd.Container) {
+func (a *Agent) MatchContainerState(namespace string, desiredContainer models.Container, actualContainer containerd.Container) error {
 	// Match status
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	actualStatus, err := a.runtime.GetContainerStatus(ctx, desiredContainer.ID, namespace)
+	if err != nil {
+		return fmt.Errorf("Failed to get container status: %v", err)
+	}
+
+	if actualStatus != desiredContainer.DesiredStatus {
+		switch desiredContainer.DesiredStatus {
+		case models.StatusRunning:
+			_, err := a.runtime.StartContainer(ctx, desiredContainer.ID, namespace)
+			if err != nil {
+				return fmt.Errorf("Failed to start container: %v", err)
+			}
+		case models.StatusStopped:
+			// TODO: use the channel
+			_, err := a.runtime.StopContainer(ctx, desiredContainer.ID, namespace, syscall.SIGKILL)
+			if err != nil {
+				return fmt.Errorf("Failed to stop container: %v", err)
+			}
+		}
+	}
+
+	return nil
 }
