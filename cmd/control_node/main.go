@@ -49,6 +49,7 @@ func main() {
 	//// /containers
 	app.Get("/api/containers", containerHandler.GetContainers)
 	app.Post("/api/containers", containerHandler.CreateContainer)
+	app.Patch("/api/containers/:id", containerHandler.UpdateContainer)
 	//// /nodes
 	app.Get("/api/nodes", nodeHandler.GetNodes)
 	app.Get("/api/nodes/:id", nodeHandler.GetNode)

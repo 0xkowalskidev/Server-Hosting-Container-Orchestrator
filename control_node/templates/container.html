@@ -1,1 +1,19 @@
-<li>ID: {{.ID}}</li>
+<li class="pa3 mb3 ba b--black-10 br3 bg-light-gray">
+        <div class="mb2">
+                <h3 class="f4 b mv0">Container ID: {{.ID}}</h3>
+                <p class="f6 gray mv1">Image: {{.Image}}</p>
+        </div>
+
+        <div class="flex justify-start items-center">
+                <button hx-patch="/api/containers/{{.ID}}" hx-vals='{"desired_status": "running"}'
+                        class="f6 link dim br2 ba ph3 pv2 mr2 dib white bg-green">Start</button>
+
+                <button hx-patch="/api/containers/{{.ID}}" hx-vals='{"desired_status": "stopped"}'
+                        class="f6 link dim br2 ba ph3 pv2 mr2 dib white bg-orange">Stop</button>
+        </div>
+
+        <div class="mt3">
+                <button hx-delete="/api/containers/{{.ID}}"
+                        class="f6 link dim br2 ba ph3 pv2 dib white bg-red">Delete</button>
+        </div>
+</li>

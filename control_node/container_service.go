@@ -1,4 +1,4 @@
-package controlnode
+package controlnode 
 
 import (
 	"context"
@@ -20,6 +20,28 @@ func NewContainerService(config Config, etcdClient *clientv3.Client) *ContainerS
 		config:     config,
 		etcdClient: etcdClient,
 	}
+}
+
+func (cs *ContainerService) GetContainer(containerID string) (models.Container, error) {
+	var container models.Container
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	resp, err := cs.etcdClient.Get(ctx, fmt.Sprintf("/%s/containers/%s", cs.config.EtcdNamespace, containerID), clientv3.WithPrefix())
+	if err != nil {
+		return container, fmt.Errorf("Failed to get container with id %s from etcd: %v", containerID, err)
+	}
+
+	if len(resp.Kvs) == 0 {
+		return container, nil // Empty Container
+	}
+
+	if err := json.Unmarshal(resp.Kvs[0].Value, &container); err != nil {
+		return container, fmt.Errorf("Failed to decode container data from etcd: %v", err)
+	}
+
+	return container, nil
 }
 
 func (cs *ContainerService) GetContainers() ([]models.Container, error) {

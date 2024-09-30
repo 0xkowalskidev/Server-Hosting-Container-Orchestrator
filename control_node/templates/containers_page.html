@@ -1,11 +1,12 @@
-<form hx-post="/api/containers" hx-target="#containers" hx-swap="beforeend">
-        <label for="container-id">ID: </label>
-        <input name="id" value="container-test" id="container-id" />
+<form hx-post="/api/containers" hx-target="#containers" hx-swap="beforeend" class="pa3 mb3">
+        <label for="container-id" class="f6 b db mb2">ID:</label>
+        <input name="id" value="container-test" id="container-id" class="input-reset ba b--black-20 pa2 mb2 db w-100" />
 
-        <label for="container-image">Image: </label>
-        <input name="image" value="ghcr.io/0xkowalskidev/minecraft-server:latest" id="container-image" />
+        <label for="container-image" class="f6 b db mb2">Image:</label>
+        <input name="image" value="ghcr.io/0xkowalskidev/minecraft-server:latest" id="container-image"
+                class="input-reset ba b--black-20 pa2 mb2 db w-100" />
 
-        <button type="submit">Submit</button>
+        <button type="submit" class="f6 link dim br1 ba ph3 pv2 mb2 dib black bg-light-gray">Create Container</button>
 </form>
 
 {{template "containers" .}}
