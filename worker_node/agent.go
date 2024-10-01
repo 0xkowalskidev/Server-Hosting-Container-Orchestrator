@@ -44,10 +44,15 @@ ConnectLoop:
 				connectTicker.Stop()
 				break ConnectLoop
 			case 404:
-				err := a.JoinCluster()
+				newNode := models.Node{
+					ID:        a.config.NodeID,
+					Namespace: a.config.ContainerdNamespace,
+				}
+				_, err := a.client.R().SetBody(newNode).SetResult(&node).Post(fmt.Sprintf("%s/nodes", a.config.ControlNodeURI))
 				if err != nil {
 					log.Printf("Failed to join cluster: %v", err)
 				}
+
 				connectTicker.Stop()
 				break ConnectLoop
 			default:
@@ -58,26 +63,12 @@ ConnectLoop:
 
 	syncTicker := time.NewTicker(2 * time.Second) // TODO: Switch to SSE instead of polling at some point
 	defer syncTicker.Stop()
-
 	for range syncTicker.C {
 		err := a.SyncNode(node)
 		if err != nil {
 			log.Printf("Failed to sync node: %v", err)
 		}
 	}
-}
-
-func (a *Agent) JoinCluster() error {
-	newNode := models.Node{
-		ID:        a.config.NodeID,
-		Namespace: a.config.ContainerdNamespace,
-	}
-	_, err := a.client.R().SetBody(newNode).Post(fmt.Sprintf("%s/nodes", a.config.ControlNodeURI))
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (a *Agent) SyncNode(node models.Node) error {
