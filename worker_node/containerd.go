@@ -35,9 +35,19 @@ func (c *ContainerdRuntime) CreateContainer(ctx context.Context, id string, name
 		return nil, fmt.Errorf("failed to pull image %s for container with id %s in namespace %s: %w", image, namespace, id, err)
 	}
 
+	volumePath := fmt.Sprintf("%s/%s", c.config.MountsPath, id)
+
 	specOpts := []oci.SpecOpts{
 		oci.WithImageConfig(imageRef),
 		oci.WithHostNamespace(specs.NetworkNamespace),
+		oci.WithMounts([]specs.Mount{
+			{
+				Destination: "/data/server",
+				Type:        "linux",
+				Source:      volumePath,
+				Options:     []string{"rbind", "rw"},
+			},
+		}),
 	}
 
 	container, err := c.client.NewContainer(

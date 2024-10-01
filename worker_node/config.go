@@ -5,5 +5,6 @@ type Config struct {
 	ControlNodeURI      string `env:"CONTROL_NODE_URI"`
 	ContainerdNamespace string `env:"CONTAINERD_NAMESPACE" default:"gameservers"` // Namespace for containerd
 	ContainerdPath      string `env:"CONTAINERD_PATH" default:"/run/containerd/containerd.sock"`
-	LogsPath            string `env:"LOGS_PATH"` // Absolute logs path
+	LogsPath            string `env:"LOGS_PATH"`   // Absolute logs path
+	MountsPath          string `env:"MOUNTS_PATH"` // Absolute mounts path
 }

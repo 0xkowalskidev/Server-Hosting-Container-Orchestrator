@@ -30,6 +30,8 @@
         echo "CONTAINERD_PATH=$CONTAINERD_PATH"
         export LOGS_PATH="/home/kowalski/dev/server-hosting/container-orchestrator/logs"
         echo "LOGS_PATH"=$LOGS_PATH
+        export MOUNTS_PATH="/home/kowalski/dev/server-hosting/container-orchestrator/mounts"
+        echo "MOUNTS_PATH"=$MOUNTS_PATH
       '';
 
     };

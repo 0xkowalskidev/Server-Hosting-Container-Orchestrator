@@ -17,8 +17,10 @@ func main() {
 		log.Fatalf("Failed to initialize runtime: %v", err)
 	}
 
+	storageManager := workernode.NewStorageManager(config, &utils.FileOps{})
+
 	client := resty.New()
-	agent := workernode.NewAgent(config, client, runtime)
+	agent := workernode.NewAgent(config, client, runtime, storageManager)
 
 	agent.StartAgent()
 }

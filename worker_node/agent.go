@@ -13,13 +13,14 @@ import (
 )
 
 type Agent struct {
-	config  Config
-	client  *resty.Client
-	runtime *ContainerdRuntime
+	config         Config
+	client         *resty.Client
+	runtime        *ContainerdRuntime
+	storageManager *StorageManager
 }
 
-func NewAgent(config Config, client *resty.Client, runtime *ContainerdRuntime) *Agent {
-	return &Agent{config: config, client: client, runtime: runtime}
+func NewAgent(config Config, client *resty.Client, runtime *ContainerdRuntime, storageManager *StorageManager) *Agent {
+	return &Agent{config: config, client: client, runtime: runtime, storageManager: storageManager}
 }
 
 func (a *Agent) StartAgent() {
@@ -84,6 +85,8 @@ func (a *Agent) SyncNode(node models.Node) error {
 	if err != nil {
 		return fmt.Errorf("Failed to get nodes containers: %v", err)
 	}
+
+	a.storageManager.SyncStorage(desiredContainers)
 
 	actualContainers, err := a.runtime.GetContainers(ctx, node.Namespace)
 	if err != nil {
