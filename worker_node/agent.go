@@ -17,16 +17,17 @@ type Agent struct {
 	client         *resty.Client
 	runtime        *ContainerdRuntime
 	storageManager *StorageManager
+	networkManager *NetworkManager
 }
 
-func NewAgent(config Config, client *resty.Client, runtime *ContainerdRuntime, storageManager *StorageManager) *Agent {
-	return &Agent{config: config, client: client, runtime: runtime, storageManager: storageManager}
+func NewAgent(config Config, client *resty.Client, runtime *ContainerdRuntime, storageManager *StorageManager, networkManager *NetworkManager) *Agent {
+	return &Agent{config: config, client: client, runtime: runtime, storageManager: storageManager, networkManager: networkManager}
 }
 
 func (a *Agent) StartAgent() {
 	var node models.Node
 
-	connectTicker := time.NewTicker(5 * time.Second)
+	connectTicker := time.NewTicker(2 * time.Second)
 	defer connectTicker.Stop()
 
 ConnectLoop:
@@ -87,6 +88,7 @@ func (a *Agent) SyncNode(node models.Node) error {
 	}
 
 	a.storageManager.SyncStorage(desiredContainers)
+	a.networkManager.SyncNetwork(desiredContainers)
 
 	actualContainers, err := a.runtime.GetContainers(ctx, node.Namespace)
 	if err != nil {

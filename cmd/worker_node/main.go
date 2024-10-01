@@ -19,8 +19,13 @@ func main() {
 
 	storageManager := workernode.NewStorageManager(config, &utils.FileOps{})
 
+	networkManager, err := workernode.NewNetworkManager(config, &utils.FileOps{})
+	if err != nil {
+		log.Fatalf("Failed to initialize network manager: %v", err)
+	}
+
 	client := resty.New()
-	agent := workernode.NewAgent(config, client, runtime, storageManager)
+	agent := workernode.NewAgent(config, client, runtime, storageManager, networkManager)
 
 	agent.StartAgent()
 }

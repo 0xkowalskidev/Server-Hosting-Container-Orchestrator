@@ -36,10 +36,14 @@ func (c *ContainerdRuntime) CreateContainer(ctx context.Context, id string, name
 	}
 
 	volumePath := fmt.Sprintf("%s/%s", c.config.MountsPath, id)
+	netnsPath := fmt.Sprintf("/var/run/netns/%s", id)
 
 	specOpts := []oci.SpecOpts{
 		oci.WithImageConfig(imageRef),
-		oci.WithHostNamespace(specs.NetworkNamespace),
+		oci.WithLinuxNamespace(specs.LinuxNamespace{
+			Type: specs.NetworkNamespace,
+			Path: netnsPath,
+		}),
 		oci.WithMounts([]specs.Mount{
 			{
 				Destination: "/data/server",
