@@ -139,8 +139,7 @@ func (a *Agent) SyncNode(node models.Node) error {
 }
 
 func (a *Agent) MatchContainerState(namespace string, desiredContainer models.Container, actualContainer containerd.Container) error {
-	// Match status
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	actualStatus, err := a.runtime.GetContainerStatus(ctx, desiredContainer.ID, namespace)
@@ -156,7 +155,6 @@ func (a *Agent) MatchContainerState(namespace string, desiredContainer models.Co
 				return fmt.Errorf("Failed to start container: %v", err)
 			}
 		case models.StatusStopped:
-			// TODO: use the channel
 			err := a.runtime.StopContainer(ctx, desiredContainer.ID, namespace, syscall.SIGKILL)
 			if err != nil {
 				return fmt.Errorf("Failed to stop container: %v", err)
