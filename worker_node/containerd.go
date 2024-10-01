@@ -95,7 +95,7 @@ func (c *ContainerdRuntime) StartContainer(ctx context.Context, id string, names
 		return nil, err
 	}
 
-	task, err := container.NewTask(ctx, cio.NewCreator(cio.WithStdio))
+	task, err := container.NewTask(ctx, cio.LogFile(fmt.Sprintf("%s/%s.log", c.config.LogsPath, id)))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create task for container with id %s in namespace %s: %w", id, namespace, err)
 	}

@@ -12,6 +12,9 @@
       ];
 
       shellHook = ''
+        echo "Setting up dev directories"
+        mkdir -p logs mounts 
+
         echo "Setting control node variables"
         export ETCD_NAMESPACE="gameservers"
         echo "ETCD_NAMESPACE=$ETCD_NAMESPACE"
@@ -25,6 +28,8 @@
         echo "CONTROL_NODE_URI=$CONTROL_NODE_URI"
         export CONTAINERD_PATH="/run/containerd/containerd.sock"
         echo "CONTAINERD_PATH=$CONTAINERD_PATH"
+        export LOGS_PATH="/home/kowalski/dev/server-hosting/container-orchestrator/logs"
+        echo "LOGS_PATH"=$LOGS_PATH
       '';
 
     };

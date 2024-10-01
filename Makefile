@@ -1,12 +1,12 @@
-REFLEX_REGEX='\.go$|\.html$$'
+REFLEX_REGEX='\.(go|html|css|js|nix)$$'
 
 .PHONY: dev-worker-node
 dev-worker-node:
-	sudo NODE_ID=node_1 CONTROL_NODE_URI=http://localhost:3000/api reflex -s -- go run ./cmd/worker_node/main.go
+	sudo LOGS_PATH=/home/kowalski/dev/server-hosting/container-orchestrator/logs NODE_ID=node_1 CONTROL_NODE_URI=http://localhost:3000/api reflex -r $(REFLEX_REGEX) -s -- go run ./cmd/worker_node/main.go
 
 .PHONY: dev-control-node
 dev-control-node:
-	 reflex -s -- go run cmd/control_node/main.go
+	 reflex -r $(REFLEX_REGEX) -s -- go run cmd/control_node/main.go
 
 .PHONY: test
 test:
