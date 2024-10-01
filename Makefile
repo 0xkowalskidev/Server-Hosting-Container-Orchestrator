@@ -46,8 +46,13 @@ reset-network:
 	sudo umount /var/run/netns/*
 	sudo rm /var/run/netns/*
 
+.PHONY: reset-logs
+reset-logs:
+	sudo rm -r logs/* 
+
 .PHONY: reset-full
 reset-full:
 	make reset-ctr
 	make reset-etcd
 	make reset-network
+	make reset-logs
