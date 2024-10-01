@@ -28,7 +28,7 @@ func (ns *NodeService) GetNode(nodeID string) (models.Node, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	resp, err := ns.etcdClient.Get(ctx, fmt.Sprintf("/%s/nodes/%s", ns.config.EtcdNamespace, nodeID), clientv3.WithPrefix())
+	resp, err := ns.etcdClient.Get(ctx, fmt.Sprintf("/%s/nodes/%s", ns.config.EtcdNamespace, nodeID))
 	if err != nil {
 		return node, fmt.Errorf("Failed to get node with id %s from etcd: %v", nodeID, err)
 	}
