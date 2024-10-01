@@ -32,7 +32,7 @@ func (c *ContainerdRuntime) CreateContainer(ctx context.Context, id string, name
 
 	imageRef, err := c.client.Pull(ctx, image, containerd.WithPullUnpack)
 	if err != nil {
-		return nil, fmt.Errorf("failed to pull image %s for container with id %s in namespace %s: %w", image, namespace, id, err)
+		return nil, fmt.Errorf("failed to pull image %s for container with id %s in namespace %s: %w", image, id, namespace, err)
 	}
 
 	volumePath := fmt.Sprintf("%s/%s", c.config.MountsPath, id)

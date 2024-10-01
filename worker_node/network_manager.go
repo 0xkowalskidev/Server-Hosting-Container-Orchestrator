@@ -18,7 +18,7 @@ type NetworkManager struct {
 
 func NewNetworkManager(config Config, fileOps utils.FileOpsInterface) (*NetworkManager, error) {
 	cninet, err := cni.New(
-		cni.WithConfListFile("/etc/cni/net.d/10-mynet.conflist"),
+		cni.WithConfListFile("/etc/cni/net.d/10-mynet.conflist"), //TODO: Put these in config
 		cni.WithPluginDir([]string{"/run/current-system/sw/bin"}),
 	)
 	if err != nil {
@@ -38,11 +38,7 @@ func (nm *NetworkManager) SyncNetwork(desiredContainers []models.Container) {
 		desiredMap[container.ID] = container
 	}
 
-	actualMap, err := nm.GetNetworkNamespaces()
-	if err != nil {
-		log.Printf("Failed to get network namespaces: %v", err)
-	}
-
+	actualMap := nm.GetNetworkNamespaces()
 	for containerID, container := range desiredMap {
 		if !actualMap[containerID] {
 			if err := nm.setupNetworking(container); err != nil {
@@ -102,17 +98,18 @@ func (nm *NetworkManager) teardownNetworking(containerID string) error {
 	return nil
 }
 
-func (nm *NetworkManager) GetNetworkNamespaces() (map[string]bool, error) {
+func (nm *NetworkManager) GetNetworkNamespaces() map[string]bool {
 	netNsMap := make(map[string]bool)
 
 	entries, err := nm.fileOps.ReadDir("/var/run/netns")
-	if err != nil {
-		return netNsMap, fmt.Errorf("failed to list network namespace directory: %v", err)
+	if err != nil { // Err Likely means 404, which is fine as netns will be created automatically
+		// TODO: Can I use errdefs here
+		return netNsMap
 	}
 
 	for _, entry := range entries {
 		netNsMap[entry.Name()] = true
 	}
 
-	return netNsMap, nil
+	return netNsMap
 }
