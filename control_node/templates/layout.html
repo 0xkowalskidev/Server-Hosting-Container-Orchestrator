@@ -13,7 +13,21 @@
 </head>
 
 <body>
-        <main class="container">
+        <header class="container">
+                <nav>
+                        <ul>
+                                <li><strong>Control Panel</strong></li>
+                        </ul>
+
+                        <ul hx-boost="true">
+                                <li><a href="/" hx-target="#content">Home</a></li>
+                                <li><a href="/containers" hx-target="#content">Containers</a></li>
+                                <li><a href="/nodes" hx-target="#content">Nodes</a></li>
+                        </ul>
+                </nav>
+        </header>
+
+        <main id="content" class="container">
                 {{embed}}
         </main>
 </body>

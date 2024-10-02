@@ -67,16 +67,37 @@ func main() {
 
 	//// Routes
 	app.Get("/", func(c fiber.Ctx) error {
+		if c.Get("HX-Request") == "true" {
+			return c.Render("home_page", nil)
+		} else {
+			return c.Render("home_page", nil, "layout")
+		}
+	})
+
+	app.Get("/containers", func(c fiber.Ctx) error {
 		containers, err := containerService.GetContainers("")
 		if err != nil {
 			// TODO: Do something else here
 			return c.Status(500).JSON(fiber.Map{"error": "Error getting containers", "details": err.Error()})
 		}
 
-		if c.Get("X-Partial-Content") == "true" {
+		if c.Get("HX-Request") == "true" {
 			return c.Render("containers_page", fiber.Map{"Containers": containers})
 		} else {
 			return c.Render("containers_page", fiber.Map{"Containers": containers}, "layout")
+		}
+	})
+	app.Get("/nodes", func(c fiber.Ctx) error {
+		nodes, err := nodeService.GetNodes()
+		if err != nil {
+			// TODO: Do something else here
+			return c.Status(500).JSON(fiber.Map{"error": "Error getting containers", "details": err.Error()})
+		}
+
+		if c.Get("HX-Request") == "true" {
+			return c.Render("nodes_page", fiber.Map{"Nodes": nodes})
+		} else {
+			return c.Render("nodes_page", fiber.Map{"Nodes": nodes}, "layout")
 		}
 	})
 

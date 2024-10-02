@@ -10,59 +10,25 @@
 
         <fieldset>
                 <legend>Ports</legend>
-                <div id="ports-container"></div>
-
-                <div class="grid">
-                        <button type="button" class="secondary" id="add-port-btn">Add Port Map</button>
-                        <button type="button" class="outline" id="delete-port-btn">Remove Port Map</button>
+                <div id="ports-container">
+                        <div class="grid">
+                                <label for="host-port-0">Host Port
+                                        <input name="ports[0][host_port]" value="25565" type="number" id="host-port-0"
+                                                required />
+                                </label>
+                                <label for="container-port-0">Container Port
+                                        <input name="ports[0][container_port]" value="25565" type="number"
+                                                id="container-port-0" required />
+                                </label>
+                                <label for="protocol-0">Protocol
+                                        <input name="ports[0][protocol]" value="tcp" type="text" id="protocol-0"
+                                                required />
+                                </label>
+                        </div>
                 </div>
         </fieldset>
 
         <button type="submit">Create Container</button>
 </form>
 
-<script>
-        let portCounter = 0;
-
-        function addPortRow() {
-                const newPortRow = document.createElement('div');
-                newPortRow.classList.add('grid', 'port-row');
-                newPortRow.setAttribute('id', `port-row-${portCounter}`);
-
-                newPortRow.innerHTML = `
-        <label for="host-port-${portCounter}">Host Port
-            <input name="ports[${portCounter}][host_port]" value="25565" type="number" id="host-port-${portCounter}" required />
-        </label>
-        <label for="container-port-${portCounter}">Container Port
-            <input name="ports[${portCounter}][container_port]" value="25565" type="number" id="container-port-${portCounter}" required />
-        </label>
-        <label for="protocol-${portCounter}">Protocol
-            <input name="ports[${portCounter}][protocol]" value="tcp" type="text" id="protocol-${portCounter}" required />
-        </label>
-    `;
-
-                document.getElementById('ports-container').appendChild(newPortRow);
-
-                portCounter++;
-        }
-
-        // Add the first row when the page loads
-        window.onload = function () {
-                addPortRow();
-        }
-
-        document.getElementById('add-port-btn').addEventListener('click', function () {
-                addPortRow();
-        });
-
-        document.getElementById('delete-port-btn').addEventListener('click', function () {
-                if (portCounter > 0) {
-                        // Remove the last row if it exists (portCounter points to the next row to be added)
-                        document.getElementById("port-row-" + (portCounter - 1)).remove();
-                        portCounter--;
-                }
-        });
-</script>
-
-
-{{template "containers" .}}
+{{template "containers".}}
