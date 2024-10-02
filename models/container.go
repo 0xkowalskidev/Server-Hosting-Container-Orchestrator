@@ -34,7 +34,7 @@ func (c *Container) SetDefaults() {
 
 	c.StorageLimit = 2 // TODO: TEMP, remove
 	c.Ports = []Port{{
-		HostPort:      25565,
+		HostPort:      30000,
 		ContainerPort: 25565,
 		Protocol:      "TCP",
 	}}

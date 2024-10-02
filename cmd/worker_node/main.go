@@ -19,7 +19,7 @@ func main() {
 
 	storageManager := workernode.NewStorageManager(config, &utils.FileOps{})
 
-	networkManager, err := workernode.NewNetworkManager(config, &utils.FileOps{})
+	networkManager, err := workernode.NewNetworkManager(config, &utils.FileOps{}, &utils.CmdRunner{})
 	if err != nil {
 		log.Fatalf("Failed to initialize network manager: %v", err)
 	}
