@@ -13,9 +13,9 @@ const (
 )
 
 type Port struct {
-	HostPort      int32  `json:"host_port"`
-	ContainerPort int32  `json:"container_port"`
-	Protocol      string `json:"protocol"`
+	HostPort      int32  `json:"host_port" form:"host_port"`
+	ContainerPort int32  `json:"container_port" form:"container_port"`
+	Protocol      string `json:"protocol" form:"protocol"`
 }
 
 type Container struct {
@@ -24,7 +24,7 @@ type Container struct {
 	Image         string          `json:"image"`
 	StorageLimit  int             `json:"storage_limit"`                        // Measured in GB
 	DesiredStatus ContainerStatus `json:"desired_status" form:"desired_status"` // Desired status for container, node agent will try to match this in container runtime
-	Ports         []Port
+	Ports         []Port          `json:"ports"`
 }
 
 func (c *Container) SetDefaults() {
@@ -33,11 +33,6 @@ func (c *Container) SetDefaults() {
 	}
 
 	c.StorageLimit = 2 // TODO: TEMP, remove
-	c.Ports = []Port{{
-		HostPort:      30000,
-		ContainerPort: 25565,
-		Protocol:      "TCP",
-	}}
 }
 
 func (c *Container) Patch(patchContainer *Container) error {
