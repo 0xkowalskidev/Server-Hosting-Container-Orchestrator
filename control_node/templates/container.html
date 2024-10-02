@@ -1,16 +1,17 @@
-<li id="container-{{.ID}}">
-        <div>
+<article id="container-{{.ID}}">
+        <header>
                 <h3>Container ID: {{.ID}}</h3>
-                <p>Image: {{.Image}}</p>
-        </div>
+        </header>
+        <p>Image: {{.Image}}</p>
+        <footer>
+                <div class="grid">
+                        <button class="secondary" hx-patch="/api/containers/{{.ID}}"
+                                hx-vals='{"desired_status": "running"}' hx-swap="none">Start</button>
+                        <button class="secondary" hx-patch="/api/containers/{{.ID}}"
+                                hx-vals='{"desired_status": "stopped"}' hx-swap="none">Stop</button>
+                        <button class="outline" hx-delete="/api/containers/{{.ID}}" hx-target="#container-{{.ID}}"
+                                hx-swap="outerHTML">Delete</button>
+                </div>
+        </footer>
 
-        <div>
-                <button hx-patch="/api/containers/{{.ID}}" hx-vals='{"desired_status": "running"}'
-                        hx-swap="none">Start</button>
-
-                <button hx-patch="/api/containers/{{.ID}}" hx-vals='{"desired_status": "stopped"}'
-                        hx-swap="none">Stop</button>
-        </div>
-
-        <button hx-delete="/api/containers/{{.ID}}" hx-target="#container-{{.ID}}" hx-swap="outerHTML">Delete</button>
-</li>
+</article>
