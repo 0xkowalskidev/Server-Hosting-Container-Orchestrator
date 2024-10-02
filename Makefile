@@ -56,3 +56,8 @@ reset-full:
 	make reset-etcd
 	make reset-network
 	make reset-logs
+
+.PHONY: cloc
+cloc: 
+	cloc --exclude-dir=.direnv --not-match-f='_test\.go$$' --by-file .
+
