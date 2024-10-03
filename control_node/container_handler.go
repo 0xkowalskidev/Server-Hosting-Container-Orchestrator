@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/0xKowalskiDev/Server-Hosting-Container-Orchestrator/models"
-	"github.com/0xKowalskiDev/Server-Hosting-Container-Orchestrator/utils"
 	"github.com/gofiber/fiber/v3"
 )
 
@@ -24,12 +23,7 @@ func (ch *ContainerHandler) GetContainers(c fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"error": "Internal Server Error", "details": err.Error()})
 	}
 
-	if c.Get("HX-Request") == "true" {
-		return c.Render("containers", fiber.Map{"Containers": containers})
-	} else {
-		return c.JSON(containers)
-	}
-
+	return c.JSON(containers)
 }
 
 func (ch *ContainerHandler) CreateContainer(c fiber.Ctx) error {
@@ -44,11 +38,7 @@ func (ch *ContainerHandler) CreateContainer(c fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"error": "Internal Server Error", "details": err.Error()})
 	}
 
-	if c.Get("HX-Request") == "true" {
-		return c.Render("container", utils.StructToFiberMap(container))
-	} else {
-		return c.Status(201).JSON(container)
-	}
+	return c.Status(201).JSON(container)
 }
 
 func (ch *ContainerHandler) UpdateContainer(c fiber.Ctx) error {
@@ -77,11 +67,7 @@ func (ch *ContainerHandler) UpdateContainer(c fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"error": "Internal Server Error", "details": err.Error()})
 	}
 
-	if c.Get("HX-Request") == "true" {
-		return c.Render("container", utils.StructToFiberMap(container))
-	} else {
-		return c.Status(201).JSON(container)
-	}
+	return c.Status(201).JSON(container)
 }
 
 func (ch *ContainerHandler) DeleteContainer(c fiber.Ctx) error {

@@ -10,9 +10,6 @@ import (
 	controlnode "github.com/0xKowalskiDev/Server-Hosting-Container-Orchestrator/control_node"
 	"github.com/0xKowalskiDev/Server-Hosting-Container-Orchestrator/utils"
 	"github.com/gofiber/fiber/v3"
-	"github.com/gofiber/fiber/v3/middleware/compress"
-	"github.com/gofiber/fiber/v3/middleware/static"
-	"github.com/gofiber/template/html/v2"
 	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
@@ -31,11 +28,7 @@ func main() {
 	}
 
 	// HTTP Server
-	engine := html.New("./control_node/templates", ".html") // Template engine
-	app := fiber.New(fiber.Config{
-		Views: engine,
-	})
-	app.Use(compress.New())
+	app := fiber.New()
 
 	/// Services
 	containerService := controlnode.NewContainerService(config, etcdClient)
@@ -56,50 +49,6 @@ func main() {
 	app.Get("/api/nodes", nodeHandler.GetNodes)
 	app.Get("/api/nodes/:id", nodeHandler.GetNode)
 	app.Post("/api/nodes", nodeHandler.CreateNode)
-
-	/// Control Panel Routes
-	//// Static Files
-	app.Use("/static*", static.New("./control_node/static", static.Config{
-		CacheDuration: 60 * time.Second, // Cache file handlers for 1 minute
-		MaxAge:        86400,            // Cache files on the client for 1 day
-		Compress:      true,             // Compress and cache static files
-	}))
-
-	//// Routes
-	app.Get("/", func(c fiber.Ctx) error {
-		if c.Get("HX-Request") == "true" {
-			return c.Render("home_page", nil)
-		} else {
-			return c.Render("home_page", nil, "layout")
-		}
-	})
-
-	app.Get("/containers", func(c fiber.Ctx) error {
-		containers, err := containerService.GetContainers("")
-		if err != nil {
-			// TODO: Do something else here
-			return c.Status(500).JSON(fiber.Map{"error": "Error getting containers", "details": err.Error()})
-		}
-
-		if c.Get("HX-Request") == "true" {
-			return c.Render("containers_page", fiber.Map{"Containers": containers})
-		} else {
-			return c.Render("containers_page", fiber.Map{"Containers": containers}, "layout")
-		}
-	})
-	app.Get("/nodes", func(c fiber.Ctx) error {
-		nodes, err := nodeService.GetNodes()
-		if err != nil {
-			// TODO: Do something else here
-			return c.Status(500).JSON(fiber.Map{"error": "Error getting containers", "details": err.Error()})
-		}
-
-		if c.Get("HX-Request") == "true" {
-			return c.Render("nodes_page", fiber.Map{"Nodes": nodes})
-		} else {
-			return c.Render("nodes_page", fiber.Map{"Nodes": nodes}, "layout")
-		}
-	})
 
 	// Schedular
 	schedular := controlnode.NewSchedular(containerService, nodeService)
@@ -131,5 +80,5 @@ func main() {
 		}
 	}()
 
-	log.Fatal(app.Listen(":3000")) // TODO: Get this from config
+	log.Fatal(app.Listen(":3001")) // TODO: Get this from config
 }

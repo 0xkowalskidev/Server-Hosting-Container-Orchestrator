@@ -1,0 +1,34 @@
+<form hx-post="/api/containers" hx-target="#gameservers" hx-swap="beforeend">
+        <label for="gameserver-id">ID
+                <input name="id" value="gameserver" id="gameserver-id" required />
+        </label>
+
+        <label for="gameserver-image">Image
+                <input name="image" value="ghcr.io/0xkowalskidev/minecraft-server:latest" id="gameserver-image"
+                        required />
+        </label>
+
+        <fieldset>
+                <legend>Ports</legend>
+                <div id="ports-container">
+                        <div class="grid">
+                                <label for="host-port-0">Host Port
+                                        <input name="ports[0][host_port]" value="25565" type="number" id="host-port-0"
+                                                required />
+                                </label>
+                                <label for="container-port-0">Container Port
+                                        <input name="ports[0][container_port]" value="25565" type="number"
+                                                id="container-port-0" required />
+                                </label>
+                                <label for="protocol-0">Protocol
+                                        <input name="ports[0][protocol]" value="tcp" type="text" id="protocol-0"
+                                                required />
+                                </label>
+                        </div>
+                </div>
+        </fieldset>
+
+        <button type="submit">Create Gameserver</button>
+</form>
+
+{{template "gameservers".}}

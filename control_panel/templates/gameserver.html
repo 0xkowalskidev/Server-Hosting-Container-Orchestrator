@@ -1,6 +1,6 @@
-<article id="container-{{.ID}}">
+<article id="gameserver-{{.ID}}">
         <header>
-                <h3>Container ID: {{.ID}}</h3>
+                <h3>ID: {{.ID}}</h3>
         </header>
         <p>Image: {{.Image}}</p>
         <footer>
@@ -9,7 +9,7 @@
                                 hx-vals='{"desired_status": "running"}' hx-swap="none">Start</button>
                         <button class="secondary" hx-patch="/api/containers/{{.ID}}"
                                 hx-vals='{"desired_status": "stopped"}' hx-swap="none">Stop</button>
-                        <button class="outline" hx-delete="/api/containers/{{.ID}}" hx-target="#container-{{.ID}}"
+                        <button class="outline" hx-delete="/api/containers/{{.ID}}" hx-target="#gameserver-{{.ID}}"
                                 hx-swap="outerHTML">Delete</button>
                 </div>
         </footer>
