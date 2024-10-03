@@ -5,11 +5,11 @@
         <p>Image: {{.Image}}</p>
         <footer>
                 <div class="grid">
-                        <button class="secondary" hx-patch="/api/containers/{{.ID}}"
+                        <button class="secondary" hx-patch="/gameservers/{{.ID}}"
                                 hx-vals='{"desired_status": "running"}' hx-swap="none">Start</button>
-                        <button class="secondary" hx-patch="/api/containers/{{.ID}}"
+                        <button class="secondary" hx-patch="/gameservers/{{.ID}}"
                                 hx-vals='{"desired_status": "stopped"}' hx-swap="none">Stop</button>
-                        <button class="outline" hx-delete="/api/containers/{{.ID}}" hx-target="#gameserver-{{.ID}}"
+                        <button class="outline" hx-delete="/gameservers/{{.ID}}" hx-target="#gameserver-{{.ID}}"
                                 hx-swap="outerHTML">Delete</button>
                 </div>
         </footer>

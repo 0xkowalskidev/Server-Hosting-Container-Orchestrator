@@ -45,7 +45,7 @@ func main() {
 		}
 	})
 
-	app.Get("/containers", func(c fiber.Ctx) error {
+	app.Get("/gameservers", func(c fiber.Ctx) error {
 		containers, err := wrapper.GetContainers()
 		if err != nil {
 			// TODO: Do something else here
@@ -53,13 +53,13 @@ func main() {
 		}
 
 		if c.Get("HX-Request") == "true" {
-			return c.Render("containers_page", fiber.Map{"Containers": containers})
+			return c.Render("gameservers_page", fiber.Map{"Gameservers": containers})
 		} else {
-			return c.Render("containers_page", fiber.Map{"Containers": containers}, "layout")
+			return c.Render("gameservers_page", fiber.Map{"Gameservers": containers}, "layout")
 		}
 	})
 
-	app.Post("/containers", func(c fiber.Ctx) error {
+	app.Post("/gameservers", func(c fiber.Ctx) error {
 		var body models.Container
 
 		if err := c.Bind().Body(&body); err != nil {
@@ -72,13 +72,13 @@ func main() {
 		}
 
 		if c.Get("HX-Request") == "true" {
-			return c.Render("container", utils.StructToFiberMap(container))
+			return c.Render("gameserver", utils.StructToFiberMap(container))
 		} else {
-			return c.Redirect().To("/containers")
+			return c.Redirect().To("/gameservers")
 		}
 	})
 
-	app.Patch("/containers/:id", func(c fiber.Ctx) error {
+	app.Patch("/gameservers/:id", func(c fiber.Ctx) error {
 		containerID := c.Params("id")
 
 		if containerID == "" { // TODO: do something else
@@ -98,13 +98,13 @@ func main() {
 		}
 
 		if c.Get("HX-Request") == "true" {
-			return c.Render("container", utils.StructToFiberMap(container))
+			return c.Render("gameserver", utils.StructToFiberMap(container))
 		} else {
-			return c.Redirect().To("/containers")
+			return c.Redirect().To("/gameservers")
 		}
 	})
 
-	app.Delete("/containers/:id", func(c fiber.Ctx) error {
+	app.Delete("/gameservers/:id", func(c fiber.Ctx) error {
 		containerID := c.Params("id")
 
 		if containerID == "" { // TODO: do something else
@@ -120,7 +120,7 @@ func main() {
 		if c.Get("HX-Request") == "true" {
 			return c.Status(200).Send(nil)
 		} else {
-			return c.Redirect().To("/containers")
+			return c.Redirect().To("/gameservers")
 		}
 	})
 
