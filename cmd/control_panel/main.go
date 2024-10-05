@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"time"
 
 	controlpanel "github.com/0xKowalskiDev/Server-Hosting-Container-Orchestrator/control_panel"
@@ -57,6 +59,56 @@ func main() {
 		} else {
 			return c.Render("gameservers_page", fiber.Map{"Gameservers": containers}, "layout")
 		}
+	})
+
+	app.Get("/gameservers/:id/logs", func(c fiber.Ctx) error {
+		containerID := c.Params("id")
+
+		if containerID == "" { // TODO: do something else
+			return c.Status(404).JSON(fiber.Map{"error": "Resource Not Found", "details": fmt.Sprintf("Container with ID=%s not found.", containerID)})
+		}
+
+		nodeLogsAPI := fmt.Sprintf("http://localhost:3002/logs/%s", containerID) // TODO: TEMP
+
+		log.Println(nodeLogsAPI)
+
+		c.Set("Content-Type", "text/event-stream")
+		c.Set("Cache-Control", "no-cache")
+		c.Set("Connection", "keep-alive")
+
+		reader, writer := io.Pipe()
+
+		go func() {
+			defer writer.Close()
+
+			resp, err := http.Get(nodeLogsAPI)
+			if err != nil {
+				log.Printf("Error fetching logs from node API: %v", err)
+				writer.CloseWithError(err)
+				return
+			}
+			defer resp.Body.Close()
+
+			buf := make([]byte, 1024) // Create a buffer to read data in chunks
+			for {
+				n, err := resp.Body.Read(buf)
+				if err != nil {
+					if err != io.EOF {
+						log.Printf("Error reading from response body: %v", err)
+						writer.CloseWithError(err)
+					}
+					break
+				}
+				if _, err := writer.Write(buf[:n]); err != nil {
+					log.Printf("Error writing to pipe: %v", err)
+					writer.CloseWithError(err)
+					return
+				}
+			}
+
+		}()
+
+		return c.SendStream(reader) // TODO probably want to handle not hx requests
 	})
 
 	app.Post("/gameservers", func(c fiber.Ctx) error {

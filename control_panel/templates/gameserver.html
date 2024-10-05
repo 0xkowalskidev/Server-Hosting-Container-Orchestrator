@@ -14,4 +14,6 @@
                 </div>
         </footer>
 
+        <div hx-ext="sse" sse-connect="/gameservers/{{.ID}}/logs" hx-swap="beforeend" sse-swap="message">
+        </div>
 </article>
