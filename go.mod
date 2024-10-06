@@ -6,6 +6,7 @@ require (
 	github.com/containerd/containerd v1.7.21
 	github.com/containerd/errdefs v0.1.0
 	github.com/containerd/go-cni v1.1.9
+	github.com/containerd/typeurl/v2 v2.1.1
 	github.com/go-resty/resty/v2 v2.15.3
 	github.com/gofiber/fiber/v3 v3.0.0-beta.3
 	github.com/gofiber/template/html/v2 v2.1.2
@@ -29,7 +30,6 @@ require (
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/platforms v0.2.1 // indirect
 	github.com/containerd/ttrpc v1.2.5 // indirect
-	github.com/containerd/typeurl/v2 v2.1.1 // indirect
 	github.com/containernetworking/cni v1.1.2 // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect

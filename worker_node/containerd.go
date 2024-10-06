@@ -6,6 +6,10 @@ import (
 	"syscall"
 
 	"github.com/0xKowalskiDev/Server-Hosting-Container-Orchestrator/models"
+
+	"github.com/containerd/typeurl/v2"
+
+	"github.com/containerd/cgroups/v2/stats"
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/cio"
 	"github.com/containerd/containerd/namespaces"
@@ -212,4 +216,41 @@ func (c *ContainerdRuntime) GetContainerStatus(ctx context.Context, id string, n
 	default:
 		return models.StatusUnknown, fmt.Errorf("Unhandled task status type: %s", status.Status)
 	}
+}
+
+func (c *ContainerdRuntime) GetContainerMetrics(ctx context.Context, id string, namespace string) (models.Metrics, error) {
+	var taskMetrics models.Metrics
+	ctx = namespaces.WithNamespace(ctx, namespace)
+
+	container, err := c.GetContainer(ctx, id, namespace)
+	if err != nil {
+		return taskMetrics, err
+	}
+
+	task, err := container.Task(ctx, nil)
+	if err != nil {
+		return taskMetrics, fmt.Errorf("Failed to get task: %v", err)
+	}
+
+	rawMetrics, err := task.Metrics(ctx)
+	if err != nil {
+		return taskMetrics, fmt.Errorf("Failed to get metrics: %v", err)
+	}
+
+	metrics, err := typeurl.UnmarshalAny(rawMetrics.Data)
+	if err != nil {
+		return taskMetrics, fmt.Errorf("Failed to unmarshal metrics: %v", err)
+	}
+
+	switch metric := metrics.(type) {
+	case *stats.Metrics:
+
+		taskMetrics.MemoryUsage = float64(metric.Memory.Usage) / (1024 * 1024 * 1024) // Convert to GB
+
+		taskMetrics.CPUUsage = float64(metric.CPU.UsageUsec) / 1e6 // Convert to seconds TODO: Get a useful cpu metric here instead
+	default:
+		return taskMetrics, fmt.Errorf("Unknown metrics type %T", metrics)
+	}
+
+	return taskMetrics, nil
 }

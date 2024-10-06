@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -52,6 +53,14 @@ func main() {
 		}()
 
 		return c.SendStream(reader)
+	})
+
+	app.Get("/metrics/:containerID", func(c fiber.Ctx) error {
+		metrics, err := runtime.GetContainerMetrics(context.Background(), c.Params("containerID"), config.ContainerdNamespace)
+		if err != nil {
+			log.Println(err)
+		}
+		return c.JSON(metrics)
 	})
 
 	go app.Listen(":3002")

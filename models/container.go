@@ -27,6 +27,11 @@ type Container struct {
 	Ports         []Port          `json:"ports"`
 }
 
+type Metrics struct {
+	CPUUsage    float64
+	MemoryUsage float64
+}
+
 func (c *Container) SetDefaults() {
 	if c.DesiredStatus == "" {
 		c.DesiredStatus = StatusRunning
