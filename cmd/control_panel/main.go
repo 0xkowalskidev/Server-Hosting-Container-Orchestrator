@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -70,8 +71,6 @@ func main() {
 
 		nodeLogsAPI := fmt.Sprintf("http://localhost:3002/logs/%s", containerID) // TODO: TEMP
 
-		log.Println(nodeLogsAPI)
-
 		c.Set("Content-Type", "text/event-stream")
 		c.Set("Cache-Control", "no-cache")
 		c.Set("Connection", "keep-alive")
@@ -109,6 +108,38 @@ func main() {
 		}()
 
 		return c.SendStream(reader) // TODO probably want to handle not hx requests
+	})
+
+	app.Get("/gameservers/:id/metrics", func(c fiber.Ctx) error {
+		containerID := c.Params("id")
+
+		if containerID == "" { // TODO: do something else
+			return c.Status(404).JSON(fiber.Map{"error": "Resource Not Found", "details": fmt.Sprintf("Container with ID=%s not found.", containerID)})
+		}
+
+		containerMetricsEndpoint := fmt.Sprintf("http://localhost:3002/metrics/%s", containerID) // TODO: TEMP
+
+		resp, err := http.Get(containerMetricsEndpoint)
+		if err != nil {
+			// TODO: Handle this
+			log.Printf("Error fetching logs from node API: %v", err)
+		}
+		defer resp.Body.Close()
+
+		// TODO: Use resty or something for this, maybe put in wrapper
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Printf("Error reading response body: %v", err)
+		}
+
+		var metrics models.Metrics
+
+		err = json.Unmarshal(body, &metrics)
+		if err != nil {
+			log.Printf("Error parsing JSON: %v", err)
+		}
+
+		return c.Render("gameserver_metrics", utils.StructToFiberMap(metrics))
 	})
 
 	app.Post("/gameservers", func(c fiber.Ctx) error {
