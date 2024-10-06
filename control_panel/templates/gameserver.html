@@ -17,6 +17,18 @@
         <div hx-get="/gameservers/{{.ID}}/metrics" hx-trigger="every 1s">
         </div>
 
-        <div hx-ext="sse" sse-connect="/gameservers/{{.ID}}/logs" hx-swap="beforeend" sse-swap="message">
-        </div>
+
+
+        <pre style="margin: 0;">
+                <code id="logs-container" hx-ext="sse" sse-connect="/gameservers/{{.ID}}/logs" hx-swap="beforeend"
+                        sse-swap="message"
+                        style="background-color: black; color: green; height: 400px; overflow: hidden; white-space: pre-line; padding:0;">
+                </code>
+        </pre>
+
+        <script>
+                document.getElementById('logs-container').addEventListener('htmx:sseMessage', function (evt) {
+                        document.getElementById('logs-container').scrollTop = document.getElementById('logs-container').scrollHeight;
+                });
+        </script>
 </article>

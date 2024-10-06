@@ -42,7 +42,7 @@ func main() {
 
 		go func() {
 			for line := range t.Lines {
-				_, err := writer.Write([]byte("data: " + line.Text + "\n\n"))
+				_, err := writer.Write([]byte("data: " + line.Text + "<br> \n\n"))
 				if err != nil {
 					log.Printf("Error writing to pipe: %v", err)
 					writer.Close()
