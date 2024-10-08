@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"net/http"
 	"time"
 
@@ -138,6 +139,10 @@ func main() {
 		if err != nil {
 			log.Printf("Error parsing JSON: %v", err)
 		}
+
+		// Prepare the metrics
+		metrics.MemoryUsage = math.Min(math.Floor((metrics.MemoryUsage*10))/10, metrics.MemoryLimit)
+		metrics.CPUUsage = math.Min(math.Floor(metrics.CPUUsage), 100)
 
 		return c.Render("gameserver_metrics", utils.StructToFiberMap(metrics))
 	})

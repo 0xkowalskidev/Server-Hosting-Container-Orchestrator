@@ -1,2 +1,10 @@
-{{.MemoryUsage}}
-{{.CPUUsage}}
+<label>
+        {{.MemoryUsage}} GB
+        <progress value="{{.MemoryUsage}}" max="{{.MemoryLimit}}"></progress>
+</label>
+
+
+<label>
+        {{.CPUUsage}} %
+        <progress value="{{.CPUUsage}}" max="100"></progress>
+</label>

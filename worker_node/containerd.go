@@ -3,9 +3,10 @@ package workernode
 import (
 	"context"
 	"fmt"
-	"github.com/0xKowalskiDev/Server-Hosting-Container-Orchestrator/models"
 	"syscall"
 	"time"
+
+	"github.com/0xKowalskiDev/Server-Hosting-Container-Orchestrator/models"
 
 	"github.com/containerd/typeurl/v2"
 
@@ -62,7 +63,8 @@ func (c *ContainerdRuntime) CreateContainer(ctx context.Context, id string, name
 				Options:     []string{"rbind", "rw"},
 			},
 		}),
-		oci.WithCPUCFS(100000, 100000), // One core TODO: Take this from container config
+		oci.WithCPUCFS(100000, 100000),              // One core TODO: Take this from container config
+		oci.WithMemoryLimit(1 * 1024 * 1024 * 1024), // GB to bytes
 	}
 
 	container, err := c.client.NewContainer(
@@ -258,7 +260,8 @@ func (c *ContainerdRuntime) GetContainerMetrics(ctx context.Context, id string, 
 	switch metric := metrics.(type) {
 	case *stats.Metrics:
 		// Memory
-		taskMetrics.MemoryUsage = float64(metric.Memory.Usage) / (1024 * 1024 * 1024) // Convert to GB
+		taskMetrics.MemoryUsage = float64(metric.Memory.Usage) / (1024 * 1024 * 1024)                // Convert to GB
+		taskMetrics.MemoryLimit = float64(*spec.Linux.Resources.Memory.Limit) / (1024 * 1024 * 1024) // Convert to GB, this will cause a crash if memory limit is not set. Which is fine, as imo memory limit not being set is crash worthy. TODO make this an fatal assert?
 
 		//CPU
 		newCPU := metric.CPU.UsageUsec
@@ -271,7 +274,7 @@ func (c *ContainerdRuntime) GetContainerMetrics(ctx context.Context, id string, 
 
 			quota := spec.Linux.Resources.CPU.Quota
 			period := spec.Linux.Resources.CPU.Period
-			coreCount := 1.0 // Default to 1 core if quota/period are not set
+			coreCount := 1.0 // Default to 1 core if quota/period are not set TODO fatal assert?
 
 			if quota != nil && period != nil && *period > 0 {
 				coreCount = float64(*quota) / float64(*period)

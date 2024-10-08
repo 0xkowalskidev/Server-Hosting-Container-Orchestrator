@@ -28,8 +28,9 @@ type Container struct {
 }
 
 type Metrics struct {
-	CPUUsage    float64
-	MemoryUsage float64
+	CPUUsage    float64 // Percentage
+	MemoryUsage float64 // GB
+	MemoryLimit float64 // GB
 }
 
 func (c *Container) SetDefaults() {

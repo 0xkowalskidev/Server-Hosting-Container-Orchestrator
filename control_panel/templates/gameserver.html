@@ -3,16 +3,7 @@
                 <h3>ID: {{.ID}}</h3>
         </header>
         <p>Image: {{.Image}}</p>
-        <footer>
-                <div class="grid">
-                        <button class="secondary" hx-patch="/gameservers/{{.ID}}"
-                                hx-vals='{"desired_status": "running"}' hx-swap="none">Start</button>
-                        <button class="secondary" hx-patch="/gameservers/{{.ID}}"
-                                hx-vals='{"desired_status": "stopped"}' hx-swap="none">Stop</button>
-                        <button class="outline" hx-delete="/gameservers/{{.ID}}" hx-target="#gameserver-{{.ID}}"
-                                hx-swap="outerHTML">Delete</button>
-                </div>
-        </footer>
+
 
         <div hx-get="/gameservers/{{.ID}}/metrics" hx-trigger="every 1s">
         </div>
@@ -31,4 +22,15 @@
                         document.getElementById('logs-container-{{.ID}}').scrollTop = document.getElementById('logs-container-{{.ID}}').scrollHeight;
                 });
         </script>
+
+        <footer>
+                <div class="grid">
+                        <button class="secondary" hx-patch="/gameservers/{{.ID}}"
+                                hx-vals='{"desired_status": "running"}' hx-swap="none">Start</button>
+                        <button class="secondary" hx-patch="/gameservers/{{.ID}}"
+                                hx-vals='{"desired_status": "stopped"}' hx-swap="none">Stop</button>
+                        <button class="outline" hx-delete="/gameservers/{{.ID}}" hx-target="#gameserver-{{.ID}}"
+                                hx-swap="outerHTML">Delete</button>
+                </div>
+        </footer>
 </article>
