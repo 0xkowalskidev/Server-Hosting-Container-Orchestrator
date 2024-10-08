@@ -3,9 +3,9 @@ package workernode
 import (
 	"context"
 	"fmt"
-	"syscall"
-
 	"github.com/0xKowalskiDev/Server-Hosting-Container-Orchestrator/models"
+	"syscall"
+	"time"
 
 	"github.com/containerd/typeurl/v2"
 
@@ -18,9 +18,15 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
+type CPUUsageSample struct {
+	cpuUsage  uint64
+	timestamp time.Time
+}
+
 type ContainerdRuntime struct {
-	client *containerd.Client
-	config Config
+	client                    *containerd.Client
+	config                    Config
+	previousCPUUsageSampleMap map[string]CPUUsageSample
 }
 
 func NewContainerdRuntime(config Config) (*ContainerdRuntime, error) {
@@ -28,7 +34,7 @@ func NewContainerdRuntime(config Config) (*ContainerdRuntime, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create containerd client: %w", err)
 	}
-	return &ContainerdRuntime{client: client, config: config}, nil
+	return &ContainerdRuntime{client: client, config: config, previousCPUUsageSampleMap: make(map[string]CPUUsageSample)}, nil
 }
 
 func (c *ContainerdRuntime) CreateContainer(ctx context.Context, id string, namespace string, image string) (containerd.Container, error) {
@@ -56,6 +62,7 @@ func (c *ContainerdRuntime) CreateContainer(ctx context.Context, id string, name
 				Options:     []string{"rbind", "rw"},
 			},
 		}),
+		oci.WithCPUCFS(100000, 100000), // One core TODO: Take this from container config
 	}
 
 	container, err := c.client.NewContainer(
@@ -227,6 +234,12 @@ func (c *ContainerdRuntime) GetContainerMetrics(ctx context.Context, id string, 
 		return taskMetrics, err
 	}
 
+	// Needed to get container core count
+	spec, err := container.Spec(ctx)
+	if err != nil {
+		return taskMetrics, fmt.Errorf("Failed to get container spec: %v", err)
+	}
+
 	task, err := container.Task(ctx, nil)
 	if err != nil {
 		return taskMetrics, fmt.Errorf("Failed to get task: %v", err)
@@ -244,10 +257,32 @@ func (c *ContainerdRuntime) GetContainerMetrics(ctx context.Context, id string, 
 
 	switch metric := metrics.(type) {
 	case *stats.Metrics:
-
+		// Memory
 		taskMetrics.MemoryUsage = float64(metric.Memory.Usage) / (1024 * 1024 * 1024) // Convert to GB
 
-		taskMetrics.CPUUsage = float64(metric.CPU.UsageUsec) / 1e6 // Convert to seconds TODO: Get a useful cpu metric here instead
+		//CPU
+		newCPU := metric.CPU.UsageUsec
+		newTimestamp := time.Now()
+
+		previousSample, exists := c.previousCPUUsageSampleMap[id]
+		if exists {
+			intervalSeconds := newTimestamp.Sub(previousSample.timestamp).Seconds()
+			usageDelta := float64(newCPU - previousSample.cpuUsage)
+
+			quota := spec.Linux.Resources.CPU.Quota
+			period := spec.Linux.Resources.CPU.Period
+			coreCount := 1.0 // Default to 1 core if quota/period are not set
+
+			if quota != nil && period != nil && *period > 0 {
+				coreCount = float64(*quota) / float64(*period)
+			}
+
+			taskMetrics.CPUUsage = (usageDelta / intervalSeconds) / 1e6 / coreCount * 100 // Convert to percentage
+		} else {
+			taskMetrics.CPUUsage = 0 // Initial value; no previous sample to compare
+		}
+
+		c.previousCPUUsageSampleMap[id] = CPUUsageSample{cpuUsage: newCPU, timestamp: newTimestamp}
 	default:
 		return taskMetrics, fmt.Errorf("Unknown metrics type %T", metrics)
 	}
