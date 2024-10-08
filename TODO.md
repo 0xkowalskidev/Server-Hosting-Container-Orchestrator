@@ -1,5 +1,6 @@
 # Features
 ## Container status api call - 
+## Container metrics api should return cpu usage as a useful value -
 
 # Refactors
 ## Move logs/metrics api into api wrapper - 
