@@ -63,8 +63,8 @@ func (c *ContainerdRuntime) CreateContainer(ctx context.Context, id string, name
 				Options:     []string{"rbind", "rw"},
 			},
 		}),
-		oci.WithCPUCFS(100000, 100000),              // One core TODO: Take this from container config
-		oci.WithMemoryLimit(1 * 1024 * 1024 * 1024), // GB to bytes
+		oci.WithCPUCFS(200000, 100000),              // One core TODO: Take this from container config
+		oci.WithMemoryLimit(2 * 1024 * 1024 * 1024), // GB to bytes
 	}
 
 	container, err := c.client.NewContainer(
