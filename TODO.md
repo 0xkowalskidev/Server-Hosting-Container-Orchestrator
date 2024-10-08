@@ -8,3 +8,4 @@
 
 # Bugs
 ## Worker node crash on server restart due to sse conn - 
+## Worker node does not properly create portmappings if netns already exists - 
