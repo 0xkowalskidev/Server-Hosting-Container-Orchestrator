@@ -11,9 +11,11 @@
         <fieldset>
                 <legend>Ports</legend>
                 <div id="ports-container">
+
+                        <!-- Game Port -->
                         <div class="grid">
                                 <label for="host-port-0">Host Port
-                                        <input name="ports[0][host_port]" value="25565" type="number" id="host-port-0"
+                                        <input name="ports[0][host_port]" value="30000" type="number" id="host-port-0"
                                                 required />
                                 </label>
                                 <label for="container-port-0">Container Port
@@ -25,6 +27,23 @@
                                                 required />
                                 </label>
                         </div>
+
+                        <!-- Rcon Port -->
+                        <div class="grid">
+                                <label for="host-port-1">Host Port
+                                        <input name="ports[1][host_port]" value="30001" type="number" id="host-port-1"
+                                                required />
+                                </label>
+                                <label for="container-port-1">Container Port
+                                        <input name="ports[1][container_port]" value="25575" type="number"
+                                                id="container-port-1" required />
+                                </label>
+                                <label for="protocol-1">Protocol
+                                        <input name="ports[1][protocol]" value="tcp" type="text" id="protocol-1"
+                                                required />
+                                </label>
+                        </div>
+
                 </div>
         </fieldset>
 
