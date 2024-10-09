@@ -38,7 +38,7 @@ func NewContainerdRuntime(config Config) (*ContainerdRuntime, error) {
 	return &ContainerdRuntime{client: client, config: config, previousCPUUsageSampleMap: make(map[string]CPUUsageSample)}, nil
 }
 
-func (c *ContainerdRuntime) CreateContainer(ctx context.Context, id string, namespace string, image string, memoryLimit int, cpuLimit int) (containerd.Container, error) {
+func (c *ContainerdRuntime) CreateContainer(ctx context.Context, id string, namespace string, image string, memoryLimit int, cpuLimit int, env []string) (containerd.Container, error) {
 	ctx = namespaces.WithNamespace(ctx, namespace)
 
 	imageRef, err := c.client.Pull(ctx, image, containerd.WithPullUnpack)
@@ -48,6 +48,8 @@ func (c *ContainerdRuntime) CreateContainer(ctx context.Context, id string, name
 
 	volumePath := fmt.Sprintf("%s/%s", c.config.MountsPath, id)
 	netnsPath := fmt.Sprintf("/var/run/netns/%s", id)
+
+	preparedEnv := append(env, fmt.Sprintf("MEMORY=%d", memoryLimit))
 
 	specOpts := []oci.SpecOpts{
 		oci.WithLinuxNamespace(specs.LinuxNamespace{
@@ -63,6 +65,7 @@ func (c *ContainerdRuntime) CreateContainer(ctx context.Context, id string, name
 				Options:     []string{"rbind", "rw"},
 			},
 		}),
+		oci.WithEnv(preparedEnv),
 		oci.WithCPUCFS(100000*int64(cpuLimit), 100000),
 		oci.WithMemoryLimit(uint64(memoryLimit) * 1024 * 1024 * 1024), // GB to bytes
 	}

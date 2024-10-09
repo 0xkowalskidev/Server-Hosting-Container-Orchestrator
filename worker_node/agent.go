@@ -127,7 +127,7 @@ func (a *Agent) SyncNode(node models.Node) error {
 		if _, exists := actualContainerMap[id]; !exists {
 			ctx := context.Background()
 
-			container, err := a.runtime.CreateContainer(ctx, desiredContainer.ID, node.Namespace, desiredContainer.Image, desiredContainer.MemoryLimit, desiredContainer.CPULimit)
+			container, err := a.runtime.CreateContainer(ctx, desiredContainer.ID, node.Namespace, desiredContainer.Image, desiredContainer.MemoryLimit, desiredContainer.CPULimit, desiredContainer.Env)
 			if err != nil {
 				log.Printf("Failed to create container: %v", err)
 				continue

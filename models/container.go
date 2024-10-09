@@ -24,6 +24,7 @@ type Container struct {
 	Image         string          `json:"image"`
 	DesiredStatus ContainerStatus `json:"desired_status" form:"desired_status"` // Desired status for container, node agent will try to match this in container runtime
 	Ports         []Port          `json:"ports"`
+	Env           []string        `json:"env"`
 
 	StorageLimit int `json:"storage_limit"` // GB
 	MemoryLimit  int `json:"memory_limit"`  // GB
