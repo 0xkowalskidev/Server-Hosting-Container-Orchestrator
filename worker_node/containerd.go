@@ -3,6 +3,7 @@ package workernode
 import (
 	"context"
 	"fmt"
+	"log"
 	"syscall"
 	"time"
 
@@ -24,10 +25,17 @@ type CPUUsageSample struct {
 	timestamp time.Time
 }
 
+type ContainerProbeState struct {
+	// Value is the time these probes last passed.
+	readinessProbe time.Time
+	livenessProbe  time.Time
+}
+
 type ContainerdRuntime struct {
 	client                    *containerd.Client
 	config                    Config
-	previousCPUUsageSampleMap map[string]CPUUsageSample
+	previousCPUUsageSampleMap map[string]CPUUsageSample // ContainerID to last cpu sample
+	containerProbeStates      map[string]ContainerProbeState
 }
 
 func NewContainerdRuntime(config Config) (*ContainerdRuntime, error) {
@@ -35,7 +43,7 @@ func NewContainerdRuntime(config Config) (*ContainerdRuntime, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create containerd client: %w", err)
 	}
-	return &ContainerdRuntime{client: client, config: config, previousCPUUsageSampleMap: make(map[string]CPUUsageSample)}, nil
+	return &ContainerdRuntime{client: client, config: config, previousCPUUsageSampleMap: make(map[string]CPUUsageSample), containerProbeStates: make(map[string]ContainerProbeState)}, nil
 }
 
 func (c *ContainerdRuntime) CreateContainer(ctx context.Context, id string, namespace string, image string, memoryLimit int, cpuLimit int, env []string) (containerd.Container, error) {
@@ -199,6 +207,54 @@ func (c *ContainerdRuntime) GetContainers(ctx context.Context, namespace string)
 	return containers, nil
 }
 
+func (c *ContainerdRuntime) ExecContainer(ctx context.Context, id string, namespace string, execID string, scriptPath string) (int, error) {
+	ctx = namespaces.WithNamespace(ctx, namespace)
+
+	container, err := c.client.LoadContainer(ctx, id)
+	if err != nil {
+		return -1, fmt.Errorf("failed to load container with ID %s: %w", id, err)
+	}
+
+	task, err := container.Task(ctx, nil)
+	if err != nil {
+		return -1, fmt.Errorf("failed to retrieve task for container %s: %w", id, err)
+	}
+
+	processSpec := &specs.Process{
+		Args: []string{scriptPath},
+		Cwd:  "/",
+	}
+
+	process, err := task.Exec(ctx, execID, processSpec, cio.NewCreator(cio.WithStdio))
+	if err != nil {
+		return -1, fmt.Errorf("failed to exec process in container %s: %w", id, err)
+	}
+
+	defer func() {
+		_, err := process.Delete(ctx)
+		if err != nil {
+			log.Printf("warning: failed to delete process %s in container %s: %v", execID, id, err)
+		}
+	}()
+
+	if err := process.Start(ctx); err != nil {
+		return -1, fmt.Errorf("failed to start process in container %s: %w", id, err)
+	}
+
+	exitStatusC, err := process.Wait(ctx)
+	if err != nil {
+		return -1, fmt.Errorf("failed to wait for process in container %s: %w", id, err)
+	}
+
+	status := <-exitStatusC
+	exitCode, _, err := status.Result()
+	if err != nil {
+		return -1, fmt.Errorf("failed to retrieve exit code for process in container %s: %w", id, err)
+	}
+
+	return int(exitCode), nil
+}
+
 func (c *ContainerdRuntime) GetContainerStatus(ctx context.Context, id string, namespace string) (models.ContainerStatus, error) {
 	ctx = namespaces.WithNamespace(ctx, namespace)
 
@@ -222,7 +278,37 @@ func (c *ContainerdRuntime) GetContainerStatus(ctx context.Context, id string, n
 	}
 	switch status.Status {
 	case containerd.Running:
-		return models.StatusRunning, nil
+		containerProbeState := c.containerProbeStates[id]
+
+		if containerProbeState.readinessProbe.IsZero() {
+			exitCode, err := c.ExecContainer(ctx, id, namespace, "readiness-probe", "/data/scripts/readiness_probe.sh")
+			if err != nil {
+				log.Println(err) // TODO do something else here
+				return models.StatusRunning, nil
+			}
+
+			if exitCode == 0 {
+				containerProbeState.readinessProbe = time.Now()
+			}
+		} else if containerProbeState.livenessProbe.IsZero() || time.Since(containerProbeState.livenessProbe) >= 10*time.Second { // TODO Probably want to take interval from container config
+			exitCode, err := c.ExecContainer(ctx, id, namespace, "liveness-probe", "/data/scripts/liveness_probe.sh")
+			if err != nil {
+				log.Println(err) // TODO do something else here
+				return models.StatusRunning, nil
+			}
+
+			if exitCode == 0 {
+				containerProbeState.livenessProbe = time.Now()
+			}
+		}
+
+		c.containerProbeStates[id] = containerProbeState
+
+		if !c.containerProbeStates[id].readinessProbe.IsZero() && !c.containerProbeStates[id].livenessProbe.IsZero() {
+			return models.StatusReady, nil
+		} else {
+			return models.StatusRunning, nil
+		}
 	case containerd.Stopped:
 		return models.StatusStopped, nil
 	default:

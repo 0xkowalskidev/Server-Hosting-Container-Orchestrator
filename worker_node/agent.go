@@ -155,6 +155,9 @@ func (a *Agent) MatchContainerState(namespace string, desiredContainer models.Co
 	if actualStatus != desiredContainer.DesiredStatus {
 		switch desiredContainer.DesiredStatus {
 		case models.StatusRunning:
+			if actualStatus == models.StatusReady {
+				return nil
+			}
 			_, err := a.runtime.StartContainer(ctx, desiredContainer.ID, namespace)
 			if err != nil {
 				return fmt.Errorf("Failed to start container: %v", err)

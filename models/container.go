@@ -7,6 +7,7 @@ import (
 type ContainerStatus string
 
 const (
+	StatusReady   ContainerStatus = "ready"
 	StatusRunning ContainerStatus = "running"
 	StatusStopped ContainerStatus = "stopped"
 	StatusUnknown ContainerStatus = "unknown"
@@ -43,8 +44,8 @@ func (c *Container) SetDefaults() {
 	}
 
 	c.StorageLimit = 2 // TODO: TEMP, remove
-	c.MemoryLimit = 2
-	c.CPULimit = 2
+	c.MemoryLimit = 4
+	c.CPULimit = 4
 }
 
 func (c *Container) Patch(patchContainer *Container) error {
