@@ -63,6 +63,14 @@ func main() {
 		return c.JSON(metrics)
 	})
 
+	app.Get("/status/:containerID", func(c fiber.Ctx) error {
+		status, err := runtime.GetContainerStatus(context.Background(), c.Params("containerID"), config.ContainerdNamespace)
+		if err != nil {
+			log.Println(err)
+		}
+		return c.JSON(map[string]string{"status": string(status)})
+	})
+
 	go app.Listen(":3002")
 
 	storageManager := workernode.NewStorageManager(config, &utils.FileOps{})

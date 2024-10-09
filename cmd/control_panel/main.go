@@ -151,6 +151,44 @@ func main() {
 		return c.Render("gameserver_metrics", utils.StructToFiberMap(metrics))
 	})
 
+	app.Get("/gameservers/:id/status", func(c fiber.Ctx) error {
+		containerID := c.Params("id")
+
+		if containerID == "" { // TODO: do something else
+			return c.Status(404).JSON(fiber.Map{"error": "Resource Not Found", "details": fmt.Sprintf("Container with ID=%s not found.", containerID)})
+		}
+
+		containerStatusEndpoint := fmt.Sprintf("http://localhost:3002/status/%s", containerID) // TODO: TEMP
+
+		resp, err := http.Get(containerStatusEndpoint)
+		if err != nil {
+			// TODO: Handle this
+			log.Printf("Error fetching logs from node API: %v", err)
+			return c.Status(500).Send(nil)
+		}
+		defer resp.Body.Close()
+
+		// TODO: Use resty or something for this, maybe put in wrapper
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Printf("Error reading response body: %v", err)
+			return c.Status(500).Send(nil)
+		}
+
+		type Response struct {
+			Status string
+		}
+		var response Response
+
+		err = json.Unmarshal(body, &response)
+		if err != nil {
+			log.Printf("Error parsing JSON: %v", err)
+			return c.Status(500).Send(nil)
+		}
+
+		return c.Render("gameserver_status", utils.StructToFiberMap(response))
+	})
+
 	app.Post("/gameservers", func(c fiber.Ctx) error {
 		var body models.Container
 

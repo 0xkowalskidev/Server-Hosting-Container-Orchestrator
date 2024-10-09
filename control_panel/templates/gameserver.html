@@ -1,6 +1,7 @@
 <article id="gameserver-{{.ID}}">
         <header>
                 <h3>ID: {{.ID}}</h3>
+                <h3 hx-get="/gameservers/{{.ID}}/status" hx-trigger="every 1s"></h3>
         </header>
         <p>Image: {{.Image}}</p>
 
