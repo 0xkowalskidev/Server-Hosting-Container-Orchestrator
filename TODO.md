@@ -8,5 +8,5 @@
 ## Move api wrapper into models or own dir -
 
 # Bugs
-## Control Panel crash on server restart due to sse conn - 
+## Control Panel crash on server restart due to sse conn - Done
 ## Worker node does not properly create portmappings if netns already exists - 

@@ -96,6 +96,7 @@ func main() {
 					if err != io.EOF {
 						log.Printf("Error reading from response body: %v", err)
 						writer.CloseWithError(err)
+						return
 					}
 					break
 				}
@@ -124,6 +125,7 @@ func main() {
 		if err != nil {
 			// TODO: Handle this
 			log.Printf("Error fetching logs from node API: %v", err)
+			return c.Status(500).Send(nil)
 		}
 		defer resp.Body.Close()
 
@@ -131,6 +133,7 @@ func main() {
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			log.Printf("Error reading response body: %v", err)
+			return c.Status(500).Send(nil)
 		}
 
 		var metrics models.Metrics
@@ -138,6 +141,7 @@ func main() {
 		err = json.Unmarshal(body, &metrics)
 		if err != nil {
 			log.Printf("Error parsing JSON: %v", err)
+			return c.Status(500).Send(nil)
 		}
 
 		// Prepare the metrics
