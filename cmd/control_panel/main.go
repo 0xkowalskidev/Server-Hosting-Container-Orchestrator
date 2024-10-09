@@ -63,6 +63,7 @@ func main() {
 		}
 	})
 
+	// TODO All these worker node api calls should proxy through the control node
 	app.Get("/gameservers/:id/logs", func(c fiber.Ctx) error {
 		containerID := c.Params("id")
 
