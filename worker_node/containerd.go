@@ -38,7 +38,7 @@ func NewContainerdRuntime(config Config) (*ContainerdRuntime, error) {
 	return &ContainerdRuntime{client: client, config: config, previousCPUUsageSampleMap: make(map[string]CPUUsageSample)}, nil
 }
 
-func (c *ContainerdRuntime) CreateContainer(ctx context.Context, id string, namespace string, image string) (containerd.Container, error) {
+func (c *ContainerdRuntime) CreateContainer(ctx context.Context, id string, namespace string, image string, memoryLimit int, cpuLimit int) (containerd.Container, error) {
 	ctx = namespaces.WithNamespace(ctx, namespace)
 
 	imageRef, err := c.client.Pull(ctx, image, containerd.WithPullUnpack)
@@ -63,8 +63,8 @@ func (c *ContainerdRuntime) CreateContainer(ctx context.Context, id string, name
 				Options:     []string{"rbind", "rw"},
 			},
 		}),
-		oci.WithCPUCFS(200000, 100000),              // One core TODO: Take this from container config
-		oci.WithMemoryLimit(2 * 1024 * 1024 * 1024), // GB to bytes
+		oci.WithCPUCFS(100000*int64(cpuLimit), 100000),
+		oci.WithMemoryLimit(uint64(memoryLimit) * 1024 * 1024 * 1024), // GB to bytes
 	}
 
 	container, err := c.client.NewContainer(
