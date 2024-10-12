@@ -1,3 +1,28 @@
-<div hx-ext="ws" ws-connect="/gameservers/{{.ID}}/file-viewer/ws" hx-target="files" hx-swap="innerHTML">
-        <div id="files"></div>
+<div hx-ext="ws" ws-connect="/gameservers/{{.ID}}/file-viewer/ws">
+        <nav id="breadcrumbs-nav" aria-label='breadcrumb'>
+                <ul id="breadcrumbs"></ul>
+        </nav>
+
+        <form id="files"></form>
+
+
+        <script>
+                //Script for breadcrumb navigation
+
+                let socketWrapper;
+                // Listen for the htmx:wsOpen event to store the WebSocket reference
+                document.addEventListener("htmx:wsOpen", function (event) {
+                        socketWrapper = event.detail.socketWrapper;
+                });
+
+                document.getElementById("breadcrumbs-nav").addEventListener("click", function (e) {
+                        const breadcrumb = e.target.closest('li');
+                        console.log("click", breadcrumb, socketWrapper);
+
+                        if (breadcrumb && socketWrapper) {
+                                const path = breadcrumb.getAttribute("value");
+                                socketWrapper.send(JSON.stringify({ls: path}));
+                        }
+                });
+        </script>
 </div>
