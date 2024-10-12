@@ -32,8 +32,6 @@
           else
             echo "sftpusers group already exists"
           fi
-          sudo chown root:sftpusers $MOUNTS_PATH
-          sudo chmod 710 $MOUNTS_PATH  # Gives execute permission for the group
 
           echo "MOUNTS_PATH=$MOUNTS_PATH"
 

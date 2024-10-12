@@ -1,7 +1,8 @@
 # Features
 ## Container status api call - Done
 ## Container metrics api should return cpu usage as a useful value - Done
-## SFTP - 
+## SFTP - Done
+## SFTP perms currently insecure, user can access any dir! -
 
 # Refactors
 ## Container status -
