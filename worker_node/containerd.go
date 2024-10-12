@@ -207,7 +207,7 @@ func (c *ContainerdRuntime) GetContainers(ctx context.Context, namespace string)
 	return containers, nil
 }
 
-func (c *ContainerdRuntime) ExecContainer(ctx context.Context, id string, namespace string, execID string, scriptPath string) (int, error) {
+func (c *ContainerdRuntime) ExecContainer(ctx context.Context, id string, namespace string, execID string, scriptPath string, arg string) (int, error) {
 	ctx = namespaces.WithNamespace(ctx, namespace)
 
 	container, err := c.client.LoadContainer(ctx, id)
@@ -221,7 +221,7 @@ func (c *ContainerdRuntime) ExecContainer(ctx context.Context, id string, namesp
 	}
 
 	processSpec := &specs.Process{
-		Args: []string{scriptPath},
+		Args: []string{scriptPath, arg},
 		Cwd:  "/",
 	}
 
@@ -281,7 +281,7 @@ func (c *ContainerdRuntime) GetContainerStatus(ctx context.Context, id string, n
 		containerProbeState := c.containerProbeStates[id]
 
 		if containerProbeState.readinessProbe.IsZero() {
-			exitCode, err := c.ExecContainer(ctx, id, namespace, "readiness-probe", "/data/scripts/readiness_probe.sh")
+			exitCode, err := c.ExecContainer(ctx, id, namespace, "readiness-probe", "/data/scripts/readiness_probe.sh", "")
 			if err != nil {
 				log.Println(err) // TODO do something else here
 				return models.StatusRunning, nil
@@ -291,7 +291,7 @@ func (c *ContainerdRuntime) GetContainerStatus(ctx context.Context, id string, n
 				containerProbeState.readinessProbe = time.Now()
 			}
 		} else if containerProbeState.livenessProbe.IsZero() || time.Since(containerProbeState.livenessProbe) >= 10*time.Second { // TODO Probably want to take interval from container config
-			exitCode, err := c.ExecContainer(ctx, id, namespace, "liveness-probe", "/data/scripts/liveness_probe.sh")
+			exitCode, err := c.ExecContainer(ctx, id, namespace, "liveness-probe", "/data/scripts/liveness_probe.sh", "")
 			if err != nil {
 				log.Println(err) // TODO do something else here
 				return models.StatusRunning, nil

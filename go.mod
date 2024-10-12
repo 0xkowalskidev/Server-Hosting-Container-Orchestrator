@@ -3,6 +3,7 @@ module github.com/0xKowalskiDev/Server-Hosting-Container-Orchestrator
 go 1.21.8
 
 require (
+	github.com/containerd/cgroups v1.1.0
 	github.com/containerd/containerd v1.7.21
 	github.com/containerd/errdefs v0.1.0
 	github.com/containerd/go-cni v1.1.9
@@ -23,7 +24,6 @@ require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/Microsoft/hcsshim v0.11.7 // indirect
 	github.com/andybalholm/brotli v1.1.0 // indirect
-	github.com/containerd/cgroups v1.1.0 // indirect
 	github.com/containerd/containerd/api v1.7.19 // indirect
 	github.com/containerd/continuity v0.4.2 // indirect
 	github.com/containerd/fifo v1.1.0 // indirect

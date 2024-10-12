@@ -1,0 +1,11 @@
+<form hx-post="/gameservers/{{.ID}}/console" hx-swap="none">
+        <pre style="margin: 0; white-space: pre-line; padding:0; overflow-y: auto; height: 600px;">
+                <code hx-ext="sse" sse-connect="/gameservers/{{.ID}}/logs" hx-swap="beforeend" sse-swap="message">
+                </code>
+        </pre>
+
+        <fieldset role="group">
+                <input type="text" name="rcon_command" placeholder="Enter command...">
+                <input type="submit" value="Submit" />
+        </fieldset>
+</form>
