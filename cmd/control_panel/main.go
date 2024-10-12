@@ -106,12 +106,12 @@ func main() {
 			return c.Status(404).JSON(fiber.Map{"error": "Resource Not Found", "details": fmt.Sprintf("Container with ID=%s not found.", containerID)})
 		}
 
-		command := c.FormValue("rcon_command")
+		command := c.FormValue("command")
 		if command == "" {
 			return c.Status(400).JSON(fiber.Map{"error": "Command cannot be empty"})
 		}
 
-		rconAPI := fmt.Sprintf("http://localhost:3002/rcon/%s", containerID) // TODO: TEMP
+		rconAPI := fmt.Sprintf("http://localhost:3002/command/%s", containerID) // TODO: TEMP
 
 		req, err := http.NewRequest("POST", rconAPI, bytes.NewBufferString(command))
 		if err != nil {

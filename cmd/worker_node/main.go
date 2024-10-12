@@ -71,8 +71,8 @@ func main() {
 		return c.JSON(map[string]string{"status": string(status)})
 	})
 
-	app.Post("/rcon/:containerID", func(c fiber.Ctx) error {
-		exitCode, err := runtime.ExecContainer(context.Background(), c.Params("containerID"), config.ContainerdNamespace, "rcon", "/data/scripts/send_rcon_command.sh", string(c.Body()))
+	app.Post("/command/:containerID", func(c fiber.Ctx) error {
+		exitCode, err := runtime.ExecContainer(context.Background(), c.Params("containerID"), config.ContainerdNamespace, c.Params("containerID")+"-command", "/data/scripts/send_command.sh", string(c.Body()))
 		if err != nil {
 			log.Println(err)
 		}
