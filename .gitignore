@@ -2,3 +2,4 @@ logs
 mounts
 .direnv
 *.fiber.br
+*.fiber.gz

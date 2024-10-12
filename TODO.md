@@ -3,6 +3,7 @@
 ## Container metrics api should return cpu usage as a useful value - Done
 ## SFTP - Done
 ## SFTP perms currently insecure, user can access any dir! -
+## Should handle sftp password - 
 
 # Refactors
 ## Container status -
@@ -12,6 +13,6 @@
 
 # Bugs
 ## Control Panel crash on server restart due to sse conn - Done
-## Worker node does not properly create portmappings if netns already exists - 
+## Worker node does not properly create/remove portmappings if netns already exists, general weirdness if a container already exists on restart- 
 ## Container status race condition - 
 ## SFTP might not let user disconnect -
