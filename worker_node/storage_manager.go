@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"syscall"
 
 	"github.com/0xKowalskiDev/Server-Hosting-Container-Orchestrator/models"
@@ -88,6 +89,10 @@ func (sm *StorageManager) RemoveVolume(volumeID string) error {
 		log.Printf("failed to remove loopback file: %v", err)
 	}
 
+	if err := sm.deleteUser(volumeID); err != nil {
+		log.Printf("Failed to delete user: %v", err)
+	}
+
 	return nil
 }
 
@@ -158,6 +163,14 @@ func (sm *StorageManager) CreateVolume(volumeID string, sizeLimit int64) (*model
 		return nil, fmt.Errorf("failed to remove lost and found dir: %v", err)
 	}
 
+	err = sm.createUser(volumeID, "password", volumePath)
+	if err != nil {
+		sm.unmountVolume(volumePath)      // Rollback the mount
+		sm.fileOps.Remove(volumeFilePath) // Rollback file creation
+		sm.fileOps.RemoveAll(volumePath)  //Rollback dir creation
+		return nil, fmt.Errorf("failed to remove create user: %v", err)
+	}
+
 	return &models.Volume{
 		ID:         volumeID,
 		MountPoint: volumePath,
@@ -205,6 +218,44 @@ func (sm *StorageManager) unmountVolume(mountPath string) error {
 	err := syscall.Unmount(mountPath, 0)
 	if err != nil {
 		return fmt.Errorf("failed to unmount %s: %v", mountPath, err)
+	}
+	return nil
+}
+
+func (sm *StorageManager) createUser(username, password, dir string) error {
+	group := "sftpusers" // TODO get this from config
+
+	userAddCmd := exec.Command("sudo", "useradd", "-M", "-s", "/sbin/nologin", "-G", group, username)
+	if output, err := userAddCmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to create user: %v, output: %s", err, output)
+	}
+
+	passwdCmd := exec.Command("sudo", "chpasswd")
+	passwdCmd.Stdin = strings.NewReader(fmt.Sprintf("%s:%s", username, password))
+	if output, err := passwdCmd.CombinedOutput(); err != nil {
+		_ = sm.deleteUser(username)
+		return fmt.Errorf("failed to set user password: %v, output: %s", err, output)
+	}
+
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		_ = sm.deleteUser(username)
+		return fmt.Errorf("failed to create directory: %v", err)
+	}
+
+	// Set ownership of the directory to the user
+	chownCmd := exec.Command("sudo", "chown", "-R", fmt.Sprintf("%s:%s", username, group), dir)
+	if output, err := chownCmd.CombinedOutput(); err != nil {
+		_ = sm.deleteUser(username)
+		return fmt.Errorf("failed to set directory ownership: %v, output: %s", err, output)
+	}
+
+	return nil
+}
+
+func (sm *StorageManager) deleteUser(username string) error {
+	userDelCmd := exec.Command("sudo", "userdel", username)
+	if err := userDelCmd.Run(); err != nil {
+		return fmt.Errorf("failed to delete user: %v", err)
 	}
 	return nil
 }

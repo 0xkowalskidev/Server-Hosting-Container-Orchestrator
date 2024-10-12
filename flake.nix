@@ -21,7 +21,21 @@
 
         shellHook = ''
           echo "Setting up dev directories"
-          mkdir -p logs mounts 
+          mkdir -p logs
+
+          export MOUNTS_PATH="/srv/mounts"
+          sudo mkdir -p /srv/mounts
+
+          if ! getent group sftpusers > /dev/null 2>&1; then
+            echo "Creating sftpusers group"
+            sudo groupadd sftpusers
+          else
+            echo "sftpusers group already exists"
+          fi
+          sudo chown root:sftpusers $MOUNTS_PATH
+          sudo chmod 710 $MOUNTS_PATH  # Gives execute permission for the group
+
+          echo "MOUNTS_PATH=$MOUNTS_PATH"
 
           echo "Setting control node variables"
           export ETCD_NAMESPACE="gameservers"
@@ -38,8 +52,7 @@
           echo "CONTAINERD_PATH=$CONTAINERD_PATH"
           export LOGS_PATH="/home/kowalski/dev/server-hosting/container-orchestrator/logs"
           echo "LOGS_PATH"=$LOGS_PATH
-          export MOUNTS_PATH="/home/kowalski/dev/server-hosting/container-orchestrator/mounts"
-          echo "MOUNTS_PATH"=$MOUNTS_PATH
+
 
           export CGO_CFLAGS="$(pkg-config --cflags pam)"
           export CGO_LDFLAGS="$(pkg-config --libs pam)"
