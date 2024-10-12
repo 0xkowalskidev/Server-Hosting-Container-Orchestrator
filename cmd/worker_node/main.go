@@ -96,5 +96,9 @@ func main() {
 	client := resty.New()
 	agent := workernode.NewAgent(config, client, runtime, storageManager, networkManager)
 
-	agent.StartAgent()
+	go agent.StartAgent()
+
+	sftp := workernode.NewSFTPServer(config)
+
+	sftp.Start()
 }

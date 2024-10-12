@@ -7,4 +7,6 @@ type Config struct {
 	ContainerdPath      string `env:"CONTAINERD_PATH" default:"/run/containerd/containerd.sock"`
 	LogsPath            string `env:"LOGS_PATH"`   // Absolute logs path
 	MountsPath          string `env:"MOUNTS_PATH"` // Absolute mounts path
+	SftpPort            string `env:"SFTP_PORT"`
+	SftpKeyPath         string `env:"SFTP_KEY_PATH"` // Absolute sftp priv key path
 }

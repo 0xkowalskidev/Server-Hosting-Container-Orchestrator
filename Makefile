@@ -1,8 +1,10 @@
 REFLEX_REGEX='\.(go|html|css|js|nix)$$'
+PAM_CFLAGS := $(shell pkg-config --cflags pam)
+PAM_LDFLAGS := $(shell pkg-config --libs pam)
 
 .PHONY: dev-worker-node
 dev-worker-node:
-	sudo LOGS_PATH=/home/kowalski/dev/server-hosting/container-orchestrator/logs MOUNTS_PATH=/home/kowalski/dev/server-hosting/container-orchestrator/mounts NODE_ID=node_1 CONTROL_NODE_URI=http://localhost:3001/api reflex -r $(REFLEX_REGEX) -s -- go run ./cmd/worker_node/main.go
+	sudo -E env CGO_CFLAGS="$(PAM_CFLAGS)" CGO_LDFLAGS="$(PAM_LDFLAGS)" SFTP_KEY_PATH=/home/kowalski/.ssh/github_rsa SFTP_PORT=2022 LOGS_PATH=/home/kowalski/dev/server-hosting/container-orchestrator/logs MOUNTS_PATH=/home/kowalski/dev/server-hosting/container-orchestrator/mounts NODE_ID=node_1 CONTROL_NODE_URI=http://localhost:3001/api reflex -r $(REFLEX_REGEX) -s -- go run ./cmd/worker_node/main.go
 
 .PHONY: dev-control-node
 dev-control-node:

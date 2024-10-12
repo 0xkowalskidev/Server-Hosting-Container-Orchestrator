@@ -12,10 +12,13 @@ require (
 	github.com/gofiber/fiber/v3 v3.0.0-beta.3
 	github.com/gofiber/template/html/v2 v2.1.2
 	github.com/hpcloud/tail v1.0.0
+	github.com/msteinert/pam v1.2.0
 	github.com/opencontainers/runtime-spec v1.1.0
+	github.com/pkg/sftp v1.13.6
 	github.com/stretchr/testify v1.9.0
 	github.com/vishvananda/netns v0.0.0-20210104183010-2eb08e3e575f
 	go.etcd.io/etcd/client/v3 v3.5.15
+	golang.org/x/crypto v0.25.0
 )
 
 require (
@@ -48,6 +51,7 @@ require (
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect
+	github.com/kr/fs v0.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/moby/locker v1.0.1 // indirect
