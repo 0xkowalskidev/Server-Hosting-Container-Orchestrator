@@ -50,10 +50,6 @@
           echo "CONTAINERD_PATH=$CONTAINERD_PATH"
           export LOGS_PATH="/home/kowalski/dev/server-hosting/container-orchestrator/logs"
           echo "LOGS_PATH"=$LOGS_PATH
-
-
-          export CGO_CFLAGS="$(pkg-config --cflags pam)"
-          export CGO_LDFLAGS="$(pkg-config --libs pam)"
         '';
 
       };

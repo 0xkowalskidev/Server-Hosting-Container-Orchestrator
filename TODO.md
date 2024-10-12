@@ -14,3 +14,4 @@
 ## Control Panel crash on server restart due to sse conn - Done
 ## Worker node does not properly create portmappings if netns already exists - 
 ## Container status race condition - 
+## SFTP might not let user disconnect -
