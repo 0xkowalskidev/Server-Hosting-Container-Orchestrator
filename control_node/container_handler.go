@@ -26,6 +26,20 @@ func (ch *ContainerHandler) GetContainers(c fiber.Ctx) error {
 	return c.JSON(containers)
 }
 
+func (ch *ContainerHandler) GetContainer(c fiber.Ctx) error {
+	containerID := c.Params("id")
+	container, err := ch.containerService.GetContainer(containerID)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Internal Server Error", "details": err.Error()})
+	}
+
+	if container.ID == "" {
+		return c.Status(404).JSON(fiber.Map{"error": "Resource Not Found", "details": fmt.Sprintf("Container with ID=%s not found.", containerID)})
+	}
+
+	return c.JSON(container)
+}
+
 func (ch *ContainerHandler) CreateContainer(c fiber.Ctx) error {
 	var container models.Container
 

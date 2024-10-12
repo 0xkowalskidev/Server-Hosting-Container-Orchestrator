@@ -1,0 +1,13 @@
+<header>
+        <nav>
+                <a>Dashboard</a>
+                <a>Console</a>
+                <a>File Viewer</a>
+                <a>Edit Gameserver</a>
+        </nav>
+
+        <div hx-get="/gameservers/{{.ID}}/metrics" hx-trigger="every 1s">
+        </div>
+</header>
+
+Storage {{.StorageLimit}}

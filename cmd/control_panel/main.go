@@ -49,6 +49,27 @@ func main() {
 		}
 	})
 
+	app.Get("/gameservers/:id", func(c fiber.Ctx) error {
+		containerID := c.Params("id")
+
+		if containerID == "" { // TODO: do something else
+			return c.Status(404).JSON(fiber.Map{"error": "Resource Not Found", "details": fmt.Sprintf("Container with ID=%s not found.", containerID)})
+		}
+
+		container, err := wrapper.GetContainer(containerID)
+		if err != nil {
+			// TODO: Do something else here
+			return c.Status(500).JSON(fiber.Map{"error": "Error getting containers", "details": err.Error()})
+		}
+
+		if c.Get("HX-Request") == "true" {
+			return c.Render("gameserver_page", utils.StructToFiberMap(container))
+		} else {
+			return c.Render("gameserver_page", utils.StructToFiberMap(container), "layout")
+		}
+
+	})
+
 	app.Get("/gameservers", func(c fiber.Ctx) error {
 		containers, err := wrapper.GetContainers()
 		if err != nil {

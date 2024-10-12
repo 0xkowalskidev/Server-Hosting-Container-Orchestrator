@@ -41,6 +41,7 @@ func main() {
 	/// Api Routes
 	//// /containers
 	app.Get("/api/containers", containerHandler.GetContainers)
+	app.Get("/api/containers/:id", containerHandler.GetContainer)
 	app.Post("/api/containers", containerHandler.CreateContainer)
 	app.Patch("/api/containers/:id", containerHandler.UpdateContainer) // TODO: Make this a put?
 	app.Delete("/api/containers/:id", containerHandler.DeleteContainer)

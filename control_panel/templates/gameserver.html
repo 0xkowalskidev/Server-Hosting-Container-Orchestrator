@@ -9,8 +9,6 @@
         <div hx-get="/gameservers/{{.ID}}/metrics" hx-trigger="every 1s">
         </div>
 
-
-
         <pre style="margin: 0;">
                 <code id="logs-container-{{.ID}}" hx-ext="sse" sse-connect="/gameservers/{{.ID}}/logs"
                         hx-swap="beforeend" sse-swap="message"

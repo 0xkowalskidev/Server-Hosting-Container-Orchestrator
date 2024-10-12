@@ -23,7 +23,23 @@ func NewWrapper(baseURL string) *Wrapper {
 	}
 }
 
-func (w *Wrapper) get(endpoint string, result interface{}) error {
+func (w *Wrapper) get(endpoint string, resourceID string, result interface{}) error {
+	resp, err := w.client.R().
+		SetResult(result).
+		Get(fmt.Sprintf("%s/%s", endpoint, resourceID))
+
+	if err != nil {
+		return err
+	}
+
+	if resp.IsError() {
+		return fmt.Errorf("error: %s", resp.Status())
+	}
+
+	return nil
+}
+
+func (w *Wrapper) list(endpoint string, result interface{}) error {
 	resp, err := w.client.R().
 		SetResult(result).
 		Get(endpoint)
@@ -89,53 +105,43 @@ func (w *Wrapper) remove(endpoint string, resourceID string) error {
 func (w *Wrapper) GetContainers() ([]models.Container, error) {
 	var containers []models.Container
 
-	err := w.get("/containers", &containers)
-	if err != nil {
-		return containers, err
-	}
+	err := w.list("/containers", &containers)
 
-	return containers, nil
+	return containers, err
+}
+
+func (w *Wrapper) GetContainer(containerID string) (models.Container, error) {
+	var container models.Container
+
+	err := w.get("/containers", containerID, &container)
+	return container, err
 }
 
 func (c *Wrapper) CreateContainer(body models.Container) (models.Container, error) {
 	var container models.Container
 
 	err := c.post("/containers", body, &container)
-	if err != nil {
-		return container, err
-	}
 
-	return container, nil
+	return container, err
 }
 
 func (c *Wrapper) UpdateContainer(containerID string, body models.Container) (models.Container, error) {
 	var container models.Container
 
 	err := c.patch("/containers", containerID, body, &container)
-	if err != nil {
-		return container, err
-	}
 
-	return container, nil
+	return container, err
 }
 
 func (c *Wrapper) DeleteContainer(containerID string) error {
-	err := c.remove("/containers", containerID)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return c.remove("/containers", containerID)
 }
 
 // Nodes
 func (w *Wrapper) GetNodes() ([]models.Node, error) {
 	var nodes []models.Node
 
-	err := w.get("/nodes", &nodes)
-	if err != nil {
-		return nodes, err
-	}
+	err := w.list("/nodes", &nodes)
 
-	return nodes, nil
+	return nodes, err
 }
