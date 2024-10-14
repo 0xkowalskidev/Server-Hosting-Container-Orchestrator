@@ -54,7 +54,6 @@ func TestCreateContainer_Valid(t *testing.T) {
 	defer teardown(etcdClient, containerService.config)
 
 	err := containerService.PutContainer(validContainer)
-
 	require.NoError(t, err)
 }
 
@@ -63,11 +62,9 @@ func TestGetContainer_Valid(t *testing.T) {
 	defer teardown(etcdClient, containerService.config)
 
 	err := containerService.PutContainer(validContainer)
-
 	require.NoError(t, err)
 
 	container, err := containerService.GetContainer(validContainer.ID)
-
 	require.NoError(t, err)
 	require.Equal(t, container.ID, validContainer.ID, "The container IDs should match")
 }
@@ -86,4 +83,15 @@ func TestGetContainers_Valid(t *testing.T) {
 	containers, err := containerService.GetContainers("")
 	require.NoError(t, err)
 	require.Len(t, containers, 3, "The number of containers retrieved should match the number created")
+}
+
+func TestDeleteContainer_Valid(t *testing.T) {
+	containerService, etcdClient := setup(t)
+	defer teardown(etcdClient, containerService.config)
+
+	err := containerService.PutContainer(validContainer)
+	require.NoError(t, err)
+
+	err = containerService.DeleteContainer(validContainer.ID)
+	require.NoError(t, err)
 }
