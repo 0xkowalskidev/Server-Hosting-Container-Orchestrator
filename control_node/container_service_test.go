@@ -1,6 +1,9 @@
 package controlnode
 
 import (
+	"context"
+	"fmt"
+	"log"
 	"testing"
 	"time"
 
@@ -14,7 +17,7 @@ var validContainer = models.Container{
 	ID: "valid-container",
 }
 
-func setup(t *testing.T) ContainerService {
+func setup(t *testing.T) (ContainerService, clientv3.Client) {
 	var config Config
 	utils.ParseConfigFromEnv(&config)
 
@@ -23,16 +26,26 @@ func setup(t *testing.T) ContainerService {
 		DialTimeout: 5 * time.Second,
 	})
 
+	require.NoError(t, err)
+
 	containerService := NewContainerService(config, etcdClient)
 
-	require.NoError(t, err)
-	require.NotNil(t, etcdClient)
+	teardown(*etcdClient, containerService.config)
 
-	return *containerService
+	return *containerService, *etcdClient
+}
+
+func teardown(etcdClient clientv3.Client, config Config) {
+	_, err := etcdClient.Delete(context.Background(), fmt.Sprintf("/%s", config.EtcdNamespace), clientv3.WithPrefix())
+
+	if err != nil {
+		log.Println("Failed to teardown etcd")
+	}
 }
 
 func TestCreateContainer_Valid(t *testing.T) {
-	containerService := setup(t)
+	containerService, etcdClient := setup(t)
+	defer teardown(etcdClient, containerService.config)
 
 	err := containerService.PutContainer(validContainer)
 
