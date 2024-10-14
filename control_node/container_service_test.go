@@ -51,3 +51,17 @@ func TestCreateContainer_Valid(t *testing.T) {
 
 	require.NoError(t, err)
 }
+
+func TestGetContainer_Valid(t *testing.T) {
+	containerService, etcdClient := setup(t)
+	defer teardown(etcdClient, containerService.config)
+
+	err := containerService.PutContainer(validContainer)
+
+	require.NoError(t, err)
+
+	container, err := containerService.GetContainer(validContainer.ID)
+
+	require.NoError(t, err)
+	require.Equal(t, container.ID, validContainer.ID, "The container IDs should match")
+}
