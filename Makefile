@@ -23,6 +23,10 @@ test:
 test-worker-node:
 	sudo go test -count=1 -v ./...
 
+.PHONY: test-control-node
+test-control-node:
+	ETCD_NAMESPACE=test go test -count=1 -v ./control_node/...
+
 .PHONY: reset-ctr
 reset-ctr:
 	# Stop and delete all running tasks
