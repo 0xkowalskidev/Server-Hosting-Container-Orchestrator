@@ -16,6 +16,12 @@ import (
 var validContainer = models.Container{
 	ID: "valid-container",
 }
+var validContainer2 = models.Container{
+	ID: "valid-container2",
+}
+var validContainer3 = models.Container{
+	ID: "valid-container3",
+}
 
 func setup(t *testing.T) (ContainerService, clientv3.Client) {
 	var config Config
@@ -64,4 +70,20 @@ func TestGetContainer_Valid(t *testing.T) {
 
 	require.NoError(t, err)
 	require.Equal(t, container.ID, validContainer.ID, "The container IDs should match")
+}
+
+func TestGetContainers_Valid(t *testing.T) {
+	containerService, etcdClient := setup(t)
+	defer teardown(etcdClient, containerService.config)
+
+	err := containerService.PutContainer(validContainer)
+	require.NoError(t, err)
+	err = containerService.PutContainer(validContainer2)
+	require.NoError(t, err)
+	err = containerService.PutContainer(validContainer3)
+	require.NoError(t, err)
+
+	containers, err := containerService.GetContainers("")
+	require.NoError(t, err)
+	require.Len(t, containers, 3, "The number of containers retrieved should match the number created")
 }
