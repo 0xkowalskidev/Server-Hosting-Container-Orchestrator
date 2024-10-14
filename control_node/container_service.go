@@ -71,7 +71,7 @@ func (cs *ContainerService) GetContainers(nodeID string) ([]models.Container, er
 }
 
 func (cs *ContainerService) PutContainer(container models.Container) error {
-	container.SetDefaults()
+	container.SetDefaults() // TODO, these should probably be in handler
 	// TODO: Validate here
 
 	containerData, err := json.Marshal(container)
