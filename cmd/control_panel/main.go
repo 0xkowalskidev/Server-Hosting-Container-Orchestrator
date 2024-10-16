@@ -366,4 +366,3 @@ func main() {
 
 	log.Fatal(app.Listen(":3000")) // TODO: Get this from config
 }
-

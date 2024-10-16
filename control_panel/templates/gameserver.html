@@ -1,6 +1,8 @@
 <article id="gameserver-{{.ID}}">
         <header>
-                <h3>ID: {{.ID}}</h3>
+                <a href="/gameservers/{{.ID}}" hx-boost="true" hx-target="#content">
+                        <h3>ID: {{.ID}}</h3>
+                </a>
                 <h3 hx-get="/gameservers/{{.ID}}/status" hx-trigger="every 1s"></h3>
         </header>
         <p>Image: {{.Image}}</p>
